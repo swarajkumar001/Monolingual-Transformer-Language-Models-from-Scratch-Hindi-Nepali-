@@ -31,21 +31,35 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 from clean_lib import (  # noqa: E402
+    acquire_single_instance_lock,
     dedup_key,
     devanagari_ratio,
     is_too_short,
+    load_resume_state,
     malformed_ratio,
+    marker_counts,
     normalize_text,
     read_metadata,
+    recompute_disk_truth_stats,
+    release_single_instance_lock,
     reset_dir,
     strip_latin_tokens,
     write_doc,
 )
 
+CHECKPOINT_EVERY = 2000
+LOCK_PATH = Path(__file__).resolve().parents[1] / "metadata" / ".clean.lock"
+
 LANG = "bhojpuri"
 LANG_ISO = "bho"  # not a langdetect-supported code; see module docstring
 DATA_DIR = Path(__file__).resolve().parents[1]
-RAW_DIRS = [DATA_DIR / "raw" / "downloaded", DATA_DIR / "raw" / "manual"]
+# Manual processed BEFORE downloaded: dedup below keeps first-seen and drops
+# later duplicates, so this ordering means a manual copy always wins a
+# cross-source duplicate tie against a downloaded copy of the same text
+# (e.g. a scraped article that also appears in a bulk corpus), never the
+# reverse. Never share this ordering assumption without this comment - it's
+# load-bearing for the dedup tie-break rule, not incidental.
+RAW_DIRS = [DATA_DIR / "raw" / "manual", DATA_DIR / "raw" / "downloaded"]
 INTERIM_DIR = DATA_DIR / "interim"
 CLEANED_DIR = DATA_DIR / "cleaned"
 STATS_PATH = DATA_DIR / "metadata" / "clean_stats.json"
@@ -72,15 +86,30 @@ def language_ok(text: str) -> tuple[bool, str]:
 def main():
     parser = argparse.ArgumentParser(description="Clean Bhojpuri raw text (Model L)")
     parser.add_argument("--min-chars", type=int, default=MIN_CHARS)
+    parser.add_argument("--resume", action="store_true",
+                         help="Continue an interrupted run instead of rebuilding from "
+                              "scratch: skip docs already in data/interim/ or the dropped "
+                              "log, reload dedup hashes from data/cleaned/, and resume the "
+                              "running stats counters.")
     args = parser.parse_args()
 
-    reset_dir(INTERIM_DIR)
-    reset_dir(CLEANED_DIR)
-    DROPPED_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if DROPPED_LOG_PATH.exists():
-        DROPPED_LOG_PATH.unlink()
+    acquire_single_instance_lock(LOCK_PATH)
 
+    processed_ids = set()
     seen_hashes = set()
+    resumed_stats = None
+    if args.resume:
+        processed_ids, seen_hashes, resumed_stats = load_resume_state(
+            INTERIM_DIR, CLEANED_DIR, DROPPED_LOG_PATH, STATS_PATH)
+        print(f"[{LANG}] resuming: {len(processed_ids)} docs already processed, "
+              f"{len(seen_hashes)} dedup hashes reloaded")
+    else:
+        reset_dir(INTERIM_DIR)
+        reset_dir(CLEANED_DIR)
+        DROPPED_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if DROPPED_LOG_PATH.exists():
+            DROPPED_LOG_PATH.unlink()
+
     stats = {
         "docs_in": 0,
         "docs_cleaned": 0,
@@ -91,18 +120,31 @@ def main():
         "chars_in": 0,
         "chars_cleaned": 0,
         "latin_tokens_removed": 0,
+        "likely_hindi_contamination": 0,
         "language_id_caveat": (
             "langdetect has no 'bho' label; Devanagari-script-ratio was used as a "
             "practical proxy and cannot distinguish Bhojpuri from closely-related "
-            "Hindi/Nepali text mislabeled at the source."
+            "Hindi/Nepali text mislabeled at the source. likely_hindi_contamination "
+            "is a coarse lexical-marker count (see clean_lib.marker_counts) among "
+            "docs that otherwise passed cleaning - it is NOT a filter, documents "
+            "counted here are still included in data/cleaned/. Flags docs where "
+            "Hindi markers (है/हैं/एक/गया/हुआ/किया/आप/तुम्हारा) outnumber Bhojpuri "
+            "markers (बा/बाटे/बाड़ें/एगो/गइल/भइल/कइल/etc.) by a clear margin."
         ),
     }
+    if resumed_stats is not None:
+        stats.update(resumed_stats)
 
     for raw_dir in RAW_DIRS:
         meta_path = raw_dir / "metadata.jsonl"
         for meta in read_metadata(meta_path):
-            stats["docs_in"] += 1
             doc_id = meta["document_id"]
+            if doc_id in processed_ids:
+                continue
+            stats["docs_in"] += 1
+            if stats["docs_in"] % CHECKPOINT_EVERY == 0:
+                STATS_PATH.parent.mkdir(parents=True, exist_ok=True)
+                STATS_PATH.write_text(json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8")
             text_path = raw_dir / "text" / f"{doc_id}.txt"
             if not text_path.exists():
                 continue
@@ -134,6 +176,10 @@ def main():
                 _log_dropped(doc_id, reason)
                 continue
 
+            bho_hits, hin_hits = marker_counts(text)
+            if hin_hits >= 2 and hin_hits > bho_hits:
+                stats["likely_hindi_contamination"] += 1
+
             key = dedup_key(text)
             if key in seen_hashes:
                 stats["dropped_duplicate"] += 1
@@ -144,16 +190,19 @@ def main():
             cleaned_meta = dict(meta)
             cleaned_meta["characters"] = len(text)
             cleaned_meta["cleaning_status"] = "cleaned"
+            cleaned_meta["dedup_key"] = key
             write_doc(CLEANED_DIR, doc_id, text, cleaned_meta)
             stats["docs_cleaned"] += 1
             stats["chars_cleaned"] += len(text)
 
+    stats = recompute_disk_truth_stats(stats, INTERIM_DIR, CLEANED_DIR, DROPPED_LOG_PATH)
     STATS_PATH.parent.mkdir(parents=True, exist_ok=True)
     STATS_PATH.write_text(json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8")
 
     print(f"[{LANG}] {stats['docs_cleaned']}/{stats['docs_in']} docs kept "
           f"({stats['chars_cleaned']} / {stats['chars_in']} chars)")
     print(json.dumps(stats, indent=2))
+    release_single_instance_lock(LOCK_PATH)
 
 
 def _log_dropped(doc_id: str, reason: str) -> None:

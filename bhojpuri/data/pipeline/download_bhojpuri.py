@@ -13,7 +13,13 @@ not assumed):
     are removed later by the document-level dedup step, not by this script.
 
 AI4Bharat Sangraha was investigated and does NOT include a Bhojpuri split (its
-language tag list has no "bho"), so it is intentionally not used here.
+language tag list has no "bho"), so it is intentionally not used here. This was
+re-checked twice (file listing has zero "bho" entries) before being ruled out.
+
+  - HuggingFaceFW/fineweb-2, config "bho_Deva" : does exist (re-verified via the
+    HF API file listing: data/bho_Deva/{train,test}/*.parquet), unlike Sangraha.
+    CommonCrawl-derived, so expect heavier contamination from closely-related
+    languages than the other sources here.
 
 This script only downloads and records metadata. It does not clean, normalize, or
 deduplicate - that happens in the later pipeline stages so each step stays testable
@@ -131,19 +137,62 @@ def download_wikipedia(out_dir: Path, max_docs: int | None) -> int:
     return count
 
 
+def download_fineweb2(out_dir: Path, max_chars: int | None, min_language_score: float = 0.8) -> int:
+    """FineWeb-2 does carry a Bhojpuri config (data/bho_Deva/), unlike Sangraha
+    which was checked and confirmed to have none. CommonCrawl-derived, so
+    expect heavier Hindi/Nepali contamination than the other Bhojpuri sources -
+    language_score is used as a coarse pre-filter, real separation happens in
+    the cleaning stage's Devanagari-ratio check, not here."""
+    source_name = "fineweb2"
+    print(f"[{LANG}] streaming HuggingFaceFW/fineweb-2 (bho_Deva) ...")
+    ds = load_dataset("HuggingFaceFW/fineweb-2", name="bho_Deva", split="train", streaming=True)
+    count, chars, skipped_low_score = 0, 0, 0
+    for row in tqdm(ds, desc="fineweb2-bho_Deva"):
+        text = (row.get("text") or "").strip()
+        if not text:
+            continue
+        if (row.get("language_score") or 0) < min_language_score:
+            skipped_low_score += 1
+            continue
+        raw_id = row.get("id", str(count))
+        doc_id = document_id(source_name, raw_id)
+        meta = {
+            "document_id": doc_id,
+            "language": LANG,
+            "source_type": "downloaded",
+            "source_name": "HuggingFaceFW/fineweb-2:bho_Deva",
+            "source_description": "FineWeb-2 Bhojpuri partition (CommonCrawl-derived web text)",
+            "collection_method": "download",
+            "license_or_usage_note": "ODC-By (dataset); underlying page licenses vary",
+            "url": row.get("url") or "",
+            "characters": len(text),
+            "split": None,
+            "cleaning_status": "raw",
+        }
+        write_document(out_dir, doc_id, text, meta)
+        count += 1
+        chars += len(text)
+        if max_chars is not None and chars >= max_chars:
+            break
+    print(f"[{LANG}] FineWeb-2: wrote {count} documents, {chars} characters "
+          f"(skipped {skipped_low_score} below language_score {min_language_score})")
+    return count
+
+
 def main():
     parser = argparse.ArgumentParser(description="Download Bhojpuri source text (Model L)")
     parser.add_argument("--max-docs-per-source", type=int, default=None,
                          help="Cap docs per source (omit for full download; both sources are small)")
+    parser.add_argument("--max-chars-fineweb2", type=int, default=200_000_000)
     parser.add_argument("--sources", nargs="+", default=["bhojpuricorpus", "wikipedia"],
-                         choices=["bhojpuricorpus", "wikipedia"])
+                         choices=["bhojpuricorpus", "wikipedia", "fineweb2"])
+    parser.add_argument("--append", action="store_true",
+                         help="Append to existing raw/downloaded/ instead of wiping it first")
     args = parser.parse_args()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    # Fresh metadata file per run (this script is meant to be re-run from scratch,
-    # not appended to across multiple partial runs).
     meta_path = OUT_DIR / "metadata.jsonl"
-    if meta_path.exists():
+    if meta_path.exists() and not args.append:
         meta_path.unlink()
 
     total = 0
@@ -151,8 +200,10 @@ def main():
         total += download_bhojpuricorpus(OUT_DIR, args.max_docs_per_source)
     if "wikipedia" in args.sources:
         total += download_wikipedia(OUT_DIR, args.max_docs_per_source)
+    if "fineweb2" in args.sources:
+        total += download_fineweb2(OUT_DIR, args.max_chars_fineweb2)
 
-    print(f"[{LANG}] TOTAL documents downloaded: {total}")
+    print(f"[{LANG}] TOTAL documents downloaded this run: {total}")
     print(f"[{LANG}] Output: {OUT_DIR}")
 
 

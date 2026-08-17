@@ -42,6 +42,15 @@
     "license_notes": "DROPPED: sitemap.xml is corrupted at the source (truncated multi-byte UTF-8 in every URL, all tested URLs return HTTP 400). Not usable via this method."
   },
   {
+    "site_id": "patrika_hindi",
+    "language": "hindi",
+    "base_url": "https://www.patrika.com",
+    "sitemap_url": "https://www.patrika.com/monthly-sitemap.xml",
+    "mode": "sitemap",
+    "license_notes": "Commercial Hindi newspaper (Rajasthan Patrika group), general news (politics/crime/local city news). robots.txt explicitly ALLOWS ClaudeBot and anthropic-ai (checked 2026-08-17) - unlike bhaskar.com and amarujala.com, which explicitly Disallow anthropic-ai/ClaudeBot/Claude-Web in their robots.txt and were ruled out on that basis, not attempted here. Configured to use monthly-sitemap.xml directly rather than the top-level sitemap.xml: patrika.com's top-level index nests its daily article sitemaps inside <url><loc> tags instead of standard-conforming <sitemap><loc> tags, which this crawler's recursive sitemap-index detection does not follow (would be mistaken for terminal article pages and fetched as such, yielding garbage). The monthly-sitemap.xml chain (index -> month sitemap -> real <url><loc> article entries) is standards-conformant and resolves within 2 levels of recursion. No explicit reuse licence observed beyond robots.txt; assume all rights reserved. Collected for coursework research use per course policy - not for redistribution.",
+    "notes_only_months_available": "Six month-level sitemaps found live at check time (Feb-Jul); July alone had ~4,671 article URLs. Real content volume, not exhausted like the smaller manual sources."
+  },
+  {
     "site_id": "kavita_kosh",
     "language": "hindi",
     "base_url": "https://kavitakosh.org",
