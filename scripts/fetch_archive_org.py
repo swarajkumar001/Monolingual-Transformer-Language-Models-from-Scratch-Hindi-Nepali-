@@ -28,9 +28,13 @@ DOWNLOAD_URL = "https://archive.org/download/{identifier}/{filename}"
 HEADERS = {"User-Agent": "Mozilla/5.0 (research collection; coursework LM training corpus)"}
 
 
-def search_identifiers(query: str, max_items: int, retries: int = 5) -> list[str]:
+def search_identifiers(query: str, max_items: int, retries: int = 5, start_offset: int = 0) -> list[str]:
+    """start_offset lets a second worker search past what an earlier run
+    already covered, so two concurrent fetch_archive_org.py runs against the
+    same query process different identifiers instead of racing over the same
+    first page of results."""
     identifiers = []
-    start = 0
+    start = start_offset
     while len(identifiers) < max_items:
         rows = min(50, max_items - len(identifiers))
         params = {"q": query, "fl[]": "identifier", "rows": rows, "start": start, "output": "json"}
@@ -92,6 +96,9 @@ def main():
     parser.add_argument("--query", required=True, help="archive.org advancedsearch query")
     parser.add_argument("--max-items", type=int, default=50)
     parser.add_argument("--min-chars", type=int, default=500)
+    parser.add_argument("--start-offset", type=int, default=0,
+                         help="Skip this many search results before collecting (lets a second "
+                              "concurrent run cover different identifiers than a first run)")
     args = parser.parse_args()
 
     lang = args.lang
@@ -99,11 +106,34 @@ def main():
     out_dir = PROJECT_ROOT / lang / "data" / "raw" / "manual"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    identifiers = search_identifiers(args.query, args.max_items)
-    print(f"[{lang}] query matched {len(identifiers)} candidate items, fetching...")
+    # Rerunning against an overlapping query would otherwise re-fetch and
+    # re-append identifiers already collected in a prior run, duplicating
+    # metadata lines. document_id is a hash of the archive.org identifier, so
+    # this check is exact, not a heuristic.
+    meta_path = out_dir / "metadata.jsonl"
+    existing_ids = set()
+    if meta_path.exists():
+        with meta_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    existing_ids.add(json.loads(line)["document_id"])
+                except (json.JSONDecodeError, KeyError):
+                    continue
 
-    count = skipped_no_ocr = skipped_short = skipped_error = 0
+    identifiers = search_identifiers(args.query, args.max_items, start_offset=args.start_offset)
+    print(f"[{lang}] query matched {len(identifiers)} candidate items "
+          f"({len(existing_ids)} docs already collected in this out dir), fetching...")
+
+    count = skipped_no_ocr = skipped_short = skipped_error = skipped_existing = 0
     for i, identifier in enumerate(identifiers, 1):
+        digest = hashlib.sha1(identifier.encode("utf-8")).hexdigest()[:10]
+        doc_id = f"{lang_iso}_manual_archiveorg_{digest}"
+        if doc_id in existing_ids:
+            skipped_existing += 1
+            continue
         text, meta = fetch_item_text(identifier)
         if meta is None:
             skipped_error += 1
@@ -117,8 +147,6 @@ def main():
             continue
 
         m = meta.get("metadata", {})
-        digest = hashlib.sha1(identifier.encode("utf-8")).hexdigest()[:10]
-        doc_id = f"{lang_iso}_manual_archiveorg_{digest}"
         record = {
             "document_id": doc_id,
             "language": lang,
@@ -143,8 +171,9 @@ def main():
         print(f"  [{i}/{len(identifiers)}] {identifier}: {len(text)} chars")
         time.sleep(0.5)  # be polite to archive.org
 
-    print(f"[{lang}] archive.org: wrote {count} documents "
-          f"(skipped: {skipped_no_ocr} no-OCR, {skipped_short} too-short, {skipped_error} errors)")
+    print(f"[{lang}] archive.org: wrote {count} new documents "
+          f"(skipped: {skipped_existing} already-collected, {skipped_no_ocr} no-OCR, "
+          f"{skipped_short} too-short, {skipped_error} errors)")
     print(f"[{lang}] Output: {out_dir}")
 
 
