@@ -1,0 +1,34 @@
+# Core ML (Phase 2+; not needed for Phase 1 data/tokenizer work)
+torch>=2.9
+
+# Tokenization
+sentencepiece>=0.2.2
+
+# Data acquisition / handling
+datasets>=5.0
+huggingface_hub>=0.25
+pandas>=2.2
+numpy>=1.26
+regex>=2024.1
+pyyaml>=6.0
+tqdm>=4.66
+
+# Language identification (verifying Hindi/Bhojpuri text is actually that language)
+langdetect>=1.0.9
+
+# Evaluation (Phase 2-3)
+sacrebleu>=2.4      # BLEU, chrF/chrF++
+rouge-score>=0.1.2
+
+# Visualization
+matplotlib>=3.8
+seaborn>=0.13
+
+# OCR (manual data collection)
+pytesseract>=0.3.10
+pdf2image>=1.17
+Pillow>=10.0
+
+# Scraping (manual data collection)
+requests>=2.31
+beautifulsoup4>=4.12

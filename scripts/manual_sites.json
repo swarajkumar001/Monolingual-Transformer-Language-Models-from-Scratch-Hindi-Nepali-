@@ -1,0 +1,60 @@
+[
+  {
+    "site_id": "khabar_bhojpuri",
+    "language": "bhojpuri",
+    "base_url": "https://khabarbhojpuri.com",
+    "mode": "wordpress",
+    "license_notes": "Commercial Bhojpuri news site (WordPress). No reuse licence observed; assume all rights reserved. Collected for coursework research use per course policy - not for redistribution."
+  },
+  {
+    "site_id": "jogira",
+    "language": "bhojpuri",
+    "base_url": "https://jogira.com",
+    "mode": "wordpress",
+    "license_notes": "Bhojpuri literature/culture site (WordPress) hosting named-author works; individual works remain author-copyright. Collected for coursework research use per course policy - not for redistribution."
+  },
+  {
+    "site_id": "anjoria",
+    "language": "bhojpuri",
+    "base_url": "https://anjoria.com",
+    "mode": "wordpress",
+    "license_notes": "Bhojpuri content site (WordPress). No reuse licence observed. Collected for coursework research use per course policy - not for redistribution."
+  },
+  {
+    "site_id": "sirijan",
+    "language": "bhojpuri",
+    "base_url": "https://sirijan.com",
+    "mode": "wordpress",
+    "license_notes": "Bhojpuri quarterly e-magazine (WordPress), contributor-authored literary works. Collected for coursework research use per course policy - not for redistribution."
+  },
+  {
+    "site_id": "bhojpuri_planet",
+    "language": "bhojpuri",
+    "base_url": "https://bhojpuriplanet.com",
+    "mode": "wordpress",
+    "license_notes": "Bhojpuri blog/culture site (WordPress). No reuse licence observed. Collected for coursework research use per course policy - not for redistribution."
+  },
+  {
+    "site_id": "hindi_samay",
+    "language": "hindi",
+    "base_url": "https://www.hindisamay.com",
+    "mode": "sitemap",
+    "license_notes": "DROPPED: sitemap.xml is corrupted at the source (truncated multi-byte UTF-8 in every URL, all tested URLs return HTTP 400). Not usable via this method."
+  },
+  {
+    "site_id": "kavita_kosh",
+    "language": "hindi",
+    "base_url": "https://kavitakosh.org",
+    "api_url": "https://kavitakosh.org/kk/api.php",
+    "mode": "mediawiki",
+    "license_notes": "Large Hindi/Urdu poetry wiki (MediaWiki, api at /kk/api.php not /w/api.php); individual poems remain author-copyright, site is community-maintained. Also hosts smaller Bhojpuri/Awadhi/Maithili/etc. sections mixed into the same namespace - language-ID filtering in the cleaning stage separates these, this crawl is not itself language-pure. Collected for coursework research use per course policy - not for redistribution."
+  },
+  {
+    "site_id": "gadya_kosh",
+    "language": "hindi",
+    "base_url": "https://gadyakosh.org",
+    "api_url": "https://gadyakosh.org/gk/api.php",
+    "mode": "mediawiki",
+    "license_notes": "Hindi prose wiki (MediaWiki, api at /gk/api.php not /w/api.php), sibling of Kavita Kosh; author-copyright. Collected for coursework research use per course policy - not for redistribution."
+  }
+]

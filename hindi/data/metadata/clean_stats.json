@@ -1,0 +1,14 @@
+{
+  "docs_in": 306323,
+  "docs_cleaned": 263511,
+  "dropped_malformed": 51,
+  "dropped_short": 37644,
+  "dropped_language": {
+    "low_devanagari_ratio": 453,
+    "langdetect_mismatch": 588
+  },
+  "dropped_duplicate": 4076,
+  "chars_in": 619989222,
+  "chars_cleaned": 566386760,
+  "latin_tokens_removed": 4320588
+}

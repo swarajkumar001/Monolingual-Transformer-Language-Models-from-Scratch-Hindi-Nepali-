@@ -1,0 +1,14 @@
+{
+  "docs_in": 400336,
+  "docs_cleaned": 387156,
+  "dropped_malformed": 2,
+  "dropped_short": 1998,
+  "dropped_language": {
+    "low_devanagari_ratio": 77
+  },
+  "dropped_duplicate": 11103,
+  "chars_in": 124636675,
+  "chars_cleaned": 107155579,
+  "latin_tokens_removed": 1282995,
+  "language_id_caveat": "langdetect has no 'bho' label; Devanagari-script-ratio was used as a practical proxy and cannot distinguish Bhojpuri from closely-related Hindi/Nepali text mislabeled at the source."
+}

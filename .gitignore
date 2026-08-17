@@ -1,0 +1,37 @@
+# Python environment
+.venv/
+__pycache__/
+*.pyc
+
+# Claude Code session state (not project content)
+.claude/
+
+# Download logs (tqdm progress-bar noise, not useful history)
+*.log
+
+# Model checkpoints (Phase 2+, will be large binary files)
+checkpoints/
+
+# Corpus data - NOT committed to git (hundreds of thousands of files, many
+# hundred million characters). Per the course spec, raw and cleaned data goes
+# to Google Drive instead, not GitHub. Only the pipeline code that produces
+# this data is tracked.
+hindi/data/raw/
+hindi/data/interim/
+hindi/data/cleaned/
+hindi/data/processed/
+hindi/data/splits/
+hindi/data/metadata/*
+bhojpuri/data/raw/
+bhojpuri/data/interim/
+bhojpuri/data/cleaned/
+bhojpuri/data/processed/
+bhojpuri/data/splits/
+bhojpuri/data/metadata/*
+
+# Small summary statistics ARE worth versioning even though the rest of
+# data/metadata/ is ignored above (negation only works when the parent dir
+# itself isn't excluded, hence the /* above rather than a bare directory
+# ignore).
+!hindi/data/metadata/clean_stats.json
+!bhojpuri/data/metadata/clean_stats.json
