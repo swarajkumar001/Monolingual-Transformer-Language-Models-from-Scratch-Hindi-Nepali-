@@ -22,12 +22,14 @@ hindi/data/cleaned/
 hindi/data/processed/
 hindi/data/splits/
 hindi/data/metadata/*
+hindi/data/external/
 bhojpuri/data/raw/
 bhojpuri/data/interim/
 bhojpuri/data/cleaned/
 bhojpuri/data/processed/
 bhojpuri/data/splits/
 bhojpuri/data/metadata/*
+bhojpuri/data/external/
 
 # Small summary statistics ARE worth versioning even though the rest of
 # data/metadata/ is ignored above (negation only works when the parent dir
