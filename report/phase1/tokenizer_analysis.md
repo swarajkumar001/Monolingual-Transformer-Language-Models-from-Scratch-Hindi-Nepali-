@@ -9,21 +9,19 @@ below). Fixed settings across the vocab-size sweep: `character_coverage=0.9995`,
 
 **Vocab range: 5,000-10,000** (swept at 5k/6k/8k/10k), per a course-TA ruling
 — see "Embedding parameter budget" below for why. An earlier pass of this
-sweep explored 12k/16k/24k/32k before that ruling; those runs are reported
-as a footnote for context but are **not valid candidates** and were dropped.
+sweep explored 12k/16k/24k before that ruling; those are not valid
+candidates and their model files have been removed.
 
 All numbers below come from `<lang>/tokenizer/analyze_tokenizer.py` run on
 each language's `data/splits/validation/` split (2,000 docs sampled) and
 `scripts/count_tokens.py` run over the full corpus (train+validation+test,
-every document, exact — not sampled/extrapolated). A cell reads
-**NOT YET MEASURED** where the corresponding sweep step has not completed
-yet; no number in this file is estimated or backfilled from a placeholder
-ratio.
-
-**Do not use 3.2 chars/token anywhere in this project** — that was an early
-placeholder before any tokenizer existed. The real, measured ratio differs
-by vocab size (see table below) and is what all downstream token-budget
-planning uses.
+every document, exact — not sampled/extrapolated). Every number is taken
+directly from `bhojpuri_tokenizer_sweep.log` / the Hindi sweep log. A cell
+reads **NOT YET MEASURED** where the corresponding step has not completed;
+nothing here is estimated, and no fabricated number (e.g. the 3.2
+chars/token placeholder, or the 3.658/3.960/4.159 figures that appeared in
+an earlier planning note but don't match this repo's actual measurements)
+is used anywhere.
 
 ---
 
@@ -32,9 +30,8 @@ planning uses.
 At a ~25M-parameter total budget, vocabulary size directly trades off
 against how many parameters are left for the actual Transformer layers. If
 the input and output projections are tied (one embedding matrix reused for
-both, as this project does — see the model config in Phase 2), the
-embedding table costs `vocab_size × model_dim` parameters, independent of
-depth/head count.
+both, as this project does), the embedding table costs
+`vocab_size × model_dim` parameters, independent of depth/head count.
 
 The course TA's ruling ("a 24k vocab makes the embedding table about 49% of
 the model") corresponds almost exactly to `model_dim=512`:
@@ -52,35 +49,72 @@ model and is what reproduces the TA's own cited figure) alongside 256 and
 | 10,000 | 2,560,000 | 10.24% | 3,840,000 | 15.36% | 5,120,000 | 20.48% |
 | ~~24,000~~ (dropped) | 6,144,000 | 24.58% | 9,216,000 | 36.86% | 12,288,000 | **49.15%** |
 
-Even at the low end of this range (5k, d=512), the embedding table is still
-~10% of the model; at the top of the allowed range (10k, d=512) it reaches
-~20%. Dropping to d=256 roughly halves every figure. Either way, staying at
-or below 10k keeps the embedding table a minority share of the budget across
-all plausible model_dim choices, whereas 24k pushes it to roughly half the
-model regardless of dimension — the actual Transformer stack (attention +
-FFN layers) would be left with less capacity than the vocabulary lookup
-table itself. If embeddings are **not** tied (separate input/output
-projections), every figure above roughly doubles, making the case for a
-small vocab even stronger.
+Even at the low end of this range (5k, d=512), the embedding table is
+~10% of the model; at the top (10k, d=512) it reaches ~20%. Staying at or
+below 10k keeps the embedding table a clear minority of the budget across
+every plausible model_dim, whereas 24k pushes it to roughly half the model
+regardless of dimension. If embeddings are **not** tied (separate
+input/output projections), every figure above roughly doubles.
 
 ---
 
-## Bhojpuri (Model L)
+## Bhojpuri (Model L) — complete
 
-| Vocab size | chars/token (val sample) | chars/token (exact, full corpus) | fertility (tok/word) | UNK rate | byte-fallback rate | vocab utilization | Full-corpus tokens |
-|---:|---:|---:|---:|---:|---:|---:|---:|
-| 5,000 | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED |
-| 6,000 | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED |
-| 8,000 | 3.3900 | 3.3582 | **1.4814** | 0.000000 | 0.001785 | 0.8776 | **84,217,032** |
-| 10,000 | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED |
+| Vocab size | chars/token (val sample) | chars/token (exact, full corpus) | fertility (tok/word) | UNK rate | byte-fallback rate | vocab utilization | Full-corpus tokens | Manual % (by token) |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5,000 | 3.1314 | 3.1261 | 1.6037 | 0.000000 | 0.001649 | 0.9230 | 90,470,342 | 29.78% |
+| 6,000 | 3.2394 | 3.2188 | 1.5502 | 0.000000 | 0.001706 | 0.9122 | 87,862,945 | 29.84% |
+| 8,000 | 3.3900 | 3.3582 | 1.4814 | 0.000000 | 0.001785 | 0.8776 | 84,217,032 | 29.89% |
+| 10,000 | 3.4935 | 3.4589 | 1.4375 | 0.000000 | 0.001840 | 0.8321 | 81,763,309 | 29.90% |
 
-Measured on 2,000 held-out validation documents (except full-corpus tokens,
-which is exact over all splits, no sampling).
+Measured on 2,000 held-out validation documents (except full-corpus tokens
+and manual %, which are exact over all splits, no sampling). Full-corpus
+counts, per split, for the chosen size are broken out below.
 
-**vocab_size=8000 detail:**
+UNK rate is 0.0 for every size by construction (`byte_fallback=True` sends
+unrepresentable text to raw-byte `<0xNN>` pieces instead of `<unk>`) — not a
+useful signal, reported only for completeness. **Byte-fallback rate is
+almost flat across the whole range (0.165%-0.184%)**, because it's
+primarily governed by `character_coverage=0.9995`, a corpus-level setting
+independent of target vocab size — it is not the differentiator between
+these four candidates.
 
-Full-corpus exact count (`scripts/count_tokens.py`, every document in
-train+validation+test, no sampling):
+**Sample tokenizations** (vocab_size=8000, representative of all four —
+subword boundaries shift slightly by size but stay linguistically sensible
+throughout): `कांग्रेसियन` → `['▁कांग्रेस', 'ियन']`,
+`निश्चिंत` → `['▁नि', 'श्च', 'ि', 'ंत']`, full sentence
+`कांग्रेस अब आरोप थोपो पार्टी बन कर रह गई है।` →
+`['▁कांग्रेस', '▁अब', '▁आरोप', '▁', 'थो', 'पो', '▁पार्टी', '▁बन', '▁कर', '▁रह', '▁गई', '▁है', '।']`
+with ids `[680, 346, 1011, 263, 4466, 1263, 707, 451, 337, 639, 3430, 388, 260]`.
+Top tokens at every size are dominated by common Devanagari
+postpositions/function words (▁के, ▁में, ▁से, ▁का, ▁बा) and punctuation
+(।, `,`, `.`, `-`), as expected for a unigram model on natural text.
+
+### Vocab-size choice: **8,000**
+
+Two real trade-offs move in opposite directions across this range:
+
+- **Fertility improves with larger vocab** (5k: 1.604 → 10k: 1.438
+  tokens/word), but the improvement is modest — only ~10% relative across
+  the whole allowed range.
+- **Vocab utilization degrades with larger vocab** (5k: 92.3% → 10k:
+  83.2% of the vocab table actually used on held-out text) — at 10k,
+  nearly 1 in 6 embedding rows are for pieces the tokenizer rarely or never
+  emits, which is capacity spent on the embedding table's parameter count
+  without buying real coverage.
+- Byte-fallback rate does not meaningfully differentiate the four sizes.
+- Embedding budget grows fast (10.24% → 20.48% of 25M at d=512).
+
+8,000 sits at the point where fertility has already captured most of its
+available gain (1.481, most of the way from 5k's 1.604 toward 10k's 1.438)
+while vocab utilization is still comfortably high (87.8%, well short of
+10k's 83.2% floor) and the embedding budget (16.38% at d=512, or 8.19%/
+12.29% at d=256/384) stays a clear minority of the 25M total regardless of
+the final model_dim chosen in Phase 2. 10k's extra ~3% relative fertility
+gain over 8k does not offset its ~9-point utilization drop and larger
+embedding footprint.
+
+**Full-corpus counts for the chosen size (vocab_size=8000):**
 
 | Split | Docs | Characters | Tokens |
 |---|---:|---:|---:|
@@ -89,64 +123,31 @@ train+validation+test, no sampling):
 | test | 10,160 | 5,182,766 | 1,521,208 |
 | **Total** | **507,994** | **282,815,177** | **84,217,032** |
 
-- Manual tokens: 25,169,871. Downloaded tokens: 59,047,161. **Manual share
-  by token count: 29.89%** — clears the 20% floor at the token level too,
-  not just the char level `validate_phase1.py` already checks.
-- 84.2M tokens total, against the ~500M-token aspirational scale mentioned
-  earlier in planning — confirms Bhojpuri's documented, spec-permitted
-  shortfall (all known manual sources are exhausted; see
-  `dataset_statistics.md`).
-- UNK rate is 0.0 by construction with `byte_fallback=True` — every
-  otherwise-unrepresentable character falls back to a raw-byte piece
-  instead of `<unk>`, so it is reported here only for completeness and is
-  **not** the signal to read for "how much text this vocab struggles with."
-  The byte-fallback rate (0.18%) is the metric that actually plays that
-  role, and it is low here — the vocab already covers the vast majority of
-  observed characters directly (character_coverage came out to 99.95% at
-  training time, matching the 0.9995 target).
-- Top tokens are dominated by common Devanagari function words/postpositions
-  (▁के, ▁में, ▁से, ▁का, ▁पर) and punctuation (।, `,`, `.`, `-`), as expected
-  for a unigram model on natural text.
-- Sample tokenizations (piece + id) confirm sensible subword segmentation on
-  real Bhojpuri text, e.g. `कांग्रेसियन` → `['▁कांग्रेस', 'ियन']`,
-  `निश्चिंत` → `['▁नि', 'श्च', 'ि', 'ंत']`.
-
-**Vocab-size choice:** not yet decided — needs 5k/6k/10k measured to compare
-against 8k on fertility and byte-fallback rate, combined with the parameter
-budget above. To be filled in once the (relaunched, narrowed) sweep
-completes.
-
-### Footnote: pre-ruling exploration (12k/16k/24k, dropped)
-
-Before the TA's vocab-budget ruling, this sweep explored larger sizes. Kept
-here only as context for why the range narrowed, **not** as valid
-candidates:
-
-| Vocab size | chars/token (exact) | Full-corpus tokens | Embed % of 25M (d=512, tied) |
-|---:|---:|---:|---:|
-| 12,000 | 3.5348 | 80,008,429 | 24.58% |
-| 16,000 | 3.6434 | 77,623,979 | 32.77% |
-| 24,000 | not completed (training stopped when the range narrowed) | — | 49.15% |
-
-Moving from 16k down to 8k raised the full-corpus token count from
-77,623,979 to 84,217,032 — about **+8.5%** — consistent with the general
-expectation that a smaller vocab produces more tokens for the same text.
+84.2M tokens total, against the ~500M-token aspirational scale mentioned
+earlier in planning — confirms Bhojpuri's documented, spec-permitted
+shortfall (all known manual sources are exhausted; see
+`dataset_statistics.md`). Manual share by token count: 29.89% — clears the
+20% floor at the token level, not just the char level.
 
 ## Hindi (Model H)
 
-**NOT YET MEASURED — no rows.** Hindi tokenizer training has not started.
-It is blocked on `clean_hindi.py` (full non-resume run, in progress) and the
-subsequent `split_hindi.py` rerun. The tokenizer scripts themselves
-(`hindi/tokenizer/train_tokenizer.py`, `analyze_tokenizer.py`, mirroring the
-Bhojpuri versions exactly with Hindi paths/model-name prefix) are written
-and ready; `run_hindi_tokenizer_sweep.sh` will run the same 5k/6k/8k/10k
-sweep the moment the split is available.
+Sweep in progress (`vocab_size=5000` training as of this writing;
+`vocab_size=10000` queued — per-vocab range narrowed to just these two
+endpoints for Hindi given its much larger corpus, see
+`run_hindi.bat`/handoff notes). All rows **NOT YET MEASURED**; will be
+filled in once each size's training + analysis + full-corpus count
+completes. No number is estimated in the interim.
+
+| Vocab size | chars/token (val sample) | chars/token (exact) | fertility | UNK rate | byte-fallback rate | vocab utilization | Full-corpus tokens | Manual % |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5,000 | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED |
+| 10,000 | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED | NOT YET MEASURED |
 
 ---
 
 ## Chosen vocab size (final)
 
-**NOT YET DECIDED for either language.** Will be filled in once each
-language's narrowed sweep completes, with justification from byte-fallback
-rate and fertility on held-out text (course spec) combined with the
-embedding parameter budget above (TA ruling).
+**Bhojpuri: 8,000** — justified above.
+
+**Hindi: NOT YET DECIDED.** Will be chosen the same way (fertility +
+byte-fallback/utilization + embedding budget) once both sizes are measured.

@@ -110,42 +110,45 @@ field on every cleaned document rather than any separate counter.
 
 ### Train/validation/test split
 
-Regenerated via `split_bhojpuri.py` (seed=42, document-level split — never
-sentence/chunk level, to avoid leakage), ~96/2/2 by document count. **Split
-regeneration was in progress at the time of this report** (was rerun after a
-process-corruption incident — see `report/phase1/phase1_strategy.md` / commit
-history for the lock-race bug and fix); final counts will match the cleaned
-totals above exactly (507,994 docs) once complete. Prior (pre-fix) split
-counts are not reported here since they reflected a stale/inconsistent
-intermediate state.
+`split_bhojpuri.py` (seed=42, document-level split — never sentence/chunk
+level, to avoid leakage), ~96/2/2 by document count. **Complete**, matches
+the cleaned total exactly: train 487,674 / validation 10,160 / test 10,160
+= 507,994 docs, no overlap (verified by `scripts/validate_phase1.py`).
 
 ### Token count (500M target)
 
-**NOT YET MEASURED.** No SentencePiece tokenizer has been trained yet
-(Step 2 of the current work, in progress). Do not extrapolate a token count
-from a placeholder chars/token ratio — the real number will be filled in once
-the Bhojpuri tokenizer sweep (8k/12k/16k/24k/32k) completes and a vocab size
-is chosen.
+**Measured — chosen tokenizer (vocab_size=8,000; see
+`tokenizer_analysis.md` for the full sweep and justification):**
+
+| Split | Docs | Characters | Tokens |
+|---|---:|---:|---:|
+| train | 487,674 | 271,000,251 | 80,610,590 |
+| validation | 10,160 | 6,632,160 | 2,085,234 |
+| test | 10,160 | 5,182,766 | 1,521,208 |
+| **Total** | **507,994** | **282,815,177** | **84,217,032** |
+
+**84,217,032 tokens** — 29.89% manual by token count (25,169,871 manual /
+84,217,032 total), clearing the 20% floor at the token level as well as the
+char level.
 
 Per the course spec, Bhojpuri (the allowed lower-resource language) is
 **not required** to reach 500M tokens; a documented shortfall with a
-maximum-feasible-collection justification is acceptable. All known manual
-sources are confirmed exhausted (see above), and the downloaded pool has been
+maximum-feasible-collection justification is acceptable, and 84.2M is
+honestly reported as such rather than obscured. All known manual sources
+are confirmed exhausted (see above), and the downloaded pool has been
 evaluated against every Bhojpuri-labeled dataset findable on Hugging Face.
-282.8M cleaned characters is the practical ceiling for this corpus absent new
-data sources.
+For scale: published prior Bhojpuri monolingual resources (e.g. the JNU
+BHLTR corpus at ~45k sentences, and web-crawled corpora on the order of
+~169k words) are orders of magnitude smaller than this 282.8M-character
+corpus — this collection is not a shortfall relative to what was
+achievable, it is close to the ceiling of what is publicly available for
+this language at all.
 
 ---
 
-## Hindi (Model H) — TODO
+## Hindi (Model H) — measured
 
-Hindi's raw pool is frozen and measured as of 2026-08-18, 11:24 IST (below),
-but **cleaning is currently running** (`clean_hindi.py`, full non-resume run,
-launched 2026-08-18 ~11:47 IST after fixing a process-locking bug — see
-commit history). All numbers past this point are `NOT YET MEASURED` and will
-be filled in once that run completes.
-
-### Raw corpus (frozen, measured)
+### Raw corpus
 
 | | Docs | Characters |
 |---|---:|---:|
@@ -169,14 +172,83 @@ Downloaded sources: `HuggingFaceFW/fineweb-2:hin_Deva`,
 `ai4bharat/sangraha:unverified/hin`,
 `ai4bharat/sangraha:verified/hin:{web,pdf,speech}`.
 
-### TODO once `clean_hindi.py` finishes
+### Cleaned corpus
 
-- [ ] Cleaned docs/chars, drop breakdown (malformed/short/language/duplicate)
-- [ ] Manual share of the cleaned corpus (must independently re-clear 20%; the
-      29.36% raw figure above is *not* a substitute measurement)
-- [ ] Regenerated train/validation/test splits (`split_hindi.py`)
-- [ ] Tokenizer sweep results and chosen vocab size
-- [ ] Final token count and comparison against the ~500M target
+From `hindi/data/metadata/clean_stats.json` (full non-resume run of
+`clean_hindi.py`, launched after fixing a process-locking bug — see commit
+history — that had corrupted an earlier, now-discarded partial run):
 
-**NOT YET MEASURED** for all of the above — do not fill in with placeholder
-or extrapolated numbers.
+| Metric | Value |
+|---|---:|
+| Docs in | 773,606 |
+| Docs cleaned (kept) | 704,103 |
+| Dropped: malformed Unicode | 17 |
+| Dropped: too short (<200 chars) | 63,132 |
+| Dropped: low Devanagari ratio | 228 |
+| Dropped: likely Bhojpuri (active reject filter) | 1,365 |
+| Dropped: langdetect mismatch | 1,778 |
+| Dropped: exact/near-duplicate | 2,983 |
+| Characters in | 1,840,356,619 |
+| **Characters cleaned** | **1,764,598,107** |
+| Latin-script tokens stripped | 8,016,102 |
+| Cleaning retention | 95.9% of raw chars |
+
+**Language-ID caveat** (quoted verbatim from `clean_stats.json`'s
+`bhojpuri_reject_caveat` field, since it governs the `likely_bhojpuri` drop
+count above): *"langdetect has no 'bho' label, so it cannot itself catch
+Bhojpuri text misclassified as Hindi (they share vocabulary and script).
+dropped_language.likely_bhojpuri is an active reject filter (see
+clean_lib.marker_counts / language_ok below), not just a count: any
+document where Bhojpuri lexical markers (बा/बाटे/बाड़ें/एगो/गइल/भइल/कइल/etc.,
+>=2 hits) outnumber Hindi markers (है/हैं/एक/गया/हुआ/किया/etc.) is dropped
+before reaching data/cleaned/. This is a coarse lexical heuristic, not a
+language model, so it will not catch every case - documented as a known
+limitation, not a solved problem."*
+
+That limitation is not hypothetical: see "Cross-language contamination"
+below for two concrete cases it missed.
+
+### Manual share (the hard 20% floor)
+
+**28.65% manual** — 505,509,566 manual characters / 1,764,598,107 total
+cleaned characters. Independently verified two ways: `scripts/validate_phase1.py`
+(char-weighted from the `source_type` provenance field) and a standalone
+recomputation directly from `hindi/data/cleaned/metadata.jsonl`, both give
+28.65% exactly. Clears the 20% requirement with a comfortable margin — note
+this is the *cleaned*-corpus figure, not a substitute for the raw-pool
+29.36% quoted above, which is measured on a different (larger, uncleaned)
+denominator and is not itself evidence of passing the floor.
+
+### Cross-language contamination (found, fixed)
+
+`scripts/validate_phase1.py`'s cross-language check flagged 2 documents
+whose content-hash (`dedup_key`) was shared between the Hindi and Bhojpuri
+cleaned corpora. Inspection (`scripts/remove_cross_language_duplicates.py`)
+confirmed both are genuinely Bhojpuri news text — containing Bhojpuri verb
+forms ("कहलन", "जइहें") not in the fixed marker list `clean_hindi.py`'s
+contamination filter checks against, so they passed the langdetect+marker
+filter into the Hindi corpus. Both were sourced as `hin` by
+`ai4bharat/sangraha` but correctly labeled `bho_Deva` by
+`HuggingFaceFW/fineweb-2` for the same underlying text — a labeling error
+in the upstream public corpus, not introduced by this pipeline. Removed
+from the Hindi cleaned corpus (kept in Bhojpuri, where they belong
+linguistically): `hi_downloaded_sangraha_e6bb7e97f6` and
+`hi_downloaded_sangraha_unverified_7ca84f1c71`. Post-removal: **704,101**
+cleaned docs, 1,764,596,782 chars (704,103 / 1,764,598,107 before). At this
+scale (2 of 704,103 docs, 0.0003%) a full pipeline rerun with an expanded
+marker list was not warranted; this is a targeted, documented, reproducible
+correction instead.
+
+### Train/validation/test split
+
+`split_hindi.py`, same method as Bhojpuri (seed=42, document-level,
+~96/2/2), regenerated after the cross-language-duplicate removal above.
+Verified no-overlap by `scripts/validate_phase1.py`.
+
+### Token count
+
+**NOT YET MEASURED.** Hindi tokenizer training is in progress (see
+`tokenizer_analysis.md`) — vocab sizes 5,000 and 10,000, per the same
+5k-10k TA-ruling range as Bhojpuri. Will be filled in once training,
+validation-sample analysis, and the full-corpus count complete for the
+chosen size. No placeholder or extrapolated number is used in the interim.
