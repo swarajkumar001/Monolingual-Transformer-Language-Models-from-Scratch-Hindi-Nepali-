@@ -173,29 +173,52 @@ def read_metadata(meta_path: Path):
 STALE_LOCK_SECONDS = 15 * 60  # a lock this old means its owner crashed/was killed, not that it's slow
 
 
-def acquire_single_instance_lock(lock_path: Path) -> None:
+def acquire_single_instance_lock(lock_path: Path, retries: int = 5, wait: float = 0.2) -> None:
     """Refuse to run if another process already holds this lock. Background
     launches in this environment have been observed to spawn two OS processes
     per logical command - without this guard, two clean_*.py instances for
     the same language would both write to data/interim/ and data/cleaned/
     concurrently and corrupt them the same way concurrent crawlers corrupted
-    metadata.jsonl (see scripts/crawl_sites.py site_lock). PID-tagged with a
-    staleness timeout so a genuinely crashed/killed owner doesn't permanently
-    block reruns. Plain acquire/release (not a context manager) so callers
-    don't need to re-indent an existing function body into a `with` block;
-    release_single_instance_lock() is best-effort cleanup - if the process
-    dies before calling it, the staleness timeout reclaims the lock instead."""
+    metadata.jsonl (see scripts/crawl_sites.py site_lock).
+
+    Uses os.O_CREAT | os.O_EXCL, which is an atomic create-if-absent at the
+    OS level, not a check-then-write (an earlier version of this function did
+    `if lock_path.exists(): ... else: write_text(...)`, which is two separate
+    syscalls - the two duplicate-launch processes above can both pass the
+    `exists()` check before either has written the file, so both proceed and
+    both reset+rewrite data/interim/data/cleaned concurrently; this is exactly
+    what happened during Phase 1 clean_hindi.py development. O_EXCL closes
+    that window: only one of the two racing opens can succeed).
+
+    PID-tagged with a staleness timeout so a genuinely crashed/killed owner
+    doesn't permanently block reruns. Plain acquire/release (not a context
+    manager) so callers don't need to re-indent an existing function body
+    into a `with` block; release_single_instance_lock() is best-effort
+    cleanup - if the process dies before calling it, the staleness timeout
+    reclaims the lock instead."""
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    if lock_path.exists():
-        age = time.time() - lock_path.stat().st_mtime
-        if age < STALE_LOCK_SECONDS:
-            raise SystemExit(
-                f"another process already holds {lock_path} (age {age:.0f}s) - "
-                f"refusing to run concurrently. If that process is dead, delete "
-                f"the lock file and rerun."
-            )
-        print(f"stale lock (age {age:.0f}s) from a crashed run, reclaiming {lock_path}")
-    lock_path.write_text(str(os.getpid()), encoding="utf-8")
+    for _ in range(retries):
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fd, str(os.getpid()).encode("utf-8"))
+            os.close(fd)
+            return
+        except (FileExistsError, PermissionError):
+            # Windows can raise PermissionError instead of FileExistsError
+            # under create/delete contention - both mean "lock already exists."
+            if not lock_path.exists():
+                time.sleep(wait)
+                continue
+            age = time.time() - lock_path.stat().st_mtime
+            if age < STALE_LOCK_SECONDS:
+                raise SystemExit(
+                    f"another process already holds {lock_path} (age {age:.0f}s) - "
+                    f"refusing to run concurrently. If that process is dead, delete "
+                    f"the lock file and rerun."
+                )
+            print(f"stale lock (age {age:.0f}s) from a crashed run, reclaiming {lock_path}")
+            lock_path.unlink(missing_ok=True)
+    raise SystemExit(f"could not acquire {lock_path} after {retries} attempts")
 
 
 def release_single_instance_lock(lock_path: Path) -> None:
