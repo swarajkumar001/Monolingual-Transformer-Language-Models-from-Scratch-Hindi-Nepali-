@@ -62,9 +62,21 @@ LANGDETECT_MIN_PROB = 0.85
 
 def language_ok(text: str) -> tuple[bool, str]:
     """Hindi has full langdetect support, so trust its verdict as the primary
-    check. Devanagari-ratio is a cheap, script-level pre-filter."""
+    check. Devanagari-ratio is a cheap, script-level pre-filter.
+
+    langdetect has no 'bho' label, so Bhojpuri text - also Devanagari, with
+    heavy vocabulary overlap with Hindi - gets misclassified as 'hi' by
+    langdetect and would otherwise pass straight into the Hindi corpus. That
+    violates the course's no-shared-documents-across-languages rule, not just
+    a style/quality issue, so it must be rejected here rather than merely
+    logged. The lexical marker check runs before langdetect for that reason:
+    a document that reads as Bhojpuri should never reach the Hindi corpus
+    regardless of what langdetect would have said about it."""
     if devanagari_ratio(text) < MIN_DEVANAGARI_RATIO:
         return False, "low_devanagari_ratio"
+    bho_hits, hin_hits = marker_counts(text)
+    if bho_hits >= 2 and bho_hits > hin_hits:
+        return False, "likely_bhojpuri"
     verdict = langdetect_verdict(text, LANG_ISO, min_prob=LANGDETECT_MIN_PROB)
     if verdict is False:
         return False, "langdetect_mismatch"
@@ -105,21 +117,25 @@ def main():
         "docs_cleaned": 0,
         "dropped_malformed": 0,
         "dropped_short": 0,
-        "dropped_language": {"low_devanagari_ratio": 0, "langdetect_mismatch": 0},
+        "dropped_language": {
+            "low_devanagari_ratio": 0,
+            "likely_bhojpuri": 0,
+            "langdetect_mismatch": 0,
+        },
         "dropped_duplicate": 0,
         "chars_in": 0,
         "chars_cleaned": 0,
         "latin_tokens_removed": 0,
-        "likely_bhojpuri_contamination": 0,
-        "contamination_caveat": (
+        "bhojpuri_reject_caveat": (
             "langdetect has no 'bho' label, so it cannot itself catch Bhojpuri text "
-            "misclassified as Hindi (they share vocabulary). "
-            "likely_bhojpuri_contamination is a coarse lexical-marker count (see "
-            "clean_lib.marker_counts) among docs that otherwise passed cleaning - "
-            "it is NOT a filter, documents counted here are still included in "
-            "data/cleaned/. Flags docs where Bhojpuri markers (बा/बाटे/बाड़ें/एगो/"
-            "गइल/भइल/कइल/etc.) outnumber Hindi markers (है/हैं/एक/गया/हुआ/किया) "
-            "by a clear margin."
+            "misclassified as Hindi (they share vocabulary and script). "
+            "dropped_language.likely_bhojpuri is an active reject filter (see "
+            "clean_lib.marker_counts / language_ok below), not just a count: any "
+            "document where Bhojpuri lexical markers (बा/बाटे/बाड़ें/एगो/गइल/भइल/"
+            "कइल/etc., >=2 hits) outnumber Hindi markers (है/हैं/एक/गया/हुआ/किया/etc.) "
+            "is dropped before reaching data/cleaned/. This is a coarse lexical "
+            "heuristic, not a language model, so it will not catch every case - "
+            "documented as a known limitation, not a solved problem."
         ),
     }
     if resumed_stats is not None:
@@ -167,10 +183,6 @@ def main():
                 stats["dropped_language"][reason] = stats["dropped_language"].get(reason, 0) + 1
                 _log_dropped(doc_id, reason)
                 continue
-
-            bho_hits, hin_hits = marker_counts(text)
-            if bho_hits >= 2 and bho_hits > hin_hits:
-                stats["likely_bhojpuri_contamination"] += 1
 
             key = dedup_key(text)
             if key in seen_hashes:

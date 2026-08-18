@@ -1,14 +1,17 @@
 {
-  "docs_in": 400336,
-  "docs_cleaned": 387156,
-  "dropped_malformed": 2,
-  "dropped_short": 1998,
+  "docs_in": 608263,
+  "docs_cleaned": 507994,
+  "dropped_malformed": 23,
+  "dropped_short": 4665,
   "dropped_language": {
-    "low_devanagari_ratio": 77
+    "low_devanagari_ratio": 1501
   },
-  "dropped_duplicate": 11103,
-  "chars_in": 124636675,
-  "chars_cleaned": 107155579,
-  "latin_tokens_removed": 1282995,
-  "language_id_caveat": "langdetect has no 'bho' label; Devanagari-script-ratio was used as a practical proxy and cannot distinguish Bhojpuri from closely-related Hindi/Nepali text mislabeled at the source."
+  "dropped_duplicate": 94080,
+  "chars_in": 318528901,
+  "chars_cleaned": 282815177,
+  "latin_tokens_removed": 1576446,
+  "likely_hindi_contamination": 11164,
+  "language_id_caveat": "langdetect has no 'bho' label; Devanagari-script-ratio was used as a practical proxy and cannot distinguish Bhojpuri from closely-related Hindi/Nepali text mislabeled at the source. likely_hindi_contamination is a coarse lexical-marker count (see clean_lib.marker_counts) among docs that otherwise passed cleaning - it is NOT a filter, documents counted here are still included in data/cleaned/. Flags docs where Hindi markers (है/हैं/एक/गया/हुआ/किया/आप/तुम्हारा) outnumber Bhojpuri markers (बा/बाटे/बाड़ें/एगो/गइल/भइल/कइल/etc.) by a clear margin.",
+  "docs_interim": 603575,
+  "chars_interim": 308730084
 }
