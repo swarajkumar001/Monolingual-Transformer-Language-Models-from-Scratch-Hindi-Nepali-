@@ -18,6 +18,12 @@ checkpoints/
 # blobs in git" reasoning as the data/ excludes above.
 */tokenizer/_train_corpus.txt
 
+# Runtime single-instance lock files (acquire_single_instance_lock) -
+# process-local, PID-tagged, meaningless outside the run that created them.
+.clean.lock
+.split.lock
+.train.lock
+
 # Corpus data - NOT committed to git (hundreds of thousands of files, many
 # hundred million characters). Per the course spec, raw and cleaned data goes
 # to Google Drive instead, not GitHub. Only the pipeline code that produces
