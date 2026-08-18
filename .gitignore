@@ -49,3 +49,5 @@ bhojpuri/data/external/
 # ignore).
 !hindi/data/metadata/clean_stats.json
 !bhojpuri/data/metadata/clean_stats.json
+*/tokenizer/_train_corpus.txt 
+*/tokenizer/_train_corpus.txt
