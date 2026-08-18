@@ -245,10 +245,19 @@ correction instead.
 ~96/2/2), regenerated after the cross-language-duplicate removal above.
 Verified no-overlap by `scripts/validate_phase1.py`.
 
-### Token count
+### Token count (500M target)
 
-**NOT YET MEASURED.** Hindi tokenizer training is in progress (see
-`tokenizer_analysis.md`) — vocab sizes 5,000 and 10,000, per the same
-5k-10k TA-ruling range as Bhojpuri. Will be filled in once training,
-validation-sample analysis, and the full-corpus count complete for the
-chosen size. No placeholder or extrapolated number is used in the interim.
+**Measured — chosen tokenizer (vocab_size=10,000; see
+`tokenizer_analysis.md` for the full sweep and justification):**
+
+| Split | Docs | Characters | Tokens |
+|---|---:|---:|---:|
+| train | 675,937 | 1,692,881,268 | 471,882,513 |
+| validation | 14,082 | 36,497,051 | 10,194,536 |
+| test | 14,082 | 35,218,463 | 9,806,338 |
+| **Total** | **704,101** | **1,764,596,782** | **491,883,387** |
+
+**491,883,387 tokens — 98.4% of the ~500M target**, essentially hitting
+it. 30.63% manual by token count (150,668,466 manual / 491,883,387
+total), clearing the 20% floor at the token level as well as the char
+level (28.65%, measured earlier).
