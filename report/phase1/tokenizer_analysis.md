@@ -131,57 +131,88 @@ shortfall (all known manual sources are exhausted; see
 
 ## Hindi (Model H)
 
-Swept at just the two endpoints of the allowed range (5,000 and 10,000),
-not the full 5k/6k/8k/10k grid used for Bhojpuri — Hindi's cleaned corpus
-is ~6.2x larger by character count, so the range was narrowed to keep
-total sweep time reasonable (`run_hindi.bat`). Both trained on the full,
-correct train split (675,937 docs; an earlier pair of runs was discarded
-after being found to have trained on a truncated merged-corpus file — see
-commit history — and retrained from scratch).
+Initially swept at just the two endpoints of the allowed range (5,000 and
+10,000) to save time, given Hindi's cleaned corpus is ~6.2x larger by
+character count than Bhojpuri's — then 8,000 was added once the
+5k-vs-10k comparison alone proved misleading (see "Vocab-size choice"
+below). All three trained on the full, correct train split (675,937
+docs; an earlier pair of runs was discarded after being found to have
+trained on a truncated merged-corpus file — see commit history — and
+retrained from scratch).
 
 | Vocab size | chars/token (val sample) | chars/token (exact, full corpus) | fertility (tok/word) | UNK rate | byte-fallback rate | vocab utilization | Full-corpus tokens | Manual % (by token) |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 5,000 | 3.3230 | NOT MEASURED (only the chosen size gets the full-corpus pass) | 1.4961 | 0.000000 | 0.018301 | 0.9654 | NOT MEASURED | NOT MEASURED |
-| 10,000 | 3.6601 | **3.5874** | 1.3583 | 0.000000 | 0.020213 | 0.9767 | **491,883,387** | **30.63%** |
+| 8,000 | 3.5622 | **3.4884** | 1.3956 | 0.000000 | 0.019613 | 0.9762 | **505,852,028** | **30.66%** |
+| 10,000 | 3.6601 | NOT MEASURED (superseded by 8,000, see below) | 1.3583 | 0.000000 | 0.020213 | 0.9767 | NOT MEASURED | NOT MEASURED |
 
 Measured on 2,000 held-out validation documents. Full-corpus exact count
-was run only for the chosen size (10,000) — see "Vocab-size choice" below
-for why only the winner gets the expensive full-corpus pass; 5,000's
-full-corpus figures are deliberately left unmeasured rather than
-estimated, since it was not the size actually used.
+was run only for the chosen size (8,000) — see "Vocab-size choice" below
+for why only the winner gets the expensive full-corpus pass. 10,000 was
+fully counted first (491,883,387 tokens, 3.5874 chars/token exact) before
+8,000 was added to the sweep and shown to be the better choice; that
+measurement is preserved here as a footnote rather than deleted, since it
+is what changed the decision.
 
 Byte-fallback rate is notably higher for Hindi than Bhojpuri at every
 size (1.8-2.0% vs Bhojpuri's ~0.17%) — expected, given Hindi's source mix
 is far more heterogeneous (newspapers, Wikipedia, government transcripts,
 web text) with more varied punctuation/symbols than Bhojpuri's more
 uniform informal-web-text sources. `<0x0A>` (newline) appears as a
-top-frequency byte-fallback token at both sizes, consistent with
+top-frequency byte-fallback token at every size, consistent with
 paragraph-heavy document structure.
 
-**Sample tokenization** (vocab_size=10000):
+**Sample tokenization** (vocab_size=8000):
 `अतुल माहेश्वरी के निधन के कई महीनों बाद...` →
-`['▁अतुल', '▁माह', 'ेश्वर', 'ी', '▁के', '▁निधन', '▁के', '▁कई', '▁महीनों', '▁बाद', ...]`
-— note `▁अतुल` (a full word) tokenizes as one piece at 10k but splits into
-`['▁अ', 'तुल']` at 5k, illustrating the fertility difference directly.
+`['▁अ', 'तुल', '▁माह', 'ेश्वर', 'ी', '▁के', '▁निधन', '▁के', '▁कई', '▁महीनों', '▁बाद', ...]`
+— note this is identical to the 5k segmentation for this word (`▁अतुल`
+still splits into `▁अ`+`तुल`), while at 10k it merges into one piece,
+illustrating the diminishing-returns pattern directly: most of the
+fertility gain from more vocab shows up between 5k and 8k, not 8k and 10k.
 
-### Vocab-size choice: **10,000**
+### Vocab-size choice: **8,000** (revised from an initial 10,000)
 
-Unlike Bhojpuri, **vocab utilization improves with the larger size here**
-(96.54% at 5k → 97.67% at 10k) rather than degrading — Hindi's much larger,
-more diverse corpus (1.76B cleaned chars vs Bhojpuri's 283M) has enough
-distinct content that even 10k vocab entries stay meaningfully used. That
-removes the main argument that pushed Bhojpuri toward a smaller size
-(wasted embedding capacity on rarely-used pieces isn't a real cost here).
-With utilization not a concern, the remaining trade-offs favor 10k
-cleanly: fertility improves by ~9.2% (1.496 → 1.358 tokens/word), and the
-byte-fallback rate difference (1.83% → 2.02%) is small enough to plausibly
-be measurement noise rather than a real degradation. At the embedding
-level (d=512, tied), 10k is 20.48% of the 25M budget — clearly still a
-minority share, nowhere near the ~49% that triggered the TA's ruling at
-24k, so there is no budget-based reason to prefer 5k over 10k the way
-there might be at a higher vocab.
+The sweep was first run at only 5,000 and 10,000 to save time on Hindi's
+much larger corpus. That comparison alone suggested 10,000: vocab
+utilization *improved* with size (96.54% → 97.67%, the opposite of
+Bhojpuri's pattern, since Hindi's much larger and more diverse corpus
+keeps even a 10k vocab meaningfully used), so the usual "wasted embedding
+capacity" argument against a larger vocab didn't apply, and fertility
+looked like it was still improving by a meaningful ~9.2%.
 
-**Full-corpus counts for the chosen size (vocab_size=10000):**
+Adding 8,000 changed the picture: utilization at 8k (97.62%) is already
+almost identical to 10k (97.67%, a 0.05-point difference) — the real
+jump in utilization happens between 5k and 8k (+1.08 points), not between
+8k and 10k. Fertility shows the same pattern: 5k→8k improves fertility by
+6.7% relative, but 8k→10k only adds another 2.7% — for 4.1 more points of
+embedding budget (16.38% → 20.48% of 25M at d=512, tied). Measured
+directly: **8,000 produces *more* total tokens than 10,000**
+(505,852,028 vs 491,883,387 — smaller vocab means more tokens for the
+same text), which happens to also push Hindi's token count to **101.2%
+of the 500M target**, versus 10k's 98.4%. Byte-fallback rate is flat
+across all three sizes (1.83% → 1.96% → 2.02%, a narrow band consistent
+with noise, not a real trend) and does not distinguish the candidates.
+
+Given the utilization/fertility gains are already mostly captured by 8k,
+the additional embedding cost of 10k is not justified by what it actually
+buys — the same reasoning that chose 8,000 for Bhojpuri, arrived at
+independently here from Hindi's own measurements rather than by analogy.
+
+**Full-corpus counts for the chosen size (vocab_size=8000):**
+
+| Split | Docs | Characters | Tokens |
+|---|---:|---:|---:|
+| train | 675,937 | 1,692,881,268 | 485,280,741 |
+| validation | 14,082 | 36,497,051 | 10,484,640 |
+| test | 14,082 | 35,218,463 | 10,086,647 |
+| **Total** | **704,101** | **1,764,596,782** | **505,852,028** |
+
+**505,852,028 tokens — 101.2% of the ~500M target**, exceeding it.
+Manual tokens: 155,104,651. Downloaded tokens: 350,747,377. **Manual
+share by token count: 30.66%** — comfortably clears the 20% floor at the
+token level.
+
+**Footnote — vocab_size=10000 (measured, not used):**
 
 | Split | Docs | Characters | Tokens |
 |---|---:|---:|---:|
@@ -190,10 +221,9 @@ there might be at a higher vocab.
 | test | 14,082 | 35,218,463 | 9,806,338 |
 | **Total** | **704,101** | **1,764,596,782** | **491,883,387** |
 
-**491,883,387 tokens — 98.4% of the ~500M target**, essentially hitting
-it. Manual tokens: 150,668,466. Downloaded tokens: 341,214,921. **Manual
-share by token count: 30.63%** — comfortably clears the 20% floor at the
-token level.
+chars/token (exact) 3.5874, manual 30.63% by token. Kept for the record
+since this measurement is what surfaced the diminishing-returns pattern
+that led to choosing 8,000 instead.
 
 ---
 
@@ -201,4 +231,5 @@ token level.
 
 **Bhojpuri: 8,000** — justified above.
 
-**Hindi: 10,000** — justified above.
+**Hindi: 8,000** — justified above (revised from an initially-measured
+10,000 once the fuller 5k/8k/10k comparison was available).

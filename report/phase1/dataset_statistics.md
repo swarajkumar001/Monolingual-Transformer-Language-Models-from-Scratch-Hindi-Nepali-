@@ -247,17 +247,18 @@ Verified no-overlap by `scripts/validate_phase1.py`.
 
 ### Token count (500M target)
 
-**Measured — chosen tokenizer (vocab_size=10,000; see
-`tokenizer_analysis.md` for the full sweep and justification):**
+**Measured — chosen tokenizer (vocab_size=8,000; see
+`tokenizer_analysis.md` for the full sweep, including why 10,000 was
+initially chosen and then revised once 8,000 was measured):**
 
 | Split | Docs | Characters | Tokens |
 |---|---:|---:|---:|
-| train | 675,937 | 1,692,881,268 | 471,882,513 |
-| validation | 14,082 | 36,497,051 | 10,194,536 |
-| test | 14,082 | 35,218,463 | 9,806,338 |
-| **Total** | **704,101** | **1,764,596,782** | **491,883,387** |
+| train | 675,937 | 1,692,881,268 | 485,280,741 |
+| validation | 14,082 | 36,497,051 | 10,484,640 |
+| test | 14,082 | 35,218,463 | 10,086,647 |
+| **Total** | **704,101** | **1,764,596,782** | **505,852,028** |
 
-**491,883,387 tokens — 98.4% of the ~500M target**, essentially hitting
-it. 30.63% manual by token count (150,668,466 manual / 491,883,387
-total), clearing the 20% floor at the token level as well as the char
-level (28.65%, measured earlier).
+**505,852,028 tokens — 101.2% of the ~500M target**, exceeding it.
+30.66% manual by token count (155,104,651 manual / 505,852,028 total),
+clearing the 20% floor at the token level as well as the char level
+(28.65%, measured earlier).
