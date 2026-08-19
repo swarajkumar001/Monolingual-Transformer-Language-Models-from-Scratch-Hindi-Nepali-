@@ -2,6 +2,12 @@
 
 Model H = **Hindi** (higher-resource) · Model L = **Bhojpuri** (lower-resource, from allowed list)
 
+**SUPERSEDED — kept for historical record only.** This was the pre-execution
+planning document, written before any data was collected. Every number in it
+is a placeholder, not a measurement. For actual, measured Phase 1 results,
+see [`README.md`](README.md) (deliverables index) or
+[`phase1_report.md`](phase1_report.md) (full report).
+
 Status: PLANNING — no data collected yet. Nothing in this document should be read as measured
 results; all counts below are placeholders until pipelines actually run.
 
