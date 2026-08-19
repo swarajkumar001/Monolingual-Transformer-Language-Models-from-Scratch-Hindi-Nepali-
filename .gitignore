@@ -3,6 +3,9 @@
 __pycache__/
 *.pyc
 
+# macOS Finder metadata
+.DS_Store
+
 # Claude Code session state (not project content)
 .claude/
 
@@ -56,3 +59,8 @@ bhojpuri/data/external/
 # nepali/scripts/corpuslib/langid.py - not a deliverable, not reproducible
 # content, just a third-party binary the pipeline fetches itself if absent.
 lid.176.bin
+
+# Nepali exploratory pipeline (not the graded Model L - see README.md "About
+# the Nepali attempt"). Same "code only, data goes to Drive/local, not git"
+# convention as hindi/bhojpuri above - nepali/data/ alone is ~20GB.
+nepali/data/

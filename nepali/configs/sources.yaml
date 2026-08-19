@@ -1,0 +1,342 @@
+# =============================================================================
+# Nepali -- corpus source catalog
+# =============================================================================
+#
+# THE LANE INVARIANT (see hindi/configs/sources.yaml for the full rationale)
+# -------------------------------------------------------------------------
+# Every source declares one `lane` and one `content_family`; a family may
+# appear in only one lane. Nepali Wikipedia is collected ONLY through the
+# MediaWiki API in the manual lane. The HuggingFace `wikimedia/wikipedia` dump
+# is not collected, because it is the same 30,041 articles and counting both
+# would inflate the manual share with duplicated text.
+#
+# NEPALI-SPECIFIC COLLECTION STRATEGY
+# -----------------------------------
+# Nepali Wikipedia has 30,041 articles against Hindi's 170,826, so the wiki
+# lane yields roughly 13M words -- not enough manual volume on its own. News
+# therefore carries the manual lane here, and Nepali news sites need a
+# different discovery strategy from the Indian ones. Probing found:
+#
+#   ekantipur.com          robots.txt advertises no sitemap
+#   www.onlinekhabar.com   no sitemap; RSS returns 55 items
+#   www.setopati.com       sitemap has 6 entries; RSS returns 5
+#   ratopati.com           Crawl-delay: 20  -> ~180 articles/hour ceiling
+#   nagariknews...         a real sitemap index with 17 child sitemaps
+#
+# So the paginated section crawl is the primary discovery path for most of
+# these hosts, not the fallback. ratopati is enabled but given a low target,
+# because honouring its 20-second crawl delay caps what it can contribute.
+
+defaults:
+  max_seconds: 5400
+  params:
+    min_chars: 250              # looser than Hindi: conservative posture
+    min_devanagari_ratio: 0.55
+
+sources:
+
+  # ===========================================================================
+  # MANUAL LANE
+  # ===========================================================================
+
+  - source_id: wikipedia_api
+    # Reads the dumps.wikimedia.org XML dump, not the live Action API -- see
+    # corpuslib/sources/wikidump.py (source_id kept for continuity). The live
+    # API already reached source_exhausted here (22,028 docs / 6.15M words in
+    # 40.9min, against a 30,041-article wiki) rather than timing out, so this
+    # is a speed/reliability upgrade for Nepali rather than the fix Hindi
+    # needed -- one streamed download instead of ~1,500 paginated requests,
+    # with the same extraction/cleaning/filtering code either way.
+    source_name: Nepali Wikipedia (dumps.wikimedia.org XML dump, own wikitext parser)
+    lane: manual
+    collection_method: http_download
+    priority: 10
+    target_words: 14_000_000     # ceiling: ~30k articles
+    max_seconds: 5400
+    params:
+      collector: wikipedia_dump
+      content_family: wikipedia
+      host: ne.wikipedia.org
+      min_chars: 300
+
+  # DISABLED — ne.wikisource.org does not exist as an independent wiki.
+  # Verified 2026-08-17: it returns HTTP 302 to
+  # https://wikisource.org/wiki/Main_Page/ne, i.e. Nepali Wikisource still lives
+  # in the multilingual Wikisource incubator rather than having its own
+  # subdomain. The previous run's "site_available: false" was therefore the
+  # right conclusion. Its 1.5M-word budget is reallocated to ekantipur and
+  # onlinekhabar below, which have the volume to absorb it.
+  - source_id: wikisource_api
+    source_name: Nepali Wikisource (UNAVAILABLE — no independent wiki exists)
+    lane: manual
+    collection_method: api
+    enabled: false
+    priority: 20
+    target_words: 0
+    params:
+      collector: mediawiki
+      content_family: wikisource
+      host: ne.wikisource.org
+      namespace: auto_page
+      group_pages: true
+      min_articles: 100
+      min_chars: 400
+
+  - source_id: wiktionary_api
+    # Same dump route as wikipedia_api above -- corpuslib/sources/wikidump.py
+    # is generic over any MediaWiki project host. Verified 2026-08-17:
+    # dumps.wikimedia.org/newiktionary/latest exists, though small (5.1MB
+    # compressed) -- ne.wikinews.org and ne.wikiquote.org, checked the same
+    # way, both 404 and are not collected.
+    source_name: Nepali Wiktionary (dumps.wikimedia.org XML dump, own wikitext parser)
+    lane: manual
+    collection_method: http_download
+    priority: 25
+    target_words: 500_000
+    max_seconds: 1800
+    params:
+      collector: wikipedia_dump
+      content_family: wiktionary
+      host: ne.wiktionary.org
+      min_chars: 120
+
+  - source_id: wikibooks_api
+    source_name: Nepali Wikibooks (MediaWiki Action API, own wikitext parser)
+    lane: manual
+    collection_method: api
+    priority: 30
+    target_words: 300_000
+    max_seconds: 1800
+    params:
+      collector: mediawiki
+      content_family: wikibooks
+      host: ne.wikibooks.org
+      namespace: 0
+      min_articles: 30
+      min_chars: 300
+
+  # --- news: the load-bearing manual source for Nepali ----------------------
+
+  - source_id: news_ekantipur
+    source_name: Kantipur / eKantipur (self-written crawler and extractor)
+    lane: manual
+    collection_method: scrape
+    priority: 40
+    # Widened 2026-08-17 (measured manual share only 5.8% of the raw corpus):
+    # discovery-capped, not time-capped, so more pages per section is the lever.
+    target_words: 14_000_000
+    max_seconds: 14400
+    params:
+      collector: news
+      content_family: news_ekantipur
+      host: ekantipur.com
+      article_pattern: 'ekantipur\.com/(?:news|business|opinion|sports|national|world|koseli|feature)/\d{4}/\d{2}/\d{2}/'
+      sections: ['/news', '/national', '/business', '/opinion', '/sports', '/world']
+      page_template: '{section}?page={n}'
+      max_pages_per_section: 110
+      min_chars: 400
+
+  - source_id: news_onlinekhabar
+    # Switched 2026-08-18 from the section-crawl cascade to onlinekhabar's own
+    # WordPress REST API (`/wp-json/wp/v2/posts`) -- verified live: robots.txt
+    # is `User-agent: *` with zero Disallow lines, and the API returns each
+    # post's full rendered body directly as JSON (462,154 posts, ~526
+    # words/post, no per-article page fetch or link discovery needed). The
+    # section crawl this replaces was topping out at ~4.2M words/run against
+    # this same 14M target ("source_exhausted" well short) because pagination
+    # under `/content/*` only surfaces a shallow recent window; the REST API
+    # walks the full post history directly. See corpuslib/sources/newscrawl.py.
+    source_name: Onlinekhabar (wp-json REST API, no scraping)
+    lane: manual
+    collection_method: scrape
+    priority: 41
+    target_words: 45_000_000
+    max_seconds: 7200
+    params:
+      collector: news
+      content_family: news_onlinekhabar
+      host: www.onlinekhabar.com
+      wp_rest_api: true
+      min_chars: 400
+
+  - source_id: news_setopati
+    source_name: Setopati (self-written crawler and extractor)
+    lane: manual
+    collection_method: scrape
+    priority: 42
+    target_words: 9_500_000     # widened 2026-08-17, see news_ekantipur
+    max_seconds: 10800
+    params:
+      collector: news
+      content_family: news_setopati
+      host: www.setopati.com
+      article_pattern: 'setopati\.com/[a-z-]+/\d+'
+      sections: ['/politics', '/social', '/economy', '/opinion', '/kinmel', '/global']
+      page_template: '{section}?page={n}'
+      max_pages_per_section: 110
+      min_chars: 400
+
+  - source_id: news_nagarik
+    source_name: Nagarik News (self-written crawler and extractor)
+    lane: manual
+    collection_method: scrape
+    priority: 43
+    target_words: 9_500_000     # widened 2026-08-17, see news_ekantipur
+    max_seconds: 10800
+    params:
+      collector: news
+      content_family: news_nagarik
+      host: nagariknews.nagariknetwork.com
+      # This host publishes a real sitemap index with 17 children, so sitemap
+      # discovery should carry it without needing the section crawl.
+      article_pattern: 'nagariknetwork\.com/[a-z-]+/\d+'
+      sections: ['/politics', '/economy', '/society', '/sports', '/world']
+      page_template: '{section}?page={n}'
+      max_pages_per_section: 85
+      min_chars: 400
+
+  - source_id: news_bbc_nepali
+    source_name: BBC Nepali (self-written crawler and extractor)
+    lane: manual
+    collection_method: scrape
+    priority: 44
+    target_words: 3_000_000
+    max_seconds: 7200
+    params:
+      collector: news
+      content_family: news_bbc_nepali
+      host: www.bbc.com
+      article_pattern: '/nepali/(?:articles|news|international|sport)'
+      sections: ['/nepali', '/nepali/international']
+      page_template: '{section}?page={n}'
+      max_pages_per_section: 40
+      min_chars: 400
+
+  - source_id: news_ratopati
+    source_name: Ratopati (self-written crawler and extractor)
+    lane: manual
+    collection_method: scrape
+    priority: 48
+    # Deliberately small: robots.txt declares Crawl-delay: 20, which caps this
+    # host at roughly 180 articles per hour. Honouring it is not optional --
+    # max_seconds raised (not max_pages) so the same rate limit runs longer,
+    # since the ceiling is the crawl delay, not discovery.
+    target_words: 1_500_000
+    max_seconds: 10800
+    params:
+      collector: news
+      content_family: news_ratopati
+      host: ratopati.com
+      article_pattern: 'ratopati\.com/story/\d+'
+      sections: ['/category/national', '/category/politics']
+      page_template: '{section}?page={n}'
+      max_pages_per_section: 30
+      min_chars: 400
+
+  # --- OCR ------------------------------------------------------------------
+
+  - source_id: ocr_archive_books
+    source_name: Public-domain Nepali books (archive.org PDFs, own OCR pipeline)
+    lane: manual
+    collection_method: ocr
+    priority: 50
+    # See hindi/configs/sources.yaml for the measured throughput rationale.
+    # Nepali has far fewer public-domain scans, so the target is lower still.
+    # Widened 2026-08-17 (400k -> 650k words, 15 -> 22 books, 1.5h -> 2h).
+    target_words: 650_000
+    max_seconds: 7200
+    params:
+      collector: ocr_books
+      content_family: ocr_books
+      tesseract_lang: nep
+      archive_query: 'language:Nepali AND mediatype:texts'
+      archive_language_codes: ['nep', 'nepali', 'ne']
+      seed_identifiers: []
+      max_books: 22
+      max_pages_per_book: 70
+      dpi: 150
+      min_page_confidence: 58.0     # looser than Hindi: fewer scans to choose from
+      min_chars: 1200
+      min_devanagari_ratio: 0.65
+
+  # ===========================================================================
+  # DOWNLOADED LANE
+  # ===========================================================================
+  # s10_balance_lanes caps this lane at a fixed token budget after cleaning
+  # regardless of manual size (see language.yaml targets.downloaded_tokens_cap),
+  # so target_words here just avoids collecting far more than that cap can use.
+  #
+  # Widened 2026-08-18 (2.4x, 80/40/40M -> 190/95/70M): a completed real run
+  # landed the downloaded lane at only 310.6M of its 400M-token cap despite
+  # s10 taking no action ("already within the cap") -- raw was collected with
+  # only 1.6x collection_headroom over the OLD 160M-word target sum, leaving
+  # no slack for S03-S09's ~18% cleaning/split loss. Compounding that: the
+  # word->token conversion used to size the cap (S02's calibration, an 8k-vocab
+  # throwaway model, measured 1.5451 tokens/word) overstates what the REAL
+  # chosen tokenizer yields -- nepali_bpe ended up at vocab_size=32000 with
+  # fertility 1.268 (see tokenizer/selection_report.json), ~18% fewer
+  # tokens/word than the calibration assumed, since a bigger vocab compresses
+  # more. Both effects push the same direction: hitting the 400M-token cap in
+  # practice needs meaningfully more raw words than the calibration-based
+  # arithmetic implies. Hindi never hit this because its downloaded targets
+  # were already sized ~3x this large from the start (see hindi/configs) and
+  # then trimmed back down post-collection -- Nepali's targets were not
+  # rescaled to match when the fixed-cap architecture replaced the old
+  # ratio-forced one. None of the 3 sources below exhausted their dataset
+  # last run (all stopped on word_target, not source_exhausted), so more is
+  # available.
+
+  - source_id: sangraha_verified
+    source_name: AI4Bharat Sangraha -- verified subset (HuggingFace)
+    lane: downloaded
+    collection_method: hf_download
+    priority: 60
+    target_words: 190_000_000
+    max_seconds: 14400
+    params:
+      collector: sangraha
+      content_family: sangraha_verified
+      subset: verified
+      lang_dir: nep               # 25 parquet shards
+      min_chars: 250
+
+  - source_id: sangraha_unverified
+    source_name: AI4Bharat Sangraha -- unverified subset (HuggingFace)
+    lane: downloaded
+    collection_method: hf_download
+    priority: 61
+    target_words: 95_000_000
+    max_seconds: 14400
+    params:
+      collector: sangraha
+      content_family: sangraha_unverified
+      subset: unverified
+      lang_dir: nep               # only 5 shards; never collected before
+      min_chars: 250
+
+  - source_id: indiccorp_v2
+    source_name: AI4Bharat IndicCorp v2 (HuggingFace)
+    lane: downloaded
+    collection_method: hf_download
+    priority: 62
+    target_words: 70_000_000
+    max_seconds: 10800
+    params:
+      collector: indiccorp
+      content_family: indiccorp
+      files: ['data/ne.txt']
+      lines_per_doc: 12
+      min_chars: 250
+
+  - source_id: sangraha_synthetic
+    source_name: AI4Bharat Sangraha -- synthetic (EXCLUDED, machine-translated)
+    lane: downloaded
+    collection_method: hf_download
+    enabled: false
+    priority: 99
+    target_words: 0
+    params:
+      collector: sangraha
+      content_family: sangraha_synthetic
+      subset: synthetic
+      lang_dir: npi_Deva

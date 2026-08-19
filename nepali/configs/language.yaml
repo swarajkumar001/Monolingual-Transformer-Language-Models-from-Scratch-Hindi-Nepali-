@@ -1,0 +1,109 @@
+# =============================================================================
+# Nepali (Model L) -- language configuration
+# =============================================================================
+# Nepali is on the assignment's allowed lower-resource list. Every threshold
+# below is looser than the Hindi equivalent for one reason: Hindi has surplus
+# data, so a discarded document costs nothing, whereas here every discarded
+# document is unrecoverable.
+
+lang: nepali
+lang_code: ne                 # ISO 639-1, and the fastText lid.176 label
+model_role: L                 # lower-resource model in the H/L contrast
+display_name: Nepali
+
+# -----------------------------------------------------------------------------
+# Justification for the report
+# -----------------------------------------------------------------------------
+justification: >
+  Nepali appears on the assignment's permitted lower-resource list. It is the
+  official language of its own country, so it has a live news ecosystem
+  (Kantipur, Setopati, Onlinekhabar, Nagarik) that keeps producing native text,
+  a 30,041-article Wikipedia, and a dedicated `nep` subset in Sangraha and
+  IndicCorp v2. That is enough to build a real corpus while remaining
+  genuinely lower-resource: Nepali Wikipedia is 5.7x smaller than Hindi's
+  (30,041 vs 170,826 articles) and its Sangraha verified split has 25 shards
+  against Hindi's 100. The resulting data-scale gap is the contrast Phase 3
+  asks us to explain.
+
+  The principal risk is language identification. Nepali shares Devanagari with
+  Hindi, Maithili, Bhojpuri, Doteli and Sanskrit, and fastText confuses them:
+  a probe sentence about Kathmandu municipal government scored ne=0.891 with
+  Doteli at 0.064. The pipeline therefore scores the margin between Nepali and
+  the best competing Devanagari label rather than raw confidence alone.
+
+# -----------------------------------------------------------------------------
+# Targets
+# -----------------------------------------------------------------------------
+targets:
+  # The brief allows Model L to fall short of 500M provided the exact count is
+  # reported and the shortfall justified. This is the aspiration; the realistic
+  # ceiling is measured, not assumed, and whatever is reached is reported exactly.
+  final_tokens: 500_000_000
+
+  manual_ratio_floor: 0.20
+  manual_ratio_aim: 0.24
+
+  # s10_balance_lanes trims the DOWNLOADED lane to this many tokens, full
+  # stop -- see hindi/configs/language.yaml for the full rationale. Measured
+  # 2026-08-17: the previous ratio-forced version cut downloaded from 256M
+  # raw words to 41.1M just to match a manual lane collected at only 5.8% of
+  # the corpus (15.8M of 271.8M raw words). The two are handled separately
+  # now: this fixed cap, and manual volume grown at collection time (sources.yaml).
+  downloaded_tokens_cap: 400_000_000
+
+  assumed_tokens_per_word: 1.90   # Nepali morphology fragments slightly more than Hindi
+
+  # Larger than Hindi's: the conservative filters keep more, but the smaller
+  # source pool means collection must reach deeper to find the same volume.
+  collection_headroom: 1.6
+
+# -----------------------------------------------------------------------------
+# Normalisation
+# -----------------------------------------------------------------------------
+normalization:
+  form: NFC
+  # CRITICAL DIFFERENCE FROM HINDI: joiners are NOT stripped. ZWJ is
+  # linguistically load-bearing in Nepali conjuncts -- पुर्‍याउने contains a
+  # legitimate ZWJ, and removing it corrupts the word. The Hindi config sets
+  # this true because Hindi web text uses joiners spuriously; Nepali does not.
+  strip_joiners: false
+  normalize_digits: true
+  collapse_whitespace: true
+  redact_pii: true
+
+# -----------------------------------------------------------------------------
+# Language identification
+# -----------------------------------------------------------------------------
+# Looser confidence than Hindi, because fastText was trained on far less Nepali
+# and systematically under-confident on it -- but a WIDER margin requirement,
+# because the failure mode here is absorbing Hindi text into the Nepali corpus,
+# which would destroy the independence the assignment requires.
+langid:
+  target_label: ne
+  min_confidence: 0.55
+  min_margin: 0.22
+  min_chars: 150              # slightly stricter: short Nepali is easily confused
+  min_devanagari_ratio: 0.60
+  max_error_rate: 0.01
+
+  expected_retention_min: 0.35   # lower band than Hindi; LID is harder here
+  # 0.999, not 0.99: Hindi hit a false BLOCKED at 99.87% retention because its
+  # downloaded lane (Sangraha/IndicCorp) is already language-filtered before
+  # collection, so near-total retention there is correct, not a sign LID
+  # stopped discriminating (see hindi/configs/language.yaml). Nepali's
+  # downloaded lane is built the same way, so the same ceiling applies here
+  # pre-emptively rather than waiting to hit it on a real run.
+  expected_retention_max: 0.999
+
+# -----------------------------------------------------------------------------
+# Splits
+# -----------------------------------------------------------------------------
+# Wider val/test than Hindi's 90/5/5. With a smaller corpus a 5% test split can
+# be too small for the held-out perplexity and BPB numbers in Phase 2 to be
+# stable, and noisy eval on Model L would undermine the whole H/L comparison.
+splits:
+  train: 0.85
+  val: 0.075
+  test: 0.075
+  by: document
+  seed: 20260817

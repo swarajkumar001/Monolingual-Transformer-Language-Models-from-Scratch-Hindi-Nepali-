@@ -1,0 +1,49 @@
+# =============================================================================
+# Nepali -- cleaning thresholds (Model L: conservative posture)
+# =============================================================================
+# Every threshold here is looser than the Hindi equivalent, deliberately.
+# Hindi can afford precision because it has surplus; Nepali cannot, because a
+# document dropped here cannot be replaced from anywhere. Where Hindi drops a
+# borderline document, Nepali keeps it and lets deduplication and the
+# perplexity filter make the finer call.
+
+heuristics:
+  min_chars: 200                  # Hindi: 300
+  max_chars: 200_000
+  min_words: 25                   # Hindi: 40
+  max_symbol_ratio: 0.40          # Hindi: 0.32
+  min_devanagari_ratio: 0.58      # Hindi: 0.65
+  max_repeated_line_ratio: 0.35   # Hindi: 0.25
+  min_mean_word_length: 1.7
+  max_mean_word_length: 15.0
+  min_terminators: 1              # Hindi: 2
+  max_url_density: 0.025          # Hindi: 0.015
+  min_unique_word_ratio: 0.16     # Hindi: 0.22
+
+  expected_retention_min: 0.55    # expect to keep MORE than Hindi, by design
+  # Measured 2026-08-17: 99.75% (1,381,546 of 1,384,983 docs), same reason as
+  # Hindi's band above -- the downloaded lane is already-clean text.
+  expected_retention_max: 0.999
+
+perplexity:
+  enabled: true
+  order: 5
+  reference_sources: [wikisource_api, ocr_archive_books, wikipedia_api]
+  reference_sample_docs: 5000
+  # Hindi drops the worst 10%; Nepali drops 3%. A document that scores
+  # "surprising" against a small Nepali reference LM is often genuine Nepali
+  # the reference under-covers, not junk -- the reference corpus is itself thin.
+  drop_worst_fraction: 0.03
+  sanity_min_mean_chars: 300
+
+dedup:
+  num_perm: 100
+  bands: 20
+  rows: 5
+  shingle_size: 5
+  threshold: 0.55
+  lane_priority: [manual, downloaded]
+
+decontamination:
+  enabled: true
+  threshold: 0.55

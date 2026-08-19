@@ -1,0 +1,14 @@
+{
+  "lang": "nepali",
+  "sample_docs": 451856,
+  "sample_chars": 200000334,
+  "sample_words": 30937560,
+  "sample_tokens": 47801647,
+  "tokens_per_word": 1.5451,
+  "calibration_vocab_size": 8000,
+  "plausible_range": [
+    1.3,
+    2.6
+  ],
+  "seconds": 33.9
+}
