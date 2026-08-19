@@ -1,0 +1,76 @@
+{
+  "hindi": [
+    {
+      "vocab_size": 5000,
+      "chars_per_token": 3.3230482549672025,
+      "fertility_tokens_per_word": 1.4960717073214493,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.018300713364280515,
+      "vocab_utilization": 0.9654,
+      "used_ids": 4827,
+      "unused_ids": 173
+    },
+    {
+      "vocab_size": 8000,
+      "chars_per_token": 3.5621766383323035,
+      "fertility_tokens_per_word": 1.3956406380363695,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.019612821734564415,
+      "vocab_utilization": 0.97625,
+      "used_ids": 7810,
+      "unused_ids": 190
+    },
+    {
+      "vocab_size": 10000,
+      "chars_per_token": 3.660139708875171,
+      "fertility_tokens_per_word": 1.3582865332340512,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.02021328679122844,
+      "vocab_utilization": 0.9767,
+      "used_ids": 9767,
+      "unused_ids": 233
+    }
+  ],
+  "bhojpuri": [
+    {
+      "vocab_size": 5000,
+      "chars_per_token": 3.1314169748594773,
+      "fertility_tokens_per_word": 1.603678446402381,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.001648887168052978,
+      "vocab_utilization": 0.923,
+      "used_ids": 4615,
+      "unused_ids": 385
+    },
+    {
+      "vocab_size": 6000,
+      "chars_per_token": 3.239390905010186,
+      "fertility_tokens_per_word": 1.5502253530173753,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.0017057422050343566,
+      "vocab_utilization": 0.9121666666666667,
+      "used_ids": 5473,
+      "unused_ids": 527
+    },
+    {
+      "vocab_size": 8000,
+      "chars_per_token": 3.389992194952736,
+      "fertility_tokens_per_word": 1.481356186234731,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.001785043216835776,
+      "vocab_utilization": 0.877625,
+      "used_ids": 7021,
+      "unused_ids": 979
+    },
+    {
+      "vocab_size": 10000,
+      "chars_per_token": 3.493505719733079,
+      "fertility_tokens_per_word": 1.4374631994775664,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.001839549571020019,
+      "vocab_utilization": 0.8321,
+      "used_ids": 8321,
+      "unused_ids": 1679
+    }
+  ]
+}
