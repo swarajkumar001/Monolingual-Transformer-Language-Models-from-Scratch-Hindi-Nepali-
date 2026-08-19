@@ -590,8 +590,10 @@ python report/phase1/make_plots.py                    # regenerate every figure 
 ```
 
 **Large artifacts** (raw corpora, cleaned corpora, tokenizer files — too
-large for git) are hosted on Google Drive; links are in the repository root
-`README.md`'s artifact table, filled in as each is uploaded.
+large for git) are hosted on OneDrive:
+[LMA DATA SET — shared OneDrive folder](https://iiithydstudents-my.sharepoint.com/personal/swaraj_kumar_students_iiit_ac_in/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fswaraj%5Fkumar%5Fstudents%5Fiiit%5Fac%5Fin%2FDocuments%2FLMA%20DATA%20SET&ga=1)
+(requires an IIIT account with access) — see the repository root
+`README.md`'s artifact table for current upload status.
 
 ---
 

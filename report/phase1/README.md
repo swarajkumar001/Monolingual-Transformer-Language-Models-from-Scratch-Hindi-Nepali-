@@ -111,14 +111,13 @@ confirmed exhausted, and this corpus is already orders of magnitude larger
 than any previously published Bhojpuri monolingual resource. See
 [`phase1_report.md`](phase1_report.md) §6 for the full justification.
 
-## Google Drive (raw + cleaned corpora, tokenizer files)
+## OneDrive (raw + cleaned corpora, tokenizer files)
 
-**[LMA DATASET — shared folder](https://drive.google.com/drive/folders/1Te68Ys--Ak4Em946rI5h15NPYxew4DsS?usp=sharing)**
+**[LMA DATA SET — shared OneDrive folder](https://iiithydstudents-my.sharepoint.com/personal/swaraj_kumar_students_iiit_ac_in/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fswaraj%5Fkumar%5Fstudents%5Fiiit%5Fac%5Fin%2FDocuments%2FLMA%20DATA%20SET&ga=1)**
+(requires an IIIT account with access)
 
-Bhojpuri's raw, cleaned, and tokenizer artifacts are uploaded
-(`BHOJPURI MODEL L/` in the folder above). Hindi's upload is still pending
-as of this writing — check the root [`README.md`](../../README.md)'s
-artifact table for the current status.
+Check the root [`README.md`](../../README.md)'s artifact table for current
+upload status per language/artifact.
 
 ## About the Nepali attempt
 
