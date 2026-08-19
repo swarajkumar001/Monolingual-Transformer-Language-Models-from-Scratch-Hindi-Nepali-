@@ -210,14 +210,22 @@ below for two concrete cases it missed.
 
 ### Manual share (the hard 20% floor)
 
-**28.65% manual** — 505,509,566 manual characters / 1,764,598,107 total
-cleaned characters. Independently verified two ways: `scripts/validate_phase1.py`
-(char-weighted from the `source_type` provenance field) and a standalone
-recomputation directly from `hindi/data/cleaned/metadata.jsonl`, both give
-28.65% exactly. Clears the 20% requirement with a comfortable margin — note
-this is the *cleaned*-corpus figure, not a substitute for the raw-pool
-29.36% quoted above, which is measured on a different (larger, uncleaned)
-denominator and is not itself evidence of passing the floor.
+**28.65% manual** — from `validate_final.log`: 505,509,566 manual
+characters / 1,764,596,782 total cleaned characters (the post-cross-
+language-fix denominator; 1,764,598,107 was the pre-fix figure, see
+"Cross-language contamination" below). Independently verified two ways:
+`scripts/validate_phase1.py`'s own char-weighted computation from the
+`source_type` provenance field, and a standalone recomputation directly
+from `hindi/data/cleaned/metadata.jsonl` — both give 28.65% exactly.
+Clears the 20% requirement with a comfortable margin — note this is the
+*cleaned*-corpus, *char*-weighted figure; the *token*-weighted figure
+from `scripts/count_tokens.py` (Step 3, chosen tokenizer vocab_size=8000)
+is a separate, also-real measurement: 30.66% (155,104,651 manual tokens /
+505,852,028 total tokens). Neither is a substitute for the other — they
+measure different units — and both clear the floor independently. Also
+not a substitute: the raw-pool 29.36% quoted above, measured on a
+different (larger, uncleaned) denominator, which is not itself evidence
+of passing the floor.
 
 ### Cross-language contamination (found, fixed)
 

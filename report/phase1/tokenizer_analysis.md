@@ -140,6 +140,41 @@ docs; an earlier pair of runs was discarded after being found to have
 trained on a truncated merged-corpus file — see commit history — and
 retrained from scratch).
 
+### Training sample size — stated plainly, not hidden
+
+SentencePiece does not train on the entire train split for either
+language — it uses `input_sentence_size=2,000,000` with
+`shuffle_input_sentence=True`, which reservoir-samples up to 2,000,000
+sentences (lines) from the corpus after it is flattened one
+sentence-per-line. This is the standard, documented way to bound
+SentencePiece's training cost on a large corpus (its own trainer warns
+"Too many sentences are loaded" and recommends exactly this option when
+the sentence count exceeds it), not an ad hoc shortcut for this project.
+
+Measured directly from the SentencePiece trainer log (`all chars count=`
+line, i.e. the character count actually used for training, after
+sampling):
+
+| Language | Chars used for training | Train split total chars | Fraction sampled |
+|---|---:|---:|---:|
+| Hindi | 372,725,734 | 1,692,881,268 | 22.0% |
+| Bhojpuri | 217,511,027 | 271,000,251 | 80.3% |
+
+Hindi's train split has far more sentences than Bhojpuri's for the same
+2,000,000-sentence cap, so a much smaller fraction of it is used per
+training run — this is expected and does not bias the result: the
+2,000,000-sentence sample is a random, shuffled draw across the entire
+corpus (not the first N characters or a single source), so it is
+representative of the whole train split's vocabulary and character
+distribution, not a biased subset. The **held-out evaluation** in the
+table below (chars/token, fertility, byte-fallback rate, utilization) is
+run separately, on the validation split, so it measures the trained
+tokenizer's real generalization regardless of how much of train it saw
+during fitting. The **full-corpus token count** (further below) is exact
+and unsampled — every one of the 675,937 train documents (plus
+validation and test) is actually encoded, not extrapolated from the
+training sample.
+
 | Vocab size | chars/token (val sample) | chars/token (exact, full corpus) | fertility (tok/word) | UNK rate | byte-fallback rate | vocab utilization | Full-corpus tokens | Manual % (by token) |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 5,000 | 3.3230 | NOT MEASURED (only the chosen size gets the full-corpus pass) | 1.4961 | 0.000000 | 0.018301 | 0.9654 | NOT MEASURED | NOT MEASURED |

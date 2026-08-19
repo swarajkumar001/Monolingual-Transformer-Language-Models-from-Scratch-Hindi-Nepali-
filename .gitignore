@@ -49,5 +49,10 @@ bhojpuri/data/external/
 # ignore).
 !hindi/data/metadata/clean_stats.json
 !bhojpuri/data/metadata/clean_stats.json
-*/tokenizer/_train_corpus.txt 
 */tokenizer/_train_corpus.txt
+*/tokenizer/_train_corpus.txt
+
+# fastText lid.176 language-ID model (131MB), downloaded on demand by
+# nepali/scripts/corpuslib/langid.py - not a deliverable, not reproducible
+# content, just a third-party binary the pipeline fetches itself if absent.
+lid.176.bin
