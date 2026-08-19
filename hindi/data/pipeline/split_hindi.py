@@ -47,6 +47,18 @@ def link_or_copy(src: Path, dst: Path) -> None:
 
 
 def main():
+    """WHY: splits at the DOCUMENT level with a fixed seed, never
+    sentence/chunk level, so no document's text can appear split across
+    train and validation/test (leakage). Always rebuilds data/splits/ from
+    data/cleaned/ rather than appending, so it's safe to rerun whenever the
+    cleaned corpus changes (e.g. after the cross-language-duplicate fix).
+    WHAT: shuffles cleaned doc metadata with the given seed, assigns each
+    doc to train/validation/test per SPLIT_RATIOS (~96/2/2), hardlinks
+    (falling back to copy) each doc's text into the right split dir, and
+    writes a manifest per split.
+    INPUT: CLI arg --seed; reads data/cleaned/metadata.jsonl.
+    OUTPUT: writes data/splits/{train,validation,test}/text/ and
+    data/splits/{split}_manifest.json; no return value."""
     parser = argparse.ArgumentParser(description="Split cleaned Hindi docs into train/val/test")
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     args = parser.parse_args()

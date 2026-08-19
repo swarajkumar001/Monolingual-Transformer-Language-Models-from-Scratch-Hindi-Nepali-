@@ -27,6 +27,12 @@ READ_WORKERS = 32
 
 
 def _read_or_none(path: Path):
+    """WHY: factored to a plain function (not a lambda) so it's mappable by
+    ThreadPoolExecutor.map in count_split; tolerates a missing file instead
+    of raising, since a manifest entry can in principle outlive its text
+    file (e.g. mid-pipeline changes) and that shouldn't crash the count.
+    INPUT: path to a split text file.
+    OUTPUT: its contents as a string, or None if the file doesn't exist."""
     return path.read_text(encoding="utf-8") if path.exists() else None
 
 
@@ -70,6 +76,15 @@ def count_split(sp: spm.SentencePieceProcessor, splits_dir: Path, split: str) ->
 
 
 def main():
+    """WHY: CLI entry point, run once per language on the chosen (winning)
+    vocab size only - not per sweep candidate, since this full-corpus pass
+    is the expensive step (see module docstring); analyze_tokenizer.py's
+    validation-sample metrics are what the sweep itself compares.
+    WHAT: loads the given tokenizer model, counts every split via
+    count_split, prints per-split and total docs/chars/tokens plus the
+    manual-vs-downloaded token breakdown and exact whole-corpus chars/token.
+    INPUT: CLI args --lang, --tokenizer-model (path to a trained .model).
+    OUTPUT: none (prints only)."""
     parser = argparse.ArgumentParser(description="Count real total tokens for a language's full corpus")
     parser.add_argument("--lang", required=True, choices=["hindi", "bhojpuri"])
     parser.add_argument("--tokenizer-model", required=True, help="path to a trained .model file")

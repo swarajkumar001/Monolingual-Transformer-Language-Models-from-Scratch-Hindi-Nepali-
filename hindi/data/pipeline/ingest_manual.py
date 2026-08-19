@@ -25,11 +25,28 @@ RAW_MANUAL = Path(__file__).resolve().parents[1] / "raw" / "manual"
 
 
 def document_id(method: str, key: str) -> str:
+    """WHY: stable, collision-safe ids across the 4 manual collection
+    methods (typed/ocr/pdf/scrape), so re-running a subcommand on the same
+    inputs doesn't create duplicate entries.
+    WHAT: hashes "{method}:{key}" (key is a filename or URL, whatever
+    uniquely identifies the source item within its method).
+    INPUT: method ("typed"/"ocr"/"pdf"/"scrape"); key (filename or URL).
+    OUTPUT: "hi_manual_{method}_{10-char hex digest}"."""
     digest = hashlib.sha1(f"{method}:{key}".encode("utf-8")).hexdigest()[:10]
     return f"hi_manual_{method}_{digest}"
 
 
 def write_document(doc_id: str, text: str, meta: dict) -> None:
+    """WHY/WHAT: same role as download_hindi.py's write_document - persist
+    text + provenance metadata together so downstream stages always see a
+    consistent pair. Kept as a separate copy rather than a shared import
+    because manual ingestion always targets RAW_MANUAL specifically (no
+    out_dir parameter needed, unlike the downloaded-source version which
+    handles multiple output dirs).
+    INPUT: doc_id, text (str), meta (dict, same schema as download_hindi.py
+    but with source_type="manual" and a collection_method-specific
+    source_name).
+    OUTPUT: none (disk side effects only)."""
     (RAW_MANUAL / "text").mkdir(parents=True, exist_ok=True)
     (RAW_MANUAL / "text" / f"{doc_id}.txt").write_text(text, encoding="utf-8")
     meta_path = RAW_MANUAL / "metadata.jsonl"
@@ -213,6 +230,13 @@ def cmd_scrape(args):
 
 
 def main():
+    """WHY: one CLI with 4 subcommands (typed/ocr/pdf/scrape) rather than 4
+    separate scripts, since they share document_id/write_document and the
+    metadata schema - keeps the manual-collection surface in one place.
+    WHAT: builds the argparse subparser tree and dispatches to whichever
+    cmd_* function matches the chosen subcommand.
+    INPUT/OUTPUT: CLI args in, disk writes out via the dispatched cmd_*
+    function; no return value."""
     parser = argparse.ArgumentParser(description="Ingest manually-collected Hindi text")
     sub = parser.add_subparsers(dest="command", required=True)
 

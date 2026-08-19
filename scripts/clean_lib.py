@@ -100,6 +100,14 @@ def malformed_ratio(text: str) -> float:
 
 
 def is_too_short(text: str, min_chars: int) -> bool:
+    """WHY: a tiny document (a stub, a nav-menu fragment that survived
+    extraction, a truncated fetch) contributes noise, not signal, and
+    langdetect is also unreliable on very short text - filtering by length
+    before language-ID avoids wasting a langdetect call on text too short
+    to classify meaningfully anyway.
+    INPUT: text (post-normalization); min_chars threshold (per-language,
+    e.g. MIN_CHARS in clean_hindi.py/clean_bhojpuri.py).
+    OUTPUT: True if text should be dropped as too short."""
     return len(text) < min_chars
 
 
@@ -153,6 +161,14 @@ def dedup_key(text: str) -> str:
 
 
 def read_metadata(meta_path: Path):
+    """WHY: this is clean_hindi.py/clean_bhojpuri.py's primary input reader,
+    so it must tolerate the one known real-world failure mode (an
+    interleaved-write malformed line from concurrent crawler appends,
+    see the inline comment below) rather than crash a multi-hour clean run
+    over a single bad line.
+    INPUT: path to a raw/{manual,downloaded}/metadata.jsonl file (may not
+    exist, e.g. a language with no downloaded sources yet).
+    OUTPUT: generator yielding each valid line's parsed dict."""
     if not meta_path.exists():
         return
     with meta_path.open("r", encoding="utf-8") as f:
@@ -222,6 +238,13 @@ def acquire_single_instance_lock(lock_path: Path, retries: int = 5, wait: float 
 
 
 def release_single_instance_lock(lock_path: Path) -> None:
+    """WHY: pairs with acquire_single_instance_lock; best-effort only
+    because if the owning process dies before calling this, the lock's
+    staleness timeout (STALE_LOCK_SECONDS) reclaims it instead - callers
+    don't need a try/finally around every possible crash path.
+    INPUT: lock_path (the same path passed to acquire).
+    OUTPUT: none; missing_ok=True means calling this twice, or on a lock
+    that was never acquired, is not an error."""
     lock_path.unlink(missing_ok=True)
 
 
@@ -348,6 +371,15 @@ def load_resume_state(interim_dir: Path, cleaned_dir: Path, dropped_log_path: Pa
 
 
 def write_doc(out_dir: Path, doc_id: str, text: str, meta: dict) -> None:
+    """WHY: clean_hindi.py/clean_bhojpuri.py write to interim/ and cleaned/
+    single-threaded (no concurrent-writer risk the way raw/ ingestion
+    scripts have, since only one clean_*.py instance holds the stage's
+    lock at a time - see acquire_single_instance_lock), so a plain append
+    is safe here, unlike append_metadata_locked used elsewhere.
+    INPUT: out_dir (interim/ or cleaned/); doc_id; text (post-processing
+    for this stage); meta (dict, cleaning_status field distinguishes
+    interim vs cleaned).
+    OUTPUT: none (disk side effects only)."""
     (out_dir / "text").mkdir(parents=True, exist_ok=True)
     (out_dir / "text" / f"{doc_id}.txt").write_text(text, encoding="utf-8")
     with (out_dir / "metadata.jsonl").open("a", encoding="utf-8") as f:

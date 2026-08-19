@@ -41,11 +41,31 @@ OUT_DIR = Path(__file__).resolve().parents[1] / "raw" / "downloaded"
 
 
 def document_id(source_name: str, raw_id: str) -> str:
+    """WHY: doc_ids must be stable across reruns (so --append doesn't create
+    duplicates) and collision-safe across sources, without depending on the
+    upstream dataset's own id scheme being globally unique.
+    WHAT: hashes "{source_name}:{raw_id}" and prefixes with the language +
+    source_type, matching the id convention every other language/source in
+    this project uses (see clean_lib.py's dedup logic, which trusts this
+    prefix to route Bhojpuri-vs-Hindi checks correctly).
+    INPUT: source_name (e.g. "wikipedia"), raw_id (the upstream dataset's own
+    row/doc id, any string).
+    OUTPUT: "hi_downloaded_{source_name}_{10-char hex digest}"."""
     digest = hashlib.sha1(f"{source_name}:{raw_id}".encode("utf-8")).hexdigest()[:10]
     return f"hi_downloaded_{source_name}_{digest}"
 
 
 def write_document(out_dir: Path, doc_id: str, text: str, meta: dict) -> None:
+    """WHY: every raw document needs both its text (for later pipeline
+    stages to read) and its provenance metadata (source_type, license, etc.
+    - what validate_phase1.py and the cleaning stage both rely on) persisted
+    together, atomically enough that a later stage never sees one without
+    the other for the same doc_id.
+    WHAT: writes {out_dir}/text/{doc_id}.txt, then appends one JSON line to
+    {out_dir}/metadata.jsonl.
+    INPUT: out_dir (raw/downloaded), doc_id, text (str), meta (dict matching
+    the schema documented inline in each download_* function below).
+    OUTPUT: none (disk side effects only)."""
     (out_dir / "text").mkdir(parents=True, exist_ok=True)
     (out_dir / "text" / f"{doc_id}.txt").write_text(text, encoding="utf-8")
     meta_path = out_dir / "metadata.jsonl"
@@ -54,6 +74,13 @@ def write_document(out_dir: Path, doc_id: str, text: str, meta: dict) -> None:
 
 
 def download_wikipedia(out_dir: Path, max_chars: int | None) -> tuple[int, int]:
+    """WHY/WHAT: see module docstring for why this source (HF parquet mirror
+    of the Hindi Wikipedia dump) is used and its schema. Streams rather than
+    downloading in full so a --max-chars cap can stop early without paying
+    for the whole dataset.
+    INPUT: out_dir to write into; max_chars cap in characters, or None for
+    the full dump (~239MB compressed upstream, so finite either way).
+    OUTPUT: (doc_count, char_count) written this call."""
     source_name = "wikipedia"
     print(f"[{LANG}] streaming wikimedia/wikipedia 20231101.hi ...")
     ds = load_dataset("wikimedia/wikipedia", "20231101.hi", split="train", streaming=True)
@@ -87,6 +114,12 @@ def download_wikipedia(out_dir: Path, max_chars: int | None) -> tuple[int, int]:
 
 
 def download_sangraha(out_dir: Path, max_chars: int | None) -> tuple[int, int]:
+    """WHY/WHAT: see module docstring - Sangraha's human-verified Hindi
+    partition (config "verified", split "hin"). Capped by default since the
+    full partition is far more than needed for the ~500M-token target.
+    INPUT: out_dir to write into; max_chars cap in characters (default
+    300M, see main()'s argparse default).
+    OUTPUT: (doc_count, char_count) written this call."""
     source_name = "sangraha"
     print(f"[{LANG}] streaming ai4bharat/sangraha (verified/hin) ...")
     ds = load_dataset("ai4bharat/sangraha", data_dir="verified/hin", split="train", streaming=True)
@@ -120,6 +153,11 @@ def download_sangraha(out_dir: Path, max_chars: int | None) -> tuple[int, int]:
 
 
 def download_sangraha_unverified(out_dir: Path, max_chars: int | None) -> tuple[int, int]:
+    """WHY/WHAT: see module docstring - Sangraha's larger, perplexity-filtered
+    (not human-verified) Hindi partition, added because the verified
+    partition alone wasn't enough volume toward the ~500M-token target.
+    INPUT: out_dir to write into; max_chars cap in characters (default 500M).
+    OUTPUT: (doc_count, char_count) written this call."""
     source_name = "sangraha_unverified"
     print(f"[{LANG}] streaming ai4bharat/sangraha (unverified/hin) ...")
     ds = load_dataset("ai4bharat/sangraha", data_dir="unverified/hin", split="train", streaming=True)
@@ -153,6 +191,15 @@ def download_sangraha_unverified(out_dir: Path, max_chars: int | None) -> tuple[
 
 
 def download_fineweb2(out_dir: Path, max_chars: int | None, min_language_score: float = 0.9) -> tuple[int, int]:
+    """WHY/WHAT: see module docstring - CommonCrawl-derived Hindi web text.
+    Filters on the dataset's own language_score as a cheap pre-filter
+    against closely-related-language contamination (e.g. Bhojpuri pages
+    tagged Hindi); this is not a substitute for clean_hindi.py's real
+    lexical-marker contamination filter, just a first pass that discards
+    the most confidently-mislabeled rows before they're even written.
+    INPUT: out_dir to write into; max_chars cap; min_language_score
+    threshold (rows below this are skipped, not written).
+    OUTPUT: (doc_count, char_count) written this call."""
     source_name = "fineweb2"
     print(f"[{LANG}] streaming HuggingFaceFW/fineweb-2 (hin_Deva) ...")
     ds = load_dataset("HuggingFaceFW/fineweb-2", name="hin_Deva", split="train", streaming=True)
@@ -190,6 +237,15 @@ def download_fineweb2(out_dir: Path, max_chars: int | None, min_language_score: 
 
 
 def main():
+    """WHY: a single CLI entry point so re-running with --sources/--append
+    lets one add a new downloaded source later without re-pulling ones
+    already on disk (each source is independently resumable by simply not
+    re-listing it).
+    WHAT: parses args, optionally wipes raw/downloaded/ (unless --append),
+    then calls whichever download_* functions were requested in --sources
+    and prints running totals.
+    INPUT/OUTPUT: CLI args in, disk writes out (see write_document); no
+    return value."""
     parser = argparse.ArgumentParser(description="Download Hindi source text (Model H)")
     parser.add_argument("--max-chars-wikipedia", type=int, default=None,
                          help="Char budget for Wikipedia (omit for the full dump)")

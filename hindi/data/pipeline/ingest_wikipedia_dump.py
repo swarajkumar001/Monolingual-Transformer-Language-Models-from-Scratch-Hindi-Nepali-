@@ -41,6 +41,18 @@ LICENSE_NOTE = (
 
 
 def append_metadata_locked(meta_path: Path, record: dict, retries: int = 200, wait: float = 0.05) -> None:
+    """WHY: this script can run concurrently with other writers to the same
+    raw/manual/metadata.jsonl (crawlers, other ingest scripts); a plain
+    unlocked append can interleave two processes' writes mid-line and
+    corrupt the file (this happened earlier this project with crawler
+    metadata - see scripts/crawl_sites.py). An os.O_CREAT|os.O_EXCL lock
+    file is atomic at the OS level, unlike a check-then-write pattern.
+    WHAT: acquires an exclusive lock file next to meta_path (retrying up to
+    `retries` times), appends one JSON line, then releases the lock.
+    INPUT: meta_path (the metadata.jsonl to append to); record (dict to
+    serialize as one JSON line); retries/wait control the acquire loop.
+    OUTPUT: none (disk side effect only); raises TimeoutError if the lock
+    can't be acquired within retries * wait seconds."""
     lock_path = meta_path.with_suffix(meta_path.suffix + ".writelock")
     line = json.dumps(record, ensure_ascii=False) + "\n"
     for _ in range(retries):
@@ -62,12 +74,29 @@ def append_metadata_locked(meta_path: Path, record: dict, retries: int = 200, wa
 
 
 def write_document(doc_id: str, text: str, meta: dict) -> None:
+    """WHY/WHAT: same role as the other ingest scripts' write_document, but
+    uses append_metadata_locked instead of a plain append since this
+    script's output directory (raw/manual/) is written concurrently by
+    other sources (crawlers, ingest_manual.py).
+    INPUT: doc_id, text (str), meta (dict; source_type="manual",
+    collection_method="wikipedia_dump" per the module docstring above).
+    OUTPUT: none (disk side effects only)."""
     (OUT_DIR / "text").mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "text" / f"{doc_id}.txt").write_text(text, encoding="utf-8")
     append_metadata_locked(OUT_DIR / "metadata.jsonl", meta)
 
 
 def main():
+    """WHY: separates "download the XML dump + run WikiExtractor" (a manual,
+    one-time shell step documented in the module docstring) from "ingest
+    the extracted JSON into this project's raw/manual/ schema" (this
+    script) - keeps the extraction tool swappable without touching the
+    schema-writing logic.
+    WHAT: walks every WikiExtractor output shard under EXTRACTED_DIR,
+    skips too-short stubs, and writes each remaining article via
+    write_document.
+    INPUT/OUTPUT: reads EXTRACTED_DIR, writes to OUT_DIR; no return value;
+    exits early with a message if EXTRACTED_DIR doesn't exist yet."""
     parser = argparse.ArgumentParser(description="Ingest self-extracted Hindi Wikipedia dump")
     args = parser.parse_args()
 

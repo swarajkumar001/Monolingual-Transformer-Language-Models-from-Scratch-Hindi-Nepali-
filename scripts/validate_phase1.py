@@ -27,6 +27,15 @@ LANGUAGES = ["hindi", "bhojpuri"]
 
 
 def load_jsonl(path: Path):
+    """WHY: every check below reads a *.jsonl provenance file; centralizing
+    the read means a missing file or one malformed line (e.g. from a past
+    concurrent-write race, since fixed) never crashes a check - it's
+    treated as "nothing there yet" or "skip this line", matching how the
+    pipeline scripts themselves tolerate malformed lines (see
+    clean_lib.read_metadata).
+    INPUT: path to a .jsonl file (may not exist).
+    OUTPUT: generator yielding each valid line's parsed dict; yields
+    nothing if the file is missing."""
     if not path.exists():
         return
     with path.open("r", encoding="utf-8") as f:
@@ -41,6 +50,12 @@ def load_jsonl(path: Path):
 
 
 def load_manifest(path: Path):
+    """WHY: split manifests are a single JSON array (not JSONL), written
+    once by split_<lang>.py - a distinct format from the streaming
+    provenance logs load_jsonl reads, so it needs its own loader.
+    INPUT: path to a *_manifest.json file (may not exist).
+    OUTPUT: the parsed list of document metadata dicts, or [] if missing
+    or malformed."""
     if not path.exists():
         return []
     try:
@@ -50,6 +65,12 @@ def load_manifest(path: Path):
 
 
 def check_raw_sources_present(lang: str):
+    """WHY: the spec requires both a manual and a downloaded lane per
+    language; an empty lane (e.g. a crawl that silently produced 0 docs)
+    should fail loudly here rather than surface later as a wrong manual %.
+    INPUT: lang ("hindi" or "bhojpuri").
+    OUTPUT: (passed: bool, detail: str) - passed iff both raw/manual/ and
+    raw/downloaded/ have at least one document."""
     counts = {}
     for kind in ["manual", "downloaded"]:
         meta_path = REPO_ROOT / lang / "data" / "raw" / kind / "metadata.jsonl"
@@ -82,6 +103,14 @@ def check_manual_floor(lang: str):
 
 
 def check_splits_no_leakage(lang: str):
+    """WHY: document-level leakage between splits (the same document_id
+    appearing in more than one of train/validation/test) would let a model
+    memorize during training and appear to generalize on eval - a silent,
+    serious eval-integrity bug, not just a data-hygiene nit.
+    INPUT: lang.
+    OUTPUT: (passed, detail) - passed iff all three manifests exist,
+    each is internally duplicate-free, and no document_id appears in more
+    than one split."""
     splits_dir = REPO_ROOT / lang / "data" / "splits"
     manifests = {}
     for split in ["train", "validation", "test"]:
@@ -110,6 +139,13 @@ def check_splits_no_leakage(lang: str):
 
 
 def check_tokenizer_trained(lang: str):
+    """WHY: a Phase 1 deliverable is a trained tokenizer per language; this
+    just checks *some* .model file exists, not which vocab size was
+    chosen (that decision and its justification live in
+    tokenizer_analysis.md, not something this script can verify).
+    INPUT: lang.
+    OUTPUT: (passed, detail) - passed iff at least one *.model file exists
+    under <lang>/tokenizer/."""
     tok_dir = REPO_ROOT / lang / "tokenizer"
     models = list(tok_dir.glob("*.model")) if tok_dir.exists() else []
     if not models:
@@ -119,6 +155,16 @@ def check_tokenizer_trained(lang: str):
 
 
 def check_no_cross_language_sharing():
+    """WHY: the spec forbids sharing documents across the two language
+    corpora; checking only document_id would miss a document that was
+    ingested independently into both corpora under different ids but with
+    identical content (exactly what happened with 2 real Bhojpuri-labeled
+    Sangraha/FineWeb-2 documents - see dataset_statistics.md's
+    "Cross-language contamination" section), so this checks both id and
+    content-hash (dedup_key).
+    INPUT: none (reads both languages' cleaned metadata via LANGUAGES).
+    OUTPUT: (passed, detail) - passed iff there is zero overlap in
+    document_id and zero overlap in dedup_key between the two corpora."""
     cleaned = {}
     for lang in LANGUAGES:
         meta_path = REPO_ROOT / lang / "data" / "cleaned" / "metadata.jsonl"
@@ -143,6 +189,14 @@ def check_no_cross_language_sharing():
 
 
 def main():
+    """WHY: single command to answer "is Phase 1 actually done" without
+    manually re-deriving every number from the raw data each time.
+    WHAT: runs all 4 per-language checks for each language in LANGUAGES,
+    plus the cross-language check once, printing PASS/FAIL with the
+    measured detail for each.
+    INPUT/OUTPUT: none in; prints the full report; exits 1 if any check
+    failed, 0 if all passed (so this is usable as a CI-style gate, not
+    just a human-readable report)."""
     all_passed = True
     print("=" * 70)
     print("PHASE 1 VALIDATION")

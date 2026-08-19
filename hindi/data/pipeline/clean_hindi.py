@@ -86,6 +86,23 @@ def language_ok(text: str) -> tuple[bool, str]:
 
 
 def main():
+    """WHY: the single entry point that turns raw/{manual,downloaded}/ into
+    cleaned/ via the pipeline documented in the module docstring
+    (normalize -> strip Latin tokens -> malformed/short-doc drop ->
+    language-ID + Bhojpuri-contamination filter -> dedup). Without
+    --resume it always rebuilds interim/ and cleaned/ from scratch (see
+    reset_dir in clean_lib.py) so a rerun after raw/ changes is never
+    silently stale.
+    WHAT: iterates every raw doc (manual before downloaded, so a
+    cross-source duplicate tie always keeps the manual copy - see the
+    RAW_DIRS comment above), applies language_ok() and dedup_key()
+    filtering, writes survivors to cleaned/, and recomputes final stats
+    from disk (not carried-forward in-memory counters, which have drifted
+    from reality across --resume cycles in the past).
+    INPUT: CLI args (--min-chars, --resume) in; reads raw/manual/ and
+    raw/downloaded/.
+    OUTPUT: writes data/interim/, data/cleaned/, and
+    metadata/clean_stats.json; no return value."""
     parser = argparse.ArgumentParser(description="Clean Hindi raw text (Model H)")
     parser.add_argument("--min-chars", type=int, default=MIN_CHARS)
     parser.add_argument("--resume", action="store_true",
@@ -210,6 +227,14 @@ def main():
 
 
 def _log_dropped(doc_id: str, reason: str) -> None:
+    """WHY: a durable, per-document record of why each dropped doc was
+    dropped - both for --resume (load_resume_state in clean_lib.py treats
+    a doc_id in this log as already-processed, so a resumed run doesn't
+    re-drop and re-log it) and for auditability (a reader can look up any
+    specific doc_id and see its fate, not just aggregate counts).
+    INPUT: doc_id; reason (one of the dropped_language keys, or
+    "malformed_unicode"/"too_short"/"duplicate").
+    OUTPUT: none (appends one JSON line to DROPPED_LOG_PATH)."""
     with DROPPED_LOG_PATH.open("a", encoding="utf-8") as f:
         f.write(json.dumps({"document_id": doc_id, "reason": reason}, ensure_ascii=False) + "\n")
 

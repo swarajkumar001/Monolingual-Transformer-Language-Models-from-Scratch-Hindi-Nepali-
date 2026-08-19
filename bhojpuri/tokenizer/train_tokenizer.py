@@ -4,8 +4,10 @@ Trains only on data/splits/train/ - never validation or test, so fertility/
 coverage/UNK-rate measurements on held-out text (see analyze_tokenizer.py)
 are a genuine held-out evaluation, not train-set leakage.
 
-Settings are fixed across the vocab-size sweep (8k/12k/16k/24k/32k) so the
-sweep only varies vocab_size:
+Settings are fixed across the vocab-size sweep (5k/6k/8k/10k, per a
+course-TA ruling capping vocab size to keep the embedding table from
+dominating the ~25M-parameter budget - see
+report/phase1/tokenizer_analysis.md) so the sweep only varies vocab_size:
   - model_type=unigram
   - character_coverage=0.9995
   - byte_fallback=True (structurally makes UNK rate 0.0 - see

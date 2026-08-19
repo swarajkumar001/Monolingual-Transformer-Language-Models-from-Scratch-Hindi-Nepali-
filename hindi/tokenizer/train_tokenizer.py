@@ -6,8 +6,10 @@ validation or test, so fertility/coverage/UNK-rate measurements on held-out
 text (see analyze_tokenizer.py) are a genuine held-out evaluation, not
 train-set leakage.
 
-Settings are fixed across the vocab-size sweep (8k/12k/16k/24k/32k) so the
-sweep only varies vocab_size:
+Settings are fixed across the vocab-size sweep (5k/6k/8k/10k, per a
+course-TA ruling capping vocab size to keep the embedding table from
+dominating the ~25M-parameter budget - see
+report/phase1/tokenizer_analysis.md) so the sweep only varies vocab_size:
   - model_type=unigram
   - character_coverage=0.9995
   - byte_fallback=True (structurally makes UNK rate 0.0 - see
@@ -40,6 +42,11 @@ READ_WORKERS = 32
 
 
 def _read(path: Path) -> str:
+    """WHY: factored out to a plain function (not a lambda/inline) so it's
+    picklable/mappable by ThreadPoolExecutor.map in build_merged_corpus.
+    WHAT: reads one train-split text file fully into memory.
+    INPUT: path to a single .txt file.
+    OUTPUT: its full contents as one string."""
     return path.read_text(encoding="utf-8")
 
 
@@ -72,6 +79,17 @@ def build_merged_corpus() -> Path:
 
 
 def main():
+    """WHY: single-instance-locked (see acquire_single_instance_lock) since
+    this environment has been observed to launch two OS processes per
+    background command - without the lock, two concurrent trainings would
+    both build/read the merged corpus and both write the same output
+    .model/.vocab path, corrupting either the corpus file or the model.
+    WHAT: builds (or reuses the cached) merged train corpus, then trains
+    one SentencePiece unigram model at the requested vocab size with the
+    fixed settings documented in the module docstring.
+    INPUT: CLI args --vocab-size (required), --threads.
+    OUTPUT: writes hindi_unigram_{vocab_size}.model/.vocab; no return
+    value."""
     parser = argparse.ArgumentParser(description="Train a Hindi SentencePiece tokenizer")
     parser.add_argument("--vocab-size", type=int, required=True)
     parser.add_argument("--threads", type=int, default=4)

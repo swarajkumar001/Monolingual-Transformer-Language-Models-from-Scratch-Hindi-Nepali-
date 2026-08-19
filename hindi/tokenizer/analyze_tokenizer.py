@@ -42,6 +42,15 @@ _BYTE_FALLBACK_PIECE = re.compile(r"^<0x[0-9A-Fa-f]{2}>$")
 
 
 def load_validation_text(max_docs: int) -> list[str]:
+    """WHY: analysis must run on text the tokenizer never trained on
+    (validation, not train) so fertility/utilization/byte-fallback numbers
+    reflect genuine held-out generalization, not memorized training text.
+    WHAT: reads up to max_docs .txt files from data/splits/validation/,
+    skipping any that are empty after stripping.
+    INPUT: max_docs cap on how many files to read (sampling, not the full
+    validation split, since 2,000 docs is enough for stable rate estimates
+    and reading all ~14k would be needlessly slow for a sanity-check pass).
+    OUTPUT: list of document text strings."""
     files = sorted(VAL_TEXT_DIR.glob("*.txt"))
     if not files:
         raise SystemExit(f"no validation text files at {VAL_TEXT_DIR} - run split_hindi.py first")
@@ -54,6 +63,19 @@ def load_validation_text(max_docs: int) -> list[str]:
 
 
 def analyze(model_path: Path, texts: list[str], n_samples: int = 3) -> dict:
+    """WHY: bundles every metric this project's vocab-size decision is
+    based on (see the module docstring's list) into one pass over the
+    validation sample, so a single function call produces everything
+    tokenizer_analysis.md quotes for one vocab size.
+    WHAT: encodes each text with the SentencePiece model (both as ids and
+    as piece strings, since UNK/byte-fallback detection needs the string
+    form but chars/token needs only counts), accumulates running totals,
+    and separately re-encodes the first n_samples texts to keep example
+    (text, pieces, ids) triples for the report.
+    INPUT: model_path (a trained .model file); texts (from
+    load_validation_text); n_samples (how many worked examples to keep).
+    OUTPUT: dict of every metric plus 'samples' - see the return statement
+    for the exact keys; this is what print_report formats."""
     sp = spm.SentencePieceProcessor(model_file=str(model_path))
     vocab_size = sp.vocab_size()
     unk_id = sp.unk_id()
@@ -104,6 +126,13 @@ def analyze(model_path: Path, texts: list[str], n_samples: int = 3) -> dict:
 
 
 def print_report(result: dict):
+    """WHY: keeps formatting separate from computation (analyze() returns
+    plain data, this only renders it) so the dict can also be consumed
+    programmatically elsewhere without re-parsing printed text.
+    WHAT: prints every metric from analyze()'s return dict in the fixed
+    layout tokenizer_analysis.md's numbers were transcribed from.
+    INPUT: result dict from analyze().
+    OUTPUT: none (prints to stdout only)."""
     print(f"\n{'=' * 70}")
     print(f"vocab_size={result['vocab_size']}  (evaluated on {result['n_docs_evaluated']} validation docs)")
     print(f"{'=' * 70}")
@@ -121,6 +150,14 @@ def print_report(result: dict):
 
 
 def main():
+    """WHY: CLI entry point so the sweep driver (run_hindi.bat /
+    run_hindi_tokenizer_sweep.sh) can analyze one vocab size at a time
+    right after training it.
+    WHAT: loads the requested vocab size's model, loads validation text,
+    runs analyze(), prints the report.
+    INPUT: CLI args --vocab-size (required), --max-docs (default 2000).
+    OUTPUT: none (prints only); exits with an error if that vocab size
+    hasn't been trained yet."""
     parser = argparse.ArgumentParser(description="Analyze a trained Hindi tokenizer on held-out text")
     parser.add_argument("--vocab-size", type=int, required=True)
     parser.add_argument("--max-docs", type=int, default=2000)
