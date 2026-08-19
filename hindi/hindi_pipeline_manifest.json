@@ -1,0 +1,172 @@
+{
+  "language": "hindi",
+  "role": "Model H (higher-resource)",
+  "generated_at_utc": "2026-08-19T07:08:00Z",
+  "deliverables": {
+    "1_collection_scripts": [
+      "hindi/data/pipeline/download_hindi.py",
+      "hindi/data/pipeline/ingest_manual.py",
+      "hindi/data/pipeline/ingest_wikipedia_dump.py"
+    ],
+    "2_preprocessing_pipeline": [
+      "hindi/data/pipeline/clean_hindi.py",
+      "scripts/clean_lib.py",
+      "scripts/remove_cross_language_duplicates.py"
+    ],
+    "3_statistics_report": "report/phase1/dataset_statistics.md",
+    "4_splits": {
+      "train": "hindi/data/splits/train_manifest.json",
+      "validation": "hindi/data/splits/validation_manifest.json",
+      "test": "hindi/data/splits/test_manifest.json"
+    },
+    "5_tokenizer_training_code": "hindi/tokenizer/train_tokenizer.py",
+    "6_vocabulary_file": "hindi/tokenizer/hindi_unigram_8000.vocab",
+    "7_tokenizer_model_file": "hindi/tokenizer/hindi_unigram_8000.model"
+  },
+  "raw": {
+    "documents": 773606,
+    "characters": 1840356619,
+    "by_source_type": {
+      "manual": {
+        "documents": 229011,
+        "characters": 540367035,
+        "sources": [
+          {"source_name": "hi_wikipedia_dump", "documents": 160591, "characters": 234096553},
+          {"source_name": "gadya_kosh", "documents": 21481, "characters": 197490954},
+          {"source_name": "patrika_hindi", "documents": 16251, "characters": 73759826},
+          {"source_name": "kavita_kosh", "documents": 30621, "characters": 23610585},
+          {"source_name": "archive.org (misc, 67 items)", "documents": 67, "characters": 11409117}
+        ]
+      },
+      "downloaded": {
+        "documents": 544595,
+        "characters": 1299990112,
+        "sources": [
+          {"source_name": "HuggingFaceFW/fineweb-2:hin_Deva", "documents": 217460, "characters": 500000289},
+          {"source_name": "ai4bharat/sangraha:unverified/hin", "documents": 191987, "characters": 500000700},
+          {"source_name": "ai4bharat/sangraha:verified/hin:web", "documents": 118785, "characters": 230941855},
+          {"source_name": "ai4bharat/sangraha:verified/hin:pdf", "documents": 16120, "characters": 67642616},
+          {"source_name": "ai4bharat/sangraha:verified/hin:speech", "documents": 243, "characters": 1404652}
+        ]
+      }
+    }
+  },
+  "cleaned": {
+    "documents": 704101,
+    "characters": 1764596782,
+    "documents_dropped": 69505,
+    "characters_lost": 75759837,
+    "retention_pct": {
+      "by_documents": 91.0155,
+      "by_characters": 95.8834
+    },
+    "drop_reasons": {
+      "malformed_unicode": 17,
+      "too_short_lt_200_chars": 63132,
+      "low_devanagari_ratio": 228,
+      "likely_bhojpuri_active_reject_filter": 1365,
+      "langdetect_mismatch": 1778,
+      "exact_or_near_duplicate": 2983,
+      "cross_language_content_duplicate_manual_removal": 2
+    },
+    "latin_tokens_removed": 8016102,
+    "normalization": "NFC; U+200C/U+200D (ZWNJ/ZWJ) preserved as meaningful in Devanagari conjuncts, not stripped as zero-width noise",
+    "language_filter_notes": "langdetect has no 'bho' label, so it cannot itself catch Bhojpuri text misclassified as Hindi (they share vocabulary and script). The likely_bhojpuri count above is an ACTIVE reject filter (lexical marker comparison, see clean_lib.py marker_counts/BHOJPURI_MARKERS/HINDI_MARKERS), not a passive count: a document is dropped before reaching cleaned/ if Bhojpuri markers (e.g. बा/बाटे/एगो/गइल/भइल/कइल) outnumber Hindi markers (e.g. है/हैं/एक/गया) by >=2 hits. This is a coarse lexical heuristic, not a language model, and did not catch every case: scripts/remove_cross_language_duplicates.py found and removed 2 additional documents post-cleaning whose content was confirmed genuinely Bhojpuri (verb forms not in the fixed marker list) but had been sourced/labeled 'hin' by ai4bharat/sangraha while the same text was correctly labeled bho_Deva by HuggingFaceFW/fineweb-2 - an upstream labeling error, not introduced by this pipeline. That removal is the 'cross_language_content_duplicate_manual_removal: 2' row above; it is not part of clean_hindi.py's own drop_reasons counters, since it happened as a separate, later, targeted correction."
+  },
+  "manual_share": {
+    "char_weighted_pct": 28.65,
+    "token_weighted_pct": 30.66,
+    "floor": 20.0,
+    "passes": true,
+    "computed_from": "provenance fields (source_type) in cleaned JSONL, char-weighted via validate_phase1.py / scripts/count_tokens.py for the token-weighted figure"
+  },
+  "splits": {
+    "seed": 42,
+    "level": "document",
+    "train": {"documents": 675937, "characters": 1692881268, "tokens": 485280741},
+    "validation": {"documents": 14082, "characters": 36497051, "tokens": 10484640},
+    "test": {"documents": 14082, "characters": 35218463, "tokens": 10086647},
+    "leakage_check": "validate_phase1.py: no overlap; train=675,937, validation=14,082, test=14,082 (verified via document_id set intersection across all three splits)"
+  },
+  "tokenizers": [
+    {
+      "vocab_size": 5000,
+      "model_path": "hindi/tokenizer/hindi_unigram_5000.model",
+      "vocab_path": "hindi/tokenizer/hindi_unigram_5000.vocab",
+      "model_type": "unigram",
+      "character_coverage": 0.9995,
+      "byte_fallback": true,
+      "trained_on_characters": 372725734,
+      "train_split_characters": 1692881268,
+      "sampling_note": "SentencePieceTrainer input_sentence_size=2000000, shuffle_input_sentence=True: reservoir-samples up to 2,000,000 sentences (post-flattening, one sentence per line) from the full train split. 372,725,734 of 1,692,881,268 train characters used (22.0%). This is SentencePiece's standard mechanism for bounding training cost on a large corpus, not an ad hoc shortcut; the held-out validation-split evaluation below is unaffected by this sampling, and the full-corpus token count (see splits.train.tokens) is exact and unsampled.",
+      "chars_per_token": 3.3230,
+      "fertility_tokens_per_word": 1.4961,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.018301,
+      "vocab_coverage": 0.9654,
+      "unused_vocab_ids": 173,
+      "evaluated_on": "validation split only, 2000-document sample"
+    },
+    {
+      "vocab_size": 8000,
+      "model_path": "hindi/tokenizer/hindi_unigram_8000.model",
+      "vocab_path": "hindi/tokenizer/hindi_unigram_8000.vocab",
+      "model_type": "unigram",
+      "character_coverage": 0.9995,
+      "byte_fallback": true,
+      "trained_on_characters": 372681654,
+      "train_split_characters": 1692881268,
+      "sampling_note": "Same input_sentence_size=2000000 / shuffle_input_sentence=True sampling as the 5000 and 10000 runs. 372,681,654 of 1,692,881,268 train characters used (22.0%).",
+      "chars_per_token": 3.5622,
+      "fertility_tokens_per_word": 1.3956,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.019613,
+      "vocab_coverage": 0.97625,
+      "unused_vocab_ids": 190,
+      "evaluated_on": "validation split only, 2000-document sample",
+      "full_corpus_exact": {
+        "note": "the only vocab size given the expensive exhaustive pass, since this is the selected size",
+        "train_docs": 675937,
+        "train_tokens": 485280741,
+        "validation_tokens": 10484640,
+        "test_tokens": 10086647,
+        "total_tokens": 505852028,
+        "chars_per_token_train_only_exact": 3.4885,
+        "chars_per_token_whole_corpus_exact": 3.4884,
+        "manual_pct_by_token": 30.66
+      }
+    },
+    {
+      "vocab_size": 10000,
+      "model_path": "hindi/tokenizer/hindi_unigram_10000.model",
+      "vocab_path": "hindi/tokenizer/hindi_unigram_10000.vocab",
+      "model_type": "unigram",
+      "character_coverage": 0.9995,
+      "byte_fallback": true,
+      "trained_on_characters": 372709882,
+      "train_split_characters": 1692881268,
+      "sampling_note": "Same input_sentence_size=2000000 / shuffle_input_sentence=True sampling as the 5000 and 8000 runs. 372,709,882 of 1,692,881,268 train characters used (22.0%).",
+      "chars_per_token": 3.6601,
+      "fertility_tokens_per_word": 1.3583,
+      "unk_rate": 0.0,
+      "byte_fallback_rate": 0.020213,
+      "vocab_coverage": 0.9767,
+      "unused_vocab_ids": 233,
+      "evaluated_on": "validation split only, 2000-document sample"
+    }
+  ],
+  "selected_vocab_size": 8000,
+  "selection_rationale": "Vocab utilization is already near-saturated by 8k (0.97625) versus 10k (0.9767, only 0.00045 higher) - the real jump in utilization is between 5k (0.9654) and 8k, not 8k and 10k. Fertility shows the same diminishing-returns shape: 5k->8k improves fertility 1.4961->1.3956 (6.7% relative), but 8k->10k only adds 1.3956->1.3583 (2.7% relative more) for a materially larger embedding cost. Byte-fallback rate (0.018301 / 0.019613 / 0.020213) is a narrow, roughly flat band across all three sizes and does not distinguish the candidates. At the embedding-parameter-budget level, assuming model_dim=512 (tied input/output embeddings, reproducing the TA-cited 24,000 x 512 = 12,288,000 = 49.15% of 25,000,000 that motivated the 5k-10k cap): 8,000 x 512 = 4,096,000 params = 16.38% of 25,000,000, versus 10,000 x 512 = 5,120,000 = 20.48%. Confirmed directly by the exact full-corpus count rather than inferred: 8,000 produces MORE total tokens than 10,000 (505,852,028 vs 491,883,387, measured separately for 10,000 before 8,000 was selected - smaller vocab means more tokens for the same text), pushing Hindi to 101.2% of the 500M-token target versus 10,000's 98.4%. 8,000 therefore captures nearly all of the achievable fertility/utilization gain over 5,000 at a meaningfully lower parameter cost than 10,000, with no offsetting benefit from going to 10,000.",
+  "embedding_parameter_budget": {
+    "model_dim_assumed": 512,
+    "embedding_params": 4096000,
+    "share_of_25M_pct": 16.38
+  },
+  "provenance": {
+    "git_commit": "0b0012ecb3deb08b61a81cc6e989c9bc60289a31",
+    "seed": 42,
+    "python": "3.14.0",
+    "sentencepiece": "0.2.2",
+    "platform": "Windows-11-10.0.26200-SP0"
+  }
+}

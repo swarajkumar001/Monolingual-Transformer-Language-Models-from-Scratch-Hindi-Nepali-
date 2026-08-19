@@ -1,0 +1,31 @@
+{
+  "language": "hindi",
+  "tokenizer": "hindi_unigram_8000.model",
+  "generated_via": "scripts/count_tokens_by_source.py --lang hindi --tokenizer-model hindi/tokenizer/hindi_unigram_8000.model",
+  "method": "exact - every one of 704,101 documents (train+validation+test) encoded individually with the actual SentencePiece model, grouped by (source_type, source_name); no sampling or extrapolation",
+  "total_tokens": 505852028,
+  "totals_by_type": {
+    "manual": {"tokens": 155104651, "pct_of_total": 30.66},
+    "downloaded": {"tokens": 350747377, "pct_of_total": 69.34}
+  },
+  "manual_sources": [
+    {"source_name": "hi_wikipedia_dump", "documents": 99994, "characters": 224783345, "tokens": 66714697, "pct_of_total": 13.19},
+    {"source_name": "gadya_kosh", "documents": 21036, "characters": 195445432, "tokens": 59899553, "pct_of_total": 11.84},
+    {"source_name": "patrika_hindi", "documents": 16142, "characters": 62797411, "tokens": 19529652, "pct_of_total": 3.86},
+    {"source_name": "kavita_kosh", "documents": 26181, "characters": 20550494, "tokens": 8112624, "pct_of_total": 1.60},
+    {"source_name": "archive.org (15 items surviving cleaning, of 67 raw)", "documents": 15, "characters": 1932884, "tokens": 848125, "pct_of_total": 0.168,
+     "note": "raw archive.org pool had 67 single-document items; only 15 survived clean_hindi.py's too-short/duplicate filters into the final splits. Per-item breakdown: GuruNanakVaniParkash-Part1 (519,474 tok), eparlib.750171 (126,990), eparlib.761236 (101,903), eparlib.758355 (58,677), eparlib.760579 (31,319), rsdebate.202374 (1,826), rsdebate.173251 (1,165), rsdebate.324461 (1,097), rsdebate.100875 (1,082), eparlib.744952 (927), rsdebate.216557 (898), rsdebate.100552 (873), rsdebate.336641 (660), rsdebate.260940 (635), eparlib.752684 (599)."}
+  ],
+  "downloaded_sources": [
+    {"source_name": "HuggingFaceFW/fineweb-2:hin_Deva", "documents": 216915, "characters": 483501647, "tokens": 135694176, "pct_of_total": 26.82},
+    {"source_name": "ai4bharat/sangraha:unverified/hin", "documents": 191716, "characters": 491756579, "tokens": 134840890, "pct_of_total": 26.66},
+    {"source_name": "ai4bharat/sangraha:verified/hin:web", "documents": 115841, "characters": 215974513, "tokens": 59280591, "pct_of_total": 11.72},
+    {"source_name": "ai4bharat/sangraha:verified/hin:pdf", "documents": 16022, "characters": 66544650, "tokens": 20496596, "pct_of_total": 4.05},
+    {"source_name": "ai4bharat/sangraha:verified/hin:speech", "documents": 239, "characters": 1309827, "tokens": 435124, "pct_of_total": 0.09}
+  ],
+  "consistency_check": "sum of all source token counts above = 505,852,028, matching scripts/count_tokens.py's independently-computed total exactly (same corpus, same model, aggregated at type-level instead of source-name-level)",
+  "provenance": {
+    "git_commit": "0b0012ecb3deb08b61a81cc6e989c9bc60289a31",
+    "generated_at_utc": "2026-08-19T09:04:51Z"
+  }
+}
