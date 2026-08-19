@@ -35,16 +35,23 @@ and is run independently end to end.
     phase2/ phase3/
 ```
 
-## Status (Phase 1, in progress)
+## Status (Phase 1, complete)
 
-See `report/phase1/dataset_statistics.md` for full, measured numbers. In
-short:
+See `report/phase1/dataset_statistics.md` and `report/phase1/tokenizer_analysis.md`
+for full, measured numbers. `scripts/validate_phase1.py` reports ALL CHECKS
+PASSED for both languages. In short:
 
-- **Bhojpuri**: raw collection complete (all known manual sources
-  confirmed exhausted); cleaning and manual-share validation done
-  (28.59% manual, clears the 20% floor); tokenizer sweep in progress.
-- **Hindi**: raw collection frozen at 1,840,357,147 chars (29.36% manual);
-  full cleaning run in progress.
+- **Hindi**: 704,101 cleaned docs / 1,764,596,782 chars; 28.65% manual
+  char-weighted (30.66% token-weighted), clears the 20% floor. Tokenizer
+  swept at 5k/8k/10k, unigram vocab_size=8,000 selected.
+  505,852,028 tokens (101.2% of the 500M target).
+- **Bhojpuri**: 507,994 cleaned docs / 282,815,177 chars; 28.59% manual
+  char-weighted (29.89% token-weighted), clears the 20% floor. All known
+  manual sources confirmed exhausted. Tokenizer swept at 5k/6k/8k/10k,
+  unigram vocab_size=8,000 selected. 84,217,032 tokens — a documented,
+  spec-permitted shortfall against the 500M target for the low-resource
+  language, not a gap in effort (see `dataset_statistics.md` for the
+  exhausted-sources justification).
 
 ## Reproduction steps
 
