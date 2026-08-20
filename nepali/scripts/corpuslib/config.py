@@ -93,14 +93,21 @@ class LanguageConfig:
         return self.section("langid")
 
     @property
-    def manual_floor(self) -> float:
-        """Required manual share of final tokens, with the safety margin applied."""
-        return float(self.targets.get("manual_ratio_floor", 0.20))
+    def manual_tokens_target(self) -> int:
+        """Minimum final manual-lane tokens this corpus must reach.
+
+        An absolute floor, not a ratio -- collection and reporting are both
+        judged against this number directly, not against what share of the
+        (variable) total it happens to work out to.
+        """
+        return int(self.targets.get("manual_tokens_target", 100_000_000))
 
     @property
-    def manual_aim(self) -> float:
-        """Ratio the pipeline actually steers to, above the graded floor."""
-        return float(self.targets.get("manual_ratio_aim", 0.24))
+    def downloaded_tokens_target(self) -> int:
+        """Downloaded-lane tokens this corpus should hold -- s10 trims down to
+        approximately this many, and rawtrim keeps raw disk usage in line with
+        it; manual is never touched by either."""
+        return int(self.targets.get("downloaded_tokens_target", 400_000_000))
 
     def ensure_dirs(self) -> None:
         for directory in (

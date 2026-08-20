@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Step 10 -- cap the downloaded lane at a fixed token budget; never touch manual.
+Step 10 -- trim the downloaded lane to its target token count; never touch manual.
 
     python hindi/scripts/s10_balance_lanes.py
 
@@ -8,26 +8,28 @@ Earlier version of this step shrank the downloaded lane until the manual
 *ratio* hit 24% -- which meant a starved manual lane (Nepali: 5.82% before
 balancing) forced away almost all of a large, perfectly usable downloaded
 lane (209.8M words cut to 41.1M) just to hold a percentage. That treats
-composition and volume as the same problem; they are not.
+composition and volume as the same problem; they are not. This step, and the
+whole pipeline, works off two independent absolute targets instead of a
+ratio: ``targets.manual_tokens_target`` and ``targets.downloaded_tokens_target``.
 
-This step instead:
+This step:
 
 1. Keeps 100% of the manual lane, unconditionally -- it is the scarce
    resource and is never subsampled here.
-2. Trims the **downloaded** lane to ``targets.downloaded_tokens_cap``
-   (default 400M tokens, i.e. ``final_tokens * (1 - manual_ratio_floor)``),
-   converted to a word budget via the measured tokens/word factor from
+2. Trims the **downloaded** lane down to approximately
+   ``targets.downloaded_tokens_target`` (default 400M tokens), converted to a
+   word budget via the measured tokens/word factor from
    ``configs/token_calibration.json`` (S02), falling back to
    ``targets.assumed_tokens_per_word`` if S02 has not run.
-3. Reports the resulting manual ratio. If it is still below the floor, that
-   is a WARNING pointing at collection -- add or deepen manual sources in
-   ``configs/sources.yaml`` and re-run ``s01_collect.py --lane manual
-   --resume`` -- not a reason to discard more downloaded text than the
-   budget calls for. ``report/qa_gate.py`` already treats a documented
+3. Reports whether manual tokens reached ``targets.manual_tokens_target``. If
+   not, that is a WARNING pointing at collection -- add or deepen manual
+   sources in ``configs/sources.yaml`` and re-run ``s01_collect.py --lane
+   manual --resume`` -- not a reason to discard more downloaded text than the
+   target calls for. ``report/qa_gate.py`` already treats a documented
    shortfall as WARN rather than FAIL.
 
 **Verify:** ``balance_report.json`` shows ``downloaded_units_after`` at or
-under the configured cap, and ``manual_units`` unchanged from the input.
+near the configured target, and ``manual_units`` unchanged from the input.
 """
 
 from __future__ import annotations
@@ -67,20 +69,16 @@ def main(argv: list[str] | None = None) -> int:
             "s09_decontaminated has not been run yet.")
         return 1
 
-    targets = config.targets
-    final_tokens = int(targets.get("final_tokens", 500_000_000))
-    downloaded_tokens_cap = int(
-        targets.get("downloaded_tokens_cap", round(final_tokens * (1 - config.manual_floor)))
-    )
+    downloaded_tokens_target = config.downloaded_tokens_target
     tpw = tokens_per_word(config)
-    downloaded_word_cap = int(downloaded_tokens_cap / tpw)
+    downloaded_word_cap = int(downloaded_tokens_target / tpw)
 
     records = list(stageio.read_stage(stage_in_dir))
     if args.limit:
         records = records[: args.limit]
     print(
-        f"S10 cap downloaded lane ({config.display_name}) -- {len(records):,} documents, "
-        f"downloaded cap {downloaded_tokens_cap:,} tokens "
+        f"S10 trim downloaded lane ({config.display_name}) -- {len(records):,} documents, "
+        f"downloaded target {downloaded_tokens_target:,} tokens "
         f"(~{downloaded_word_cap:,} words @ {tpw:.4f} tok/word)",
         flush=True,
     )
@@ -103,29 +101,34 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"  action: {report['action']}")
     print(f"  downloaded words: {report['downloaded_units_before']:,} -> "
-          f"{report['downloaded_units_after']:,}  (cap {downloaded_word_cap:,})")
-    print(f"  manual ratio: {report['ratio_before']:.2%} -> {report['ratio_after']:.2%}")
+          f"{report['downloaded_units_after']:,}  (target {downloaded_word_cap:,})")
 
-    meets_floor = report["ratio_after"] >= config.manual_floor
-    status = runlog.SUCCESS if meets_floor else runlog.WARNING
+    manual_tokens_target = config.manual_tokens_target
+    manual_words = report["manual_units"]
+    manual_tokens_estimate = int(manual_words * tpw)
+    meets_manual_target = manual_tokens_estimate >= manual_tokens_target
+    status = runlog.SUCCESS if meets_manual_target else runlog.WARNING
+    print(f"  manual tokens (estimate): {manual_tokens_estimate:,} "
+          f"(target {manual_tokens_target:,})")
     log(
         "S10",
         f"Balance lanes ({config.display_name})",
         status,
         (
-            f"{report['reason']} Manual ratio {report['ratio_before']:.2%} -> "
-            f"{report['ratio_after']:.2%} (floor {config.manual_floor:.0%})."
+            f"{report['reason']} Manual tokens (estimate) {manual_tokens_estimate:,} "
+            f"(target {manual_tokens_target:,})."
         ),
         metrics=report,
         decision=report["action"],
     )
-    if not meets_floor:
+    if not meets_manual_target:
         print(
-            f"WARNING: manual ratio {report['ratio_after']:.2%} is below the {config.manual_floor:.0%} "
-            f"floor. The downloaded lane was NOT cut further to force the ratio -- collect more "
-            f"manual text instead: add/deepen sources in configs/sources.yaml, then "
-            f"`python {config.lang}/scripts/s01_collect.py --lane manual --resume` and re-run "
-            f"S02 onward. This is a documented WARN, not a blocking failure -- see report/qa_gate.py."
+            f"WARNING: manual tokens (estimate) {manual_tokens_estimate:,} is below the "
+            f"{manual_tokens_target:,}-token target. The downloaded lane was NOT cut further to "
+            f"compensate -- collect more manual text instead: add/deepen sources in "
+            f"configs/sources.yaml, then `python {config.lang}/scripts/s01_collect.py --lane "
+            f"manual --resume` and re-run S02 onward. This is a documented WARN, not a blocking "
+            f"failure -- see report/qa_gate.py."
         )
     return 0
 

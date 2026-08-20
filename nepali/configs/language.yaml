@@ -35,21 +35,25 @@ justification: >
 # Targets
 # -----------------------------------------------------------------------------
 targets:
-  # The brief allows Model L to fall short of 500M provided the exact count is
-  # reported and the shortfall justified. This is the aspiration; the realistic
-  # ceiling is measured, not assumed, and whatever is reached is reported exactly.
-  final_tokens: 500_000_000
-
-  manual_ratio_floor: 0.20
-  manual_ratio_aim: 0.24
-
-  # s10_balance_lanes trims the DOWNLOADED lane to this many tokens, full
-  # stop -- see hindi/configs/language.yaml for the full rationale. Measured
-  # 2026-08-17: the previous ratio-forced version cut downloaded from 256M
-  # raw words to 41.1M just to match a manual lane collected at only 5.8% of
-  # the corpus (15.8M of 271.8M raw words). The two are handled separately
-  # now: this fixed cap, and manual volume grown at collection time (sources.yaml).
-  downloaded_tokens_cap: 400_000_000
+  # Overridden 2026-08-20: two independent ABSOLUTE token targets, not a
+  # ratio+cap pair derived from an overall total -- see hindi/configs/language.yaml
+  # for the full rationale. The brief allows Model L to fall short provided the
+  # exact count is reported and any shortfall justified; that applies per-lane
+  # now, not to an overall-total aspiration.
+  #
+  # manual_tokens_target: minimum final manual-lane tokens. Collection is grown
+  # (more/deeper sources in sources.yaml) until met; manual is never trimmed.
+  #
+  # downloaded_tokens_target: s10_balance_lanes trims the DOWNLOADED lane to
+  # approximately this many tokens, full stop. Measured 2026-08-17: the
+  # previous ratio-forced version cut downloaded from 256M raw words to 41.1M
+  # just to match a manual lane collected at only 5.8% of the corpus (15.8M of
+  # 271.8M raw words). Composition (this target) and manual volume (grown at
+  # collection time) are handled separately. corpuslib/rawtrim.py keeps raw
+  # disk usage in line with this same target so collected-but-unusable excess
+  # doesn't sit on disk.
+  manual_tokens_target: 100_000_000
+  downloaded_tokens_target: 400_000_000
 
   assumed_tokens_per_word: 1.90   # Nepali morphology fragments slightly more than Hindi
 

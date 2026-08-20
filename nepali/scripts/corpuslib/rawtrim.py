@@ -1,7 +1,8 @@
 """
 One-time disk cleanup: wipe regenerable pipeline output, and trim the raw
-DOWNLOADED lane down to the same token budget ``s10_balance_lanes`` enforces
-later, so collected-but-unusable excess doesn't sit on disk.
+DOWNLOADED lane down to approximately ``targets.downloaded_tokens_target`` --
+the same absolute token target ``s10_balance_lanes`` trims the cleaned
+corpus to later -- so collected-but-unusable excess doesn't sit on disk.
 
 The raw MANUAL lane is never touched by anything in this module -- it is the
 scarce, hours-to-recollect resource; deletion and trimming only ever apply to
@@ -78,7 +79,7 @@ class CleanPlan:
         lines.append("")
         lines.append(
             f"TRIM raw DOWNLOADED lane: {self.downloaded_words_before:,} -> "
-            f"{self.downloaded_words_after:,} words (cap {self.downloaded_cap_words:,} words)"
+            f"{self.downloaded_words_after:,} words (target {self.downloaded_cap_words:,} words)"
         )
         for s in self.sources:
             if s.action == "trim":
@@ -99,12 +100,7 @@ def plan(config: LanguageConfig) -> CleanPlan:
     tokenizer_bytes = {"tokenizer": dir_size(config.tokenizer_dir)}
 
     downloaded_root = config.raw_dir / "downloaded"
-    cap_tokens = int(
-        config.targets.get(
-            "downloaded_tokens_cap",
-            round(config.targets.get("final_tokens", 500_000_000) * (1 - config.manual_floor)),
-        )
-    )
+    cap_tokens = config.downloaded_tokens_target
     cap_words = int(cap_tokens / tokens_per_word(config))
 
     raw_sources: list[dict[str, Any]] = []

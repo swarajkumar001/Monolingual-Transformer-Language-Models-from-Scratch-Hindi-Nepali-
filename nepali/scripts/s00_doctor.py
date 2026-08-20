@@ -286,7 +286,7 @@ def check_disk(report: Report, config) -> None:
     )
 
 
-def check_lane_invariant(report: Report, registry) -> None:
+def check_lane_invariant(report: Report, registry, config) -> None:
     """The registry validates on construction; report it explicitly for the log."""
     manual = registry.by_lane("manual")
     downloaded = registry.by_lane("downloaded")
@@ -306,18 +306,18 @@ def check_lane_invariant(report: Report, registry) -> None:
         critical=True,
     )
 
-    manual_target = sum(s.target_words for s in manual if s.enabled)
-    downloaded_target = sum(s.target_words for s in downloaded if s.enabled)
-    total = manual_target + downloaded_target
-    planned_ratio = manual_target / total if total else 0.0
+    manual_target_words = sum(s.target_words for s in manual if s.enabled)
+    tpw_assumed = float(config.targets.get("assumed_tokens_per_word", 1.75))
+    planned_manual_tokens = manual_target_words * tpw_assumed
     report.add(
-        "invariant:planned_manual_ratio",
-        PASS if planned_ratio >= 0.20 else WARN,
-        f"planned manual share {planned_ratio:.1%} "
-        f"({manual_target:,} of {total:,} target words)",
+        "invariant:planned_manual_tokens",
+        PASS if planned_manual_tokens >= config.manual_tokens_target else WARN,
+        f"planned manual collection ~{planned_manual_tokens:,.0f} tokens "
+        f"({manual_target_words:,} target words @ {tpw_assumed} assumed tok/word), "
+        f"target {config.manual_tokens_target:,}",
         "raise manual target_words, or add/deepen manual sources -- "
-        "s10_balance_lanes caps the downloaded lane at a fixed token budget "
-        "regardless, it will not force this ratio by discarding more downloaded text",
+        "s10_balance_lanes trims the downloaded lane to its own target "
+        "regardless, it will not compensate by discarding more downloaded text",
         critical=False,
     )
 
@@ -343,7 +343,7 @@ def main(argv: list[str] | None = None) -> int:
 
     check_python_packages(report)
     check_disk(report, config)
-    check_lane_invariant(report, registry)
+    check_lane_invariant(report, registry, config)
     check_language_id(report, config)
     check_tokenizer(report)
     check_ocr(report, config)

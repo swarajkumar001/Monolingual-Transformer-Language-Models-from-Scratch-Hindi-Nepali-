@@ -1,0 +1,62 @@
+{
+  "corpus": {
+    "overall_tokens": 635204333,
+    "overall_manual_tokens": 167787251,
+    "overall_downloaded_tokens": 467417082,
+    "meets_manual_target": true,
+    "meets_downloaded_target": true
+  },
+  "splits": {
+    "train": 1520000,
+    "val": 199428,
+    "test": 198837
+  },
+  "tokenizer_selection": {
+    "chosen_vocab_size": 10000,
+    "chosen_fertility": 1.4868049962638505,
+    "chosen_chars_per_token": 4.350458501204369,
+    "candidates": [
+      {
+        "model_type": "bpe",
+        "vocab_size": 5000,
+        "fertility": 1.703247251676906,
+        "unk_rate": 0.0,
+        "chars_per_token": 3.797618595456972,
+        "model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/sweep/nepali_bpe_bpe_5000.model",
+        "seconds": 55.2
+      },
+      {
+        "model_type": "bpe",
+        "vocab_size": 6000,
+        "fertility": 1.6377512451408252,
+        "unk_rate": 0.0,
+        "chars_per_token": 3.949490775733168,
+        "model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/sweep/nepali_bpe_bpe_6000.model",
+        "seconds": 55.2
+      },
+      {
+        "model_type": "bpe",
+        "vocab_size": 8000,
+        "fertility": 1.547151077086792,
+        "unk_rate": 0.0,
+        "chars_per_token": 4.180770405310807,
+        "model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/sweep/nepali_bpe_bpe_8000.model",
+        "seconds": 55.7
+      },
+      {
+        "model_type": "bpe",
+        "vocab_size": 10000,
+        "fertility": 1.4868049962638505,
+        "unk_rate": 0.0,
+        "chars_per_token": 4.350458501204369,
+        "model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/sweep/nepali_bpe_bpe_10000.model",
+        "seconds": 55.5
+      }
+    ]
+  },
+  "tokenizer_test_eval": {
+    "test_fertility": 1.4672,
+    "test_unk_rate": 0.0,
+    "test_chars_per_token": 4.405
+  }
+}

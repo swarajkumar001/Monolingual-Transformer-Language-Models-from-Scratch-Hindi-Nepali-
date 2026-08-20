@@ -11,13 +11,10 @@ model_prefix: nepali_bpe
 character_coverage: 0.9995
 byte_fallback: false
 
-# Capped to 5,000-10,000 per a course-TA ruling that supersedes the brief's
-# "tens of thousands" guidance: at a ~25M-parameter model, a vocab as large
-# as 24k makes the embedding table (vocab_size x model_dim) too large a
-# share of the budget (~49% at d=512) - see report/phase1/tokenizer_analysis.md
-# for the same arithmetic applied to Hindi and Bhojpuri. This applies to
-# every model at this parameter budget, not just Hindi/Bhojpuri, so Nepali
-# uses the identical range.
+# Overridden 2026-08-20 per explicit request: sweep ONLY [5000, 6000, 8000,
+# 10000] and install whichever of those four has the best (lowest) fertility
+# within the UNK ceiling -- not the brief-compliant >=16k sweep this config
+# used previously (see log.md / git history to revert).
 vocab_sizes: [5000, 6000, 8000, 10000]
 preferred_min_vocab: 5000
 

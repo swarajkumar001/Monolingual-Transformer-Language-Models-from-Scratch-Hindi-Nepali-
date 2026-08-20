@@ -1,0 +1,57 @@
+{
+  "chosen": {
+    "model_type": "bpe",
+    "vocab_size": 10000,
+    "fertility": 1.4868049962638505,
+    "unk_rate": 0.0,
+    "chars_per_token": 4.350458501204369,
+    "seconds": 55.5
+  },
+  "chosen_model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/nepali_bpe.model",
+  "candidates": [
+    {
+      "model_type": "bpe",
+      "vocab_size": 5000,
+      "fertility": 1.703247251676906,
+      "unk_rate": 0.0,
+      "chars_per_token": 3.797618595456972,
+      "model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/sweep/nepali_bpe_bpe_5000.model",
+      "seconds": 55.2
+    },
+    {
+      "model_type": "bpe",
+      "vocab_size": 6000,
+      "fertility": 1.6377512451408252,
+      "unk_rate": 0.0,
+      "chars_per_token": 3.949490775733168,
+      "model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/sweep/nepali_bpe_bpe_6000.model",
+      "seconds": 55.2
+    },
+    {
+      "model_type": "bpe",
+      "vocab_size": 8000,
+      "fertility": 1.547151077086792,
+      "unk_rate": 0.0,
+      "chars_per_token": 4.180770405310807,
+      "model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/sweep/nepali_bpe_bpe_8000.model",
+      "seconds": 55.7
+    },
+    {
+      "model_type": "bpe",
+      "vocab_size": 10000,
+      "fertility": 1.4868049962638505,
+      "unk_rate": 0.0,
+      "chars_per_token": 4.350458501204369,
+      "model_path": "C:/Users/swara/Desktop/lma-individual-project/nepali/tokenizer/sweep/nepali_bpe_bpe_10000.model",
+      "seconds": 55.5
+    }
+  ],
+  "selection_notes": [
+    "no elbow found within the swept range; fertility was still improving by more than 3% at every step, so the largest candidate (10,000) was selected."
+  ],
+  "max_unk_rate": 0.002,
+  "min_relative_gain": 0.03,
+  "preferred_min_vocab": 5000,
+  "model_sha256_16": "08a7ebf55ba24ebe",
+  "seconds": 221.7
+}

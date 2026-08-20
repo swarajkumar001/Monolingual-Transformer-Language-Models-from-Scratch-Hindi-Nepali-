@@ -133,7 +133,10 @@ sources:
       article_pattern: 'ekantipur\.com/(?:news|business|opinion|sports|national|world|koseli|feature)/\d{4}/\d{2}/\d{2}/'
       sections: ['/news', '/national', '/business', '/opinion', '/sports', '/world']
       page_template: '{section}?page={n}'
-      max_pages_per_section: 110
+      # Widened 2026-08-20: previous run hit source_exhausted at only 179 docs
+      # / 106,180 words against a 14M-word target -- discovery was capped well
+      # short of the site's real depth, not actually out of pages.
+      max_pages_per_section: 350
       min_chars: 400
 
   - source_id: news_onlinekhabar
@@ -150,8 +153,13 @@ sources:
     lane: manual
     collection_method: scrape
     priority: 41
-    target_words: 45_000_000
-    max_seconds: 7200
+    # Widened 2026-08-20: previous run stopped on word_target well short of
+    # source_exhausted (462,154 posts / ~243M words available via the REST
+    # API), and this is the fastest-growing lever for the manual lane -- the
+    # measured final corpus landed manual_ratio_tokens at 5.86%, far under the
+    # 20% floor, so more raw manual volume is needed to survive S05-S09 attrition.
+    target_words: 100_000_000
+    max_seconds: 10800
     params:
       collector: news
       content_family: news_onlinekhabar
@@ -263,7 +271,7 @@ sources:
   # DOWNLOADED LANE
   # ===========================================================================
   # s10_balance_lanes caps this lane at a fixed token budget after cleaning
-  # regardless of manual size (see language.yaml targets.downloaded_tokens_cap),
+  # regardless of manual size (see language.yaml targets.downloaded_tokens_target),
   # so target_words here just avoids collecting far more than that cap can use.
   #
   # Widened 2026-08-18 (2.4x, 80/40/40M -> 190/95/70M): a completed real run
@@ -291,7 +299,10 @@ sources:
     lane: downloaded
     collection_method: hf_download
     priority: 60
-    target_words: 190_000_000
+    # Widened 2026-08-20: downloaded lane measured under its 400M-token cap
+    # after cleaning (209.8M words vs 258.9M-word cap) -- there is real room
+    # to grow before s10 would trim anything.
+    target_words: 384_000_000
     max_seconds: 14400
     params:
       collector: sangraha
@@ -305,7 +316,7 @@ sources:
     lane: downloaded
     collection_method: hf_download
     priority: 61
-    target_words: 95_000_000
+    target_words: 192_000_000
     max_seconds: 14400
     params:
       collector: sangraha
@@ -319,7 +330,7 @@ sources:
     lane: downloaded
     collection_method: hf_download
     priority: 62
-    target_words: 70_000_000
+    target_words: 144_000_000
     max_seconds: 10800
     params:
       collector: indiccorp

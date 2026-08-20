@@ -60,12 +60,10 @@ def _split_breakdown(records: list[dict]) -> dict:
         lane["tokens"] += r.get("n_tokens", 0)
         total_tokens += r.get("n_tokens", 0)
         total_words += r.get("n_words", 0)
-    manual_tokens = by_lane[schema.LANE_MANUAL]["tokens"]
     return {
         "docs": len(records),
         "total_words": total_words,
         "total_tokens": total_tokens,
-        "manual_ratio_tokens": round(manual_tokens / total_tokens, 4) if total_tokens else 0.0,
         "by_lane": by_lane,
         "by_source": dict(by_source),
     }
@@ -95,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     overall_manual_tokens = sum(
         s["by_lane"][schema.LANE_MANUAL]["tokens"] for s in split_stats.values()
     )
-    overall_manual_ratio = overall_manual_tokens / overall_tokens if overall_tokens else 0.0
+    overall_downloaded_tokens = overall_tokens - overall_manual_tokens
 
     # -- retention funnel, from stage manifests ------------------------------
     funnel = []
@@ -118,16 +116,19 @@ def main(argv: list[str] | None = None) -> int:
     decon_manifest = stageio.stage_manifest(config.interim_dir / "s09_decontaminated")
     balance_manifest = stageio.stage_manifest(config.interim_dir / "s10_balanced")
 
+    meets_manual_target = overall_manual_tokens >= config.manual_tokens_target
+    meets_downloaded_target = overall_downloaded_tokens >= config.downloaded_tokens_target
     payload = {
         "lang": config.lang,
         "model_role": config.model_role,
         "splits": split_stats,
         "overall_tokens": overall_tokens,
         "overall_manual_tokens": overall_manual_tokens,
-        "overall_manual_ratio": round(overall_manual_ratio, 4),
-        "manual_floor": config.manual_floor,
-        "manual_aim": config.manual_aim,
-        "meets_floor": overall_manual_ratio >= config.manual_floor,
+        "overall_downloaded_tokens": overall_downloaded_tokens,
+        "manual_tokens_target": config.manual_tokens_target,
+        "downloaded_tokens_target": config.downloaded_tokens_target,
+        "meets_manual_target": meets_manual_target,
+        "meets_downloaded_target": meets_downloaded_target,
         "retention_funnel": funnel,
         "dedup": {
             "exact_removed": dedup_manifest.get("exact_duplicates_removed"),
@@ -149,8 +150,11 @@ def main(argv: list[str] | None = None) -> int:
     }
     atomic_write_json(config.final_dir / "corpus_stats.json", payload)
 
-    print(f"  overall: {overall_tokens:,} tokens, manual ratio {overall_manual_ratio:.2%} "
-          f"(floor {config.manual_floor:.0%})")
+    print(f"  overall: {overall_tokens:,} tokens -- manual {overall_manual_tokens:,} "
+          f"(target {config.manual_tokens_target:,}, "
+          f"{'met' if meets_manual_target else 'NOT MET'}), downloaded "
+          f"{overall_downloaded_tokens:,} (target {config.downloaded_tokens_target:,}, "
+          f"{'met' if meets_downloaded_target else 'NOT MET'})")
     for stage in funnel:
         ret = f"{stage['retention']:.2%}" if stage["retention"] is not None else "n/a"
         print(f"    {stage['stage']:<22} {stage['docs_in']!s:>10} -> {stage['docs_out']!s:>10}  ({ret})")
@@ -158,10 +162,17 @@ def main(argv: list[str] | None = None) -> int:
     log(
         "S14",
         f"Corpus statistics ({config.display_name})",
-        runlog.SUCCESS if payload["meets_floor"] else runlog.WARNING,
-        f"{overall_tokens:,} final tokens, manual ratio {overall_manual_ratio:.2%} "
-        f"(floor {config.manual_floor:.0%}, {'met' if payload['meets_floor'] else 'NOT MET'}).",
-        metrics={"overall_tokens": overall_tokens, "overall_manual_ratio": round(overall_manual_ratio, 4)},
+        runlog.SUCCESS if (meets_manual_target and meets_downloaded_target) else runlog.WARNING,
+        f"{overall_tokens:,} final tokens. Manual {overall_manual_tokens:,} "
+        f"(target {config.manual_tokens_target:,}, "
+        f"{'met' if meets_manual_target else 'NOT MET'}). Downloaded {overall_downloaded_tokens:,} "
+        f"(target {config.downloaded_tokens_target:,}, "
+        f"{'met' if meets_downloaded_target else 'NOT MET'}).",
+        metrics={
+            "overall_tokens": overall_tokens,
+            "overall_manual_tokens": overall_manual_tokens,
+            "overall_downloaded_tokens": overall_downloaded_tokens,
+        },
     )
     return 0
 

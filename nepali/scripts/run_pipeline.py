@@ -25,7 +25,7 @@ Subcommands
 ``clean [--yes]``
     Deletes this language's ``data/interim/``, ``data/final/`` and
     ``tokenizer/`` (all regenerable by re-running ``pipeline``), and trims
-    the raw **downloaded** lane down to ``targets.downloaded_tokens_cap``
+    the raw **downloaded** lane down to ``targets.downloaded_tokens_target``
     (default 400M tokens). The raw **manual** lane is never touched -- see
     ``corpuslib.rawtrim`` for why. Prints the exact plan and asks for
     confirmation before deleting anything, unless ``--yes`` is passed.

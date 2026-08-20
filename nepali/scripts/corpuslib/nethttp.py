@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 DEFAULT_USER_AGENT = (
     "LMA-Phase1-CorpusBot/1.0 "
     "(IIIT coursework; monolingual LM corpus construction; "
-    "contact: hritikranjan078@gmail.com)"
+    "contact: swarajkumar25102002@gmail.com)"
 )
 
 RETRYABLE_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504})

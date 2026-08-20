@@ -306,26 +306,25 @@ def main(argv: list[str] | None = None) -> int:
     print(ledger.render_table("words"))
     print()
 
-    floor = config.manual_floor
-    ratio = ledger.manual_ratio("words")
-    meets = ratio >= floor
-    shortfall = ledger.shortfall_words(floor)
-    downloaded_tokens_cap = int(
-        config.targets.get(
-            "downloaded_tokens_cap", round(config.targets.get("final_tokens", 500_000_000) * (1 - floor))
-        )
-    )
+    tpw_assumed = float(config.targets.get("assumed_tokens_per_word", 1.75))
+    manual_tokens_target = config.manual_tokens_target
+    downloaded_tokens_target = config.downloaded_tokens_target
+    manual_words = summary["manual"]
+    manual_tokens_estimate = int(manual_words * tpw_assumed)
+    meets = manual_tokens_estimate >= manual_tokens_target
+    shortfall_words = max(0, int((manual_tokens_target - manual_tokens_estimate) / tpw_assumed))
 
-    print(f"manual share (words, pre-cleaning): {ratio:.2%}  floor {floor:.0%}")
+    print(f"manual words (pre-cleaning): {manual_words:,}  "
+          f"(~{manual_tokens_estimate:,} tokens estimated, target {manual_tokens_target:,})")
     if meets:
-        print("  → floor met at collection time.")
+        print("  → manual target already on track at collection time (pre-cleaning estimate).")
     else:
-        print(f"  → short by {shortfall:,} manual words at the current downloaded size.")
+        print(f"  → short by roughly {shortfall_words:,} manual words at the current estimate.")
         print(
-            f"  → s10_balance_lanes caps the downloaded lane at a fixed "
-            f"{downloaded_tokens_cap:,} tokens regardless -- it will NOT force this ratio by "
-            f"cutting downloaded further. Collect more manual: `s01_collect.py --lane manual "
-            f"--resume`, or add sources in configs/sources.yaml."
+            f"  → s10_balance_lanes trims the downloaded lane to {downloaded_tokens_target:,} "
+            f"tokens regardless -- it will NOT compensate by keeping more downloaded text. "
+            f"Collect more manual: `s01_collect.py --lane manual --resume`, or add sources in "
+            f"configs/sources.yaml."
         )
 
     log(
@@ -334,20 +333,21 @@ def main(argv: list[str] | None = None) -> int:
         runlog.SUCCESS if meets else runlog.WARNING,
         f"Collected {ledger.total('words'):,} estimated words across "
         f"{len(summary['sources'])} sources in {elapsed/3600:.2f}h. "
-        f"Manual share {ratio:.2%} (floor {floor:.0%}).",
+        f"Manual tokens (estimate) {manual_tokens_estimate:,} (target {manual_tokens_target:,}).",
         metrics={
             "total_words_estimate": ledger.total("words"),
             "manual_words": summary["manual"],
             "downloaded_words": summary["downloaded"],
-            "manual_ratio": round(ratio, 4),
+            "manual_tokens_estimate": manual_tokens_estimate,
+            "manual_tokens_target": manual_tokens_target,
             "hours": round(elapsed / 3600, 2),
             "http_requests": session.stats()["requests"],
             "http_failures": session.stats()["failures"],
         },
         decision=(
-            "manual floor met at collection"
+            "manual target on track at collection"
             if meets
-            else f"downloaded lane is capped at a fixed {downloaded_tokens_cap:,} tokens in s10, "
+            else f"downloaded lane is trimmed to {downloaded_tokens_target:,} tokens in s10, "
                  f"regardless of manual size -- collect more manual instead"
         ),
     )
