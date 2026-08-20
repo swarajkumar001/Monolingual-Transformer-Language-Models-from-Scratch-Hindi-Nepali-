@@ -31,46 +31,46 @@
       "unused_ids": 233
     }
   ],
-  "bhojpuri": [
+  "nepali": [
     {
       "vocab_size": 5000,
-      "chars_per_token": 3.1314169748594773,
-      "fertility_tokens_per_word": 1.603678446402381,
-      "unk_rate": 0.0,
-      "byte_fallback_rate": 0.001648887168052978,
-      "vocab_utilization": 0.923,
-      "used_ids": 4615,
-      "unused_ids": 385
+      "chars_per_token": 3.7882251731592183,
+      "fertility_tokens_per_word": 1.6987933748032675,
+      "unk_rate": 0.0029558388847222834,
+      "byte_fallback_rate": 0.0,
+      "vocab_utilization": 0.9776,
+      "used_ids": 4888,
+      "unused_ids": 112
     },
     {
       "vocab_size": 6000,
-      "chars_per_token": 3.239390905010186,
-      "fertility_tokens_per_word": 1.5502253530173753,
-      "unk_rate": 0.0,
-      "byte_fallback_rate": 0.0017057422050343566,
-      "vocab_utilization": 0.9121666666666667,
-      "used_ids": 5473,
-      "unused_ids": 527
+      "chars_per_token": 3.9410004451930623,
+      "fertility_tokens_per_word": 1.632938619500862,
+      "unk_rate": 0.0030750448635276733,
+      "byte_fallback_rate": 0.0,
+      "vocab_utilization": 0.9726666666666667,
+      "used_ids": 5836,
+      "unused_ids": 164
     },
     {
       "vocab_size": 8000,
-      "chars_per_token": 3.389992194952736,
-      "fertility_tokens_per_word": 1.481356186234731,
-      "unk_rate": 0.0,
-      "byte_fallback_rate": 0.001785043216835776,
-      "vocab_utilization": 0.877625,
-      "used_ids": 7021,
-      "unused_ids": 979
+      "chars_per_token": 4.172466908977823,
+      "fertility_tokens_per_word": 1.5423517949486623,
+      "unk_rate": 0.0032556512274291047,
+      "byte_fallback_rate": 0.0,
+      "vocab_utilization": 0.961625,
+      "used_ids": 7693,
+      "unused_ids": 307
     },
     {
       "vocab_size": 10000,
-      "chars_per_token": 3.493505719733079,
-      "fertility_tokens_per_word": 1.4374631994775664,
-      "unk_rate": 0.0,
-      "byte_fallback_rate": 0.001839549571020019,
-      "vocab_utilization": 0.8321,
-      "used_ids": 8321,
-      "unused_ids": 1679
+      "chars_per_token": 4.340961942894119,
+      "fertility_tokens_per_word": 1.4824851982312823,
+      "unk_rate": 0.0033871228666181347,
+      "byte_fallback_rate": 0.0,
+      "vocab_utilization": 0.9458,
+      "used_ids": 9458,
+      "unused_ids": 542
     }
   ]
 }

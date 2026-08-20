@@ -3,16 +3,18 @@
 Model H = **Hindi**. Model L = **Nepali**. This page is the entry point
 for Phase 1: it maps every required deliverable to its exact file(s), then
 summarizes raw data, cleaned data, splits, tokenizers, and resources for
-both languages. For Hindi's full narrative report with all 10 figures, see
-**[`phase1_report.md`](phase1_report.md)**; for Nepali's, see
-**[`phase1_report_nepali.md`](phase1_report_nepali.md)**. Every number here
-is also in one of those reports, traceable to the same files on disk.
+both languages. For the full narrative report with all 10 required
+figures, see **[`phase1_report.md`](phase1_report.md)**. Every number here
+is also in that report, traceable to the same files on disk. Hindi and
+Nepali run on two structurally different pipelines, so several tables
+below present them side by side rather than forcing one shared schema —
+see `phase1_report.md`'s opening note for why.
 
 `scripts/validate_phase1.py` reports **ALL CHECKS PASSED** for Hindi.
 `scripts/validate_phase1_nepali.py` reports **ALL CHECKS PASSED** for
 Nepali except the cross-language check (run separately as its own pass —
 see `scripts/check_nepali_hindi_overlap.py`, result in
-`phase1_report_nepali.md` §6).
+`phase1_report.md` §3: 0 shared documents against Hindi).
 
 ## Deliverables checklist
 
@@ -20,25 +22,28 @@ see `scripts/check_nepali_hindi_overlap.py`, result in
 |---|---|---|
 | 1 | Dataset collection scripts (both languages) | `hindi/data/pipeline/{download_hindi.py, ingest_manual.py, ingest_wikipedia_dump.py}`; `nepali/scripts/{s01_collect.py, collect.py, auto_grow_and_tokenize.py, corpuslib/}` |
 | 2 | Dataset preprocessing pipelines | `hindi/data/pipeline/clean_hindi.py`, `scripts/clean_lib.py` (shared logic); `nepali/scripts/{s03_normalize.py..s11_finalize_splits.py}` |
-| 3 | Per-language dataset statistics reports | [`phase1_report.md`](phase1_report.md) (Hindi), [`phase1_report_nepali.md`](phase1_report_nepali.md) (Nepali), [`dataset_statistics.md`](dataset_statistics.md), [`tokenizer_analysis.md`](tokenizer_analysis.md) |
+| 3 | Per-language dataset statistics reports | [`phase1_report.md`](phase1_report.md) (both languages), [`dataset_statistics.md`](dataset_statistics.md), [`tokenizer_analysis.md`](tokenizer_analysis.md) |
 | 4 | Per-language train/validation/test splits | `hindi/data/splits/{train,validation,test}/` + `*_manifest.json`, built by `split_hindi.py`; `nepali/data/final/{train,val,test}.jsonl` + `split_stats.json`, built by `s11_finalize_splits.py` |
 | 5 | Tokenizer training code (both languages) | `hindi/tokenizer/train_tokenizer.py`; `nepali/scripts/{s12_train_tokenizer.py, s13_tokenizer_eval.py}` |
 | 6 | Vocabulary files (one per language) | `hindi/tokenizer/hindi_unigram_8000.vocab`; `nepali/tokenizer/nepali_bpe.vocab` (plus other swept sizes, kept for the record) |
 | 7 | Tokenizer model files (one per language) | `hindi/tokenizer/hindi_unigram_8000.model`; `nepali/tokenizer/nepali_bpe.model` |
 
 Raw and cleaned corpora themselves are too large for git — see the root
-[`README.md`](../../README.md)'s "Large artifacts" section (currently
-OneDrive, not yet reconciled with the spec's Google Drive requirement —
-flagged there).
+[`README.md`](../../README.md)'s "Large artifacts" section (OneDrive, a
+deliberate choice — see that section's note).
 
-## Raw data
+## Raw / final data
 
-| | Hindi | Bhojpuri |
+Hindi tracks characters at every stage; Nepali's pipeline tracks
+docs/words/tokens instead (no per-lane character tally past
+normalization) — units differ by design, not oversight.
+
+| | Hindi | Nepali |
 |---|---:|---:|
-| Total raw docs | 773,606 | 608,263 |
-| Total raw chars | 1,840,357,147 | 318,606,726 |
-| Manual docs / chars | 229,011 / 540,367,035 | 47,958 / 90,781,624 |
-| Downloaded docs / chars | 544,595 / 1,299,990,112 | 560,305 / 227,825,102 |
+| Total raw docs | 773,606 | ~2,655,504 (S03 input) |
+| Total raw chars | 1,840,357,147 | not tracked |
+| Manual docs | 229,011 | 337,783 (final) |
+| Downloaded docs | 544,595 | 1,580,482 (final) |
 
 **Resources used — Hindi manual** (self-run collection, counts toward the
 manual floor): `hi_wikipedia_dump` (self-extracted Wikipedia XML dump via
@@ -53,104 +58,93 @@ Excluded: the HF-mirrored `wikimedia/wikipedia:20231101.hi` (quarantined —
 redundant with the self-extracted dump, and would not count as manual
 regardless).
 
-**Resources used — Bhojpuri manual**: four dedicated crawl sources
-(`khabar_bhojpuri`, `anjoria`, `jogira`, `sirijan` — recrawled uncapped and
-confirmed exhausted), `bho_wikipedia_dump` (self-extracted, same method as
-Hindi's), 88 misc. `archive.org` items, and a prior personally-collected
-scrape (`harsh_scraped_manual`).
+**Resources used — Nepali manual**: `news_onlinekhabar` (web scrape, 91.6%
+of manual tokens), `wikipedia_api` (self-parsed XML dump), `news_bbc_nepali`,
+`wikibooks_api`, `wiktionary_api`, `news_ekantipur`, `news_ratopati`,
+`news_nagarik`, `ocr_archive_books`.
 
-**Resources used — Bhojpuri downloaded**: 17 HF datasets/partitions, the
-largest being the `Satyam810/BhojpuriCorpus` family (multiple partitions),
-`harsh_indiccorp` (personal prior collection), JNU's BHLTR corpus, and
-`HuggingFaceFW/fineweb-2:bho_Deva`. Six other HF datasets were evaluated and
-rejected: CulturaX/sil-ai-bloom-lm (gated), Sangraha/Glot500 (zero Bhojpuri
-rows), MADLAD-400 (no `bho` config), CC-100 (unsupported legacy format).
+**Resources used — Nepali downloaded**: `ai4bharat/sangraha` (`verified` +
+`unverified`), `ai4bharat/IndicCorpV2`.
 
-Full source-by-source tables (docs + chars per source) are in
-[`dataset_statistics.md`](dataset_statistics.md) §"raw corpus", and per-source
-**token** counts for Hindi are in `hindi/hindi_token_counts_by_source.json`.
+Full source-by-source tables (docs/words/tokens per source, both
+languages) are in [`dataset_statistics.md`](dataset_statistics.md) and
+[`phase1_report.md`](phase1_report.md) §2.
 
-## Cleaning → cleaned data
+## Cleaning → final data
 
-| | Hindi | Bhojpuri |
+| | Hindi | Nepali |
 |---|---:|---:|
-| Cleaned docs | 704,101 | 507,994 |
-| Cleaned chars | 1,764,596,782 | 282,815,177 |
-| Doc retention | 91.0% | 83.5% |
-| Char retention | 95.9% | 88.8% |
+| Final docs | 704,101 | 1,918,265 |
+| Doc retention (raw→final) | 91.0% | 72.2% (2,655,504→1,918,265) |
+| Dedup method | exact-hash | MinHash/LSH (near-dup) |
+| Extra stages | — | S09 decontaminate, S10 balance lanes |
 
-Pipeline order (verified from `clean_stats.json` checkpoints, not assumed):
-raw → malformed-Unicode removal → too-short removal → language-ID filter →
-exact/near-duplicate removal (manual copy wins on cross-lane ties) →
-cleaned. Full drop-reason breakdown, the langdetect-has-no-`bho`-label
-limitation, and the 2-document cross-language correction are in
-[`phase1_report.md`](phase1_report.md) §3.
+Hindi's pipeline order (verified from `clean_stats.json` checkpoints): raw
+→ malformed-Unicode removal → too-short removal → language-ID filter →
+exact/near-duplicate removal → cleaned. Nepali's is stage-based (S03–S10,
+see `phase1_report.md` §3 for the full per-stage retention table) with two
+steps Hindi's pipeline has no equivalent of: decontamination (removes
+train documents matching held-out content) and lane balancing (trims the
+downloaded lane rather than loosening a filter to hit the manual-share
+floor). Full drop-reason breakdowns and the historical Hindi↔Bhojpuri
+cross-language correction are in [`phase1_report.md`](phase1_report.md) §3.
 
-## Splits (document-level, seed 42, no leakage)
+## Splits
 
-| | Hindi | Bhojpuri |
+| | Hindi | Nepali |
 |---|---:|---:|
-| Train | 675,937 | 487,674 |
-| Validation | 14,082 | 10,160 |
-| Test | 14,082 | 10,160 |
+| Train | 675,937 (seed-42 hash split) | 1,520,000 (S07 holdout, pre-balancing) |
+| Validation | 14,082 | 199,428 |
+| Test | 14,082 | 198,837 |
+| Leakage check | `validate_phase1.py`: no overlap | `validate_phase1_nepali.py` + `split_stats.json`: no overlap |
 
 ## Tokenizers
 
-Both: SentencePiece **Unigram**, vocab swept over 5,000–10,000 (course-TA
-cap), **8,000 selected for both languages**. Full sweep tables, embedding-
-budget justification, and sample tokenizations are in
-[`phase1_report.md`](phase1_report.md) §5.
+**Hindi:** SentencePiece **Unigram**, swept 5,000–10,000, **8,000
+selected** (fertility/utilization/embedding-budget trade-off, argued from
+Hindi's own measurements). **Nepali:** SentencePiece **BPE**, swept
+5,000–10,000, **10,000 selected** (by the pipeline's own automated
+fertility-elbow rule — no elbow found, so the largest candidate was kept).
+Full sweep tables, embedding-budget justification, and sample
+tokenizations are in [`phase1_report.md`](phase1_report.md) §5 and
+[`tokenizer_analysis.md`](tokenizer_analysis.md).
 
 ## Total tokens vs. the 500M target
 
-| | Hindi | Bhojpuri |
+| | Hindi | Nepali |
 |---|---:|---:|
-| Total tokens (train+val+test, exact, unsampled) | **505,852,028** | **84,217,032** |
-| % of 500M target | **101.2%** | **16.8%** |
-| Manual share, char-weighted | 28.65% | 28.59% |
-| Manual share, token-weighted | 30.66% | 29.89% |
+| Total tokens (train+val+test, exact, unsampled) | **505,852,028** | **635,204,333** |
+| % of 500M target | **101.2%** | **127.0%** |
+| Manual share, char-weighted | 28.65% | not tracked (see below) |
+| Manual share, token-weighted | 30.66% | 26.41% |
 | Clears 20% manual floor? | Yes | Yes |
+| Absolute lane targets | n/a (Hindi's pipeline doesn't use this gate) | manual 167.8M ≥ 100M; downloaded 467.4M ≥ 400M — both met |
 
-Bhojpuri's shortfall against 500M is expected and spec-permitted for the
-low-resource model, not a gap in effort — all known manual sources are
-confirmed exhausted, and this corpus is already orders of magnitude larger
-than any previously published Bhojpuri monolingual resource. See
-[`phase1_report.md`](phase1_report.md) §6 for the full justification.
-
-## Nepali (Model L) summary
-
-| | |
-|---|---:|
-| Final docs (train+val+test) | 1,918,265 |
-| Final tokens (train+val+test) | **635,204,333 — 127.0% of 500M target** |
-| Manual tokens / target | 167,787,251 / ≥100,000,000 |
-| Downloaded tokens / target | 467,417,082 / ≥400,000,000 |
-| Manual share (token-weighted) | 26.41% (floor 20%) |
-| Splits (train/val/test) | 1,520,000 / 199,428 / 198,837, no doc-id leakage |
-| Tokenizer | BPE, swept 5k/6k/8k/10k, **10,000 selected** (fertility 1.487, 0% UNK) |
-
-Full source-by-source tables, cleaning-stage retention funnel, drop-reason
-breakdowns, and all 10 figures are in
-[`phase1_report_nepali.md`](phase1_report_nepali.md).
+Nepali's larger public-data availability (AI4Bharat Sangraha and
+IndicCorpV2 both carry sizeable Nepali partitions) let its pipeline's
+growth loop (`auto_grow_and_tokenize.py`) close the gap to both absolute
+lane targets and exceed the 500M planning target by a wider margin than
+Hindi. See [`phase1_report.md`](phase1_report.md) §6 for the full
+discussion, including why Bhojpuri (this project's original Model L, a
+documented 16.8%-of-target shortfall) was superseded by Nepali.
 
 ## OneDrive (raw + cleaned corpora, tokenizer files)
 
 **[LMA DATA SET — shared OneDrive folder](https://iiithydstudents-my.sharepoint.com/personal/swaraj_kumar_students_iiit_ac_in/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fswaraj%5Fkumar%5Fstudents%5Fiiit%5Fac%5Fin%2FDocuments%2FLMA%20DATA%20SET&ga=1)**
-(requires an IIIT account with access)
+(an IIIT-institutional link, used deliberately rather than Google Drive —
+see the root README's "Large artifacts" note)
 
 Check the root [`README.md`](../../README.md)'s artifact table for current
 upload status per language/artifact.
 
 ## About Bhojpuri (superseded)
 
-Bhojpuri was the original Model L: fully built, cleaned, split, tokenized,
-and passing every `validate_phase1.py` check (507,994 cleaned docs,
-84,217,032 total tokens — 16.8% of the 500M target, a documented,
-spec-permitted shortfall since all known manual sources were confirmed
-exhausted). It has since been superseded by **Nepali**, once Nepali's own
-pipeline finished collecting enough data to clear both its manual and
-downloaded absolute token targets (see "Nepali (Model L) summary" above).
-
-`bhojpuri/` and its share of this report are left exactly as they were —
-nothing deleted, nothing re-run — as a complete, working fallback and a
-record of that earlier work.
+Bhojpuri was this project's original Model L: fully built, cleaned,
+split, tokenized, and passing every `validate_phase1.py` check (507,994
+cleaned docs, 84,217,032 total tokens — 16.8% of the 500M target, a
+documented, spec-permitted shortfall). Superseded by Nepali once Nepali's
+own pipeline cleared both its absolute token targets. `bhojpuri/` and its
+numbers (folded into `phase1_report.md` alongside Hindi and Nepali, not a
+separate document) are left exactly as they were — nothing deleted,
+nothing re-run — as a complete, working fallback and a record of that
+earlier work.

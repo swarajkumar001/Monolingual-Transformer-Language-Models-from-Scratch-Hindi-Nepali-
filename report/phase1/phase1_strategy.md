@@ -1,11 +1,15 @@
 # Phase 1 Strategy — Data Collection & Tokenizer Construction
 
-Model H = **Hindi** (higher-resource) · Model L = **Bhojpuri** (lower-resource, from allowed list)
+Model H = **Hindi** (higher-resource) · Model L at planning time =
+**Bhojpuri** (lower-resource, from allowed list) — later superseded by
+**Nepali**, also from the allowed list, once Nepali's own pipeline
+finished. See [`phase1_report.md`](phase1_report.md) §6 for that history.
 
 **SUPERSEDED — kept for historical record only.** This was the pre-execution
 planning document, written before any data was collected. Every number in it
-is a placeholder, not a measurement. For actual, measured Phase 1 results,
-see [`README.md`](README.md) (deliverables index) or
+is a placeholder, not a measurement — and its Model L language choice (
+Bhojpuri) is itself now superseded by Nepali. For actual, measured Phase 1
+results, see [`README.md`](README.md) (deliverables index) or
 [`phase1_report.md`](phase1_report.md) (full report).
 
 Status: PLANNING — no data collected yet. Nothing in this document should be read as measured

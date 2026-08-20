@@ -1,5 +1,5 @@
 % Phase 1 Report -- Dataset Collection & Tokenizer Construction
-% Model H: Hindi. Model L: Bhojpuri.
+% Model H: Hindi. Model L: Nepali.
 % Compile with: xelatex phase1_report.tex  (run twice for the ToC/refs)
 \documentclass[11pt]{article}
 
@@ -33,22 +33,12 @@
 }
 
 \title{\textbf{Phase 1 Report: Dataset Collection and Tokenizer Construction} \\
-\large Model H: Hindi \quad\textbar\quad Model L: Bhojpuri}
+\large Model H: Hindi \quad\textbar\quad Model L: Nepali}
 \author{Swaraj Kumar \\ \small 2025202016}
 \date{\today}
 
 \begin{document}
 \maketitle
-
-\noindent\fbox{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule}{%
-\textbf{Update:} Nepali (Section~\ref{sec:nepali} below) has since
-\textbf{succeeded} and is now the graded Model L, superseding Bhojpuri.
-Nepali's full report is the standalone companion document
-\texttt{phase1\_report\_nepali.tex} / \texttt{.pdf}. Everything below this
-note describes the original Hindi/Bhojpuri submission exactly as it was
-built -- kept intact, not deleted, as a complete working record -- except
-Section~\ref{sec:nepali}, which is updated in place to reflect the outcome.}}
-\vspace{1em}
 
 \begin{abstract}
 \noindent
@@ -56,18 +46,21 @@ This report covers Phase 1 of the Language Models and Agents individual
 project: dataset collection, cleaning, splitting, and tokenizer
 construction for two independent, from-scratch decoder-only Transformer
 language models. Model H (higher-resource) is \textbf{Hindi}; Model L
-(lower-resource, from the assignment's allowed list) was originally
-\textbf{Bhojpuri}, later superseded by \textbf{Nepali} (see the update
-note above and Section~\ref{sec:nepali}).
+(lower-resource, from the assignment's allowed list) is \textbf{Nepali}.
 Every number in this report is read directly from a file produced by the
-project's own pipeline code -- \texttt{clean\_stats.json},
-\texttt{hindi\_pipeline\_manifest.json}, \texttt{validate\_final.log}, or
-the trained tokenizer model files re-measured directly -- never estimated.
-Both Hindi and Bhojpuri clear the assignment's hard 20\% manual-collection
-floor; Hindi exceeds the 500M-token planning target (101.2\%) while
-Bhojpuri's documented shortfall (16.8\%) was explicitly permitted by the
-assignment for the low-resource model. Nepali, now the graded Model L,
-reaches 127.0\% of the target -- see \texttt{phase1\_report\_nepali.pdf}.
+project's own pipeline code -- Hindi from \texttt{clean\_stats.json} and
+\texttt{hindi\_pipeline\_manifest.json}; Nepali from
+\texttt{nepali/data/final/corpus\_stats.json} and \texttt{split\_stats.json}
+-- or the trained tokenizer model files re-measured directly, never
+estimated. Both languages clear the assignment's hard 20\% manual-
+collection floor; Hindi reaches 101.2\% of the 500M-token planning target
+and Nepali reaches 127.0\%. Hindi and Nepali run on two structurally
+different pipelines (Hindi: a single-pass cleaner; Nepali: a stage-based
+S00--S14 pipeline with MinHash/LSH dedup and absolute per-lane token
+targets), described separately throughout rather than forced into one
+shared schema. Nepali is this project's second Model L candidate --
+Bhojpuri was the original choice and is kept intact in the repository,
+superseded once Nepali's own pipeline finished (Section~\ref{sec:results}).
 \end{abstract}
 
 \tableofcontents
@@ -92,42 +85,31 @@ This makes it realistic to reach the assignment's $\sim$500M-token
 planning target almost entirely from public sources, while still
 requiring genuine manual collection to clear the 20\% floor.
 
-\textbf{Model L is Bhojpuri}, chosen from the assignment's allowed
-low-resource list. Bhojpuri is spoken by tens of millions of people but
-has very little curated NLP data: most available corpora are small,
-scattered, or web-crawled with heavy noise. This makes Bhojpuri a genuine
-test of the assignment's manual-collection requirement -- public sources
-alone do not come close to 500M tokens, so the manual share matters more
-here by necessity, not just by rule.
+\textbf{Model L is Nepali.} Nepali has considerably more public data
+available than several other allowed languages -- AI4Bharat's Sangraha
+and IndicCorpV2 both carry sizeable Nepali partitions -- which let this
+corpus not just clear the 20\% manual floor but exceed the 500M-token
+planning target outright (127.0\%), while still requiring genuine,
+sustained manual collection (mainly news-site scraping) to hit the
+pipeline's own 100M-token absolute manual-lane floor.
 
-Both languages are Devanagari-script, which lets the cleaning and
-tokenization code share logic (\texttt{scripts/clean\_lib.py}) while
-keeping every byte of data, every trained model file, and every decision
-fully separate per language.
+Both languages are Devanagari-script. Hindi's cleaning/tokenization code
+is \texttt{scripts/clean\_lib.py}; Nepali's is its own independent
+\texttt{corpuslib} package under \texttt{nepali/scripts/} -- not shared
+with Hindi's -- keeping every byte of data, every trained model file, and
+every decision fully separate per language.
 
 % =====================================================================
 \section{Data Collection}
 % =====================================================================
 
-\subsection{What counts as ``manual'' under the course ruling}
+\subsection*{What counts as ``manual'' under the course ruling}
 
 A source counts as \textbf{manual} only if it required work beyond
 pointing a downloader at an existing public dataset: a self-run scrape, a
 personally extracted Wikipedia XML dump, OCR from a physical or scanned
 source, or similarly hands-on collection. A dataset that is just
-\emph{labeled} as Wikipedia-derived on Hugging Face does not count --
-even though the underlying text originates from Wikipedia, using the
-HF-hosted mirror is a download, not manual collection.
-
-Concretely: \texttt{hi\_wikipedia\_dump} is the \textbf{self-extracted}
-Hindi Wikipedia XML dump, run through WikiExtractor by this project -- it
-counts as manual. \texttt{wikimedia/wikipedia:20231101.hi}, the
-HF-mirrored parquet of the same underlying Wikipedia content, does
-\textbf{not} count as manual, and using both would double-count Wikipedia
-in two different lanes with two different \texttt{source\_type} labels
-for the same underlying text. It was moved to
-\texttt{hindi/data/raw/\_quarantined\_hf\_hiwiki\_mirror/} and excluded
-from cleaning entirely.
+\textit{labeled} as Wikipedia-derived on Hugging Face does not count.
 
 \subsection{Hindi (Model H) raw sources}
 
@@ -135,346 +117,331 @@ from cleaning entirely.
 \centering
 \begin{tabular}{lrr}
 \toprule
- & Docs & Characters \\
+& Docs & Characters \\
 \midrule
 Manual & 229{,}011 & 540{,}367{,}035 \\
 Downloaded & 544{,}595 & 1{,}299{,}990{,}112 \\
-\midrule
 \textbf{Total raw} & \textbf{773{,}606} & \textbf{1{,}840{,}357{,}147} \\
 \bottomrule
 \end{tabular}
-\caption{Hindi raw corpus, by lane.}
+\caption{Hindi raw corpus totals.}
 \end{table}
 
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabular}{lrrp{5cm}}
-\toprule
-Source & Docs & Characters & Collection method \\
-\midrule
-\texttt{hi\_wikipedia\_dump} & 160{,}591 & 234{,}096{,}553 & self-extracted Wikipedia XML dump (WikiExtractor) \\
-\texttt{gadya\_kosh} & 21{,}481 & 197{,}490{,}954 & scrape + clean (prose wiki) \\
-\texttt{patrika\_hindi} & 16{,}251 & 73{,}759{,}826 & scrape + clean (newspaper archive) \\
-\texttt{kavita\_kosh} & 30{,}621 & 23{,}610{,}585 & scrape + clean (poetry wiki) \\
-archive.org (misc, 67 items) & 67 & 11{,}409{,}117 & OCR/text extraction \\
-\bottomrule
-\end{tabular}
-\caption{Hindi manual sources.}
-\end{table}
+\textbf{Manual sources:} \texttt{hi\_wikipedia\_dump} (self-extracted
+Wikipedia XML dump, 160{,}591 docs / 234.1M chars), \texttt{gadya\_kosh}
+(prose wiki, 21{,}481 / 197.5M), \texttt{patrika\_hindi} (newspaper
+archive, 16{,}251 / 73.8M), \texttt{kavita\_kosh} (poetry wiki, 30{,}621 /
+23.6M), 67 misc.\ \texttt{archive.org} items (11.4M chars).
 
-\begin{table}[htbp]
-\centering
-\begin{tabular}{p{6cm}rr}
-\toprule
-Source & Docs & Characters \\
-\midrule
-HuggingFaceFW/fineweb-2:hin\_Deva & 217{,}460 & 500{,}000{,}289 \\
-ai4bharat/sangraha:unverified/hin & 191{,}987 & 500{,}000{,}700 \\
-ai4bharat/sangraha:verified/hin:web & 118{,}785 & 230{,}941{,}855 \\
-ai4bharat/sangraha:verified/hin:pdf & 16{,}120 & 67{,}642{,}616 \\
-ai4bharat/sangraha:verified/hin:speech & 243 & 1{,}404{,}652 \\
-\bottomrule
-\end{tabular}
-\caption{Hindi downloaded sources.}
-\end{table}
+\textbf{Downloaded sources:} \texttt{HuggingFaceFW/fineweb-2:hin\_Deva}
+(217{,}460 / 500.0M chars), \texttt{ai4bharat/sangraha:unverified/hin}
+(191{,}987 / 500.0M), \texttt{ai4bharat/sangraha:verified/hin} (web+pdf+
+speech, 135{,}148 / 299.99M).
 
 \textbf{Excluded:} \texttt{wikimedia/wikipedia:20231101.hi} (163{,}091
-docs / 253.3M chars) -- the HF-hosted Hindi Wikipedia mirror, quarantined
-to avoid double-counting against the self-extracted dump above, and
-because it would not count as manual regardless.
+docs) -- quarantined, redundant with the self-extracted dump.
 
-\emph{Note on the raw total:} \texttt{clean\_stats.json}'s own
-\texttt{chars\_in} (what \texttt{clean\_hindi.py} measured as its input)
-reads 1{,}840{,}356{,}619 -- 528 characters (0.00003\%) less than the sum
-above. Both figures are real, independently-collected measurements (one at
-ingestion/tagging time, one at cleaning time); the gap is negligible and
-not investigated further given its scale.
+\subsection{Nepali (Model L) raw sources}
 
-\subsection{Bhojpuri (Model L) raw sources}
+Nepali's pipeline tracks docs/words/tokens per source, not characters --
+its cleaner never kept a per-lane character tally past normalisation. Two
+lanes, each gated on its own \textbf{absolute} token target rather than a
+ratio: manual $\geq$ 100{,}000{,}000 tokens, downloaded $\geq$
+400{,}000{,}000 tokens (\texttt{nepali/configs/language.yaml}).
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{lrr}
+\begin{tabular}{lrrr}
 \toprule
- & Docs & Characters \\
+& Docs & Words & Tokens \\
 \midrule
-Manual & 47{,}958 & 90{,}781{,}624 \\
-Downloaded & 560{,}305 & 227{,}825{,}102 \\
-\midrule
-\textbf{Total raw} & \textbf{608{,}263} & \textbf{318{,}606{,}726} \\
+Manual & 337{,}783 & 116{,}207{,}907 & 167{,}787{,}251 \\
+Downloaded & 1{,}580{,}482 & 319{,}077{,}639 & 467{,}417{,}082 \\
+\textbf{Total (final)} & \textbf{1{,}918{,}265} & \textbf{435{,}285{,}546} & \textbf{635{,}204{,}333} \\
 \bottomrule
 \end{tabular}
-\caption{Bhojpuri raw corpus, by lane.}
+\caption{Nepali final corpus totals.}
 \end{table}
 
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabular}{lrrp{5cm}}
-\toprule
-Source & Docs & Characters & Collection method \\
-\midrule
-\texttt{khabar\_bhojpuri} & 22{,}175 & 39{,}169{,}105 & scrape + clean \\
-\texttt{anjoria} & 13{,}556 & 21{,}750{,}949 & scrape + clean \\
-\texttt{bho\_wikipedia\_dump} & 8{,}539 & 6{,}101{,}826 & self-extracted Wikipedia XML dump \\
-\texttt{jogira} & 3{,}085 & 6{,}595{,}231 & scrape + clean \\
-archive.org (misc, 88 items) & 88 & 16{,}210{,}212 & OCR/text extraction \\
-\texttt{harsh\_scraped\_manual} & 290 & 724{,}804 & prior personal scrape \\
-\texttt{sirijan} & 225 & 229{,}497 & scrape + clean \\
-\bottomrule
-\end{tabular}
-\caption{Bhojpuri manual sources. All four dedicated crawl sources
-(\texttt{khabar\_bhojpuri}, \texttt{anjoria}, \texttt{jogira},
-\texttt{sirijan}) were recrawled uncapped and confirmed exhausted
-(0--7 new docs on the final pass).}
-\end{table}
+\textbf{Manual sources:} \texttt{news\_onlinekhabar} (web scrape,
+308{,}139 docs, 153.7M tokens -- 91.6\% of manual tokens),
+\texttt{wikipedia\_api} (self-parsed XML dump, 8.1M tokens),
+\texttt{news\_bbc\_nepali} (5.3M), \texttt{wikibooks\_api},
+\texttt{wiktionary\_api}, \texttt{news\_ekantipur}, \texttt{news\_ratopati},
+\texttt{ocr\_archive\_books}, \texttt{news\_nagarik} (remainder, combined
+$<$1M tokens).
 
-\begin{table}[htbp]
-\centering
-\begin{tabular}{p{6cm}rr}
-\toprule
-Source (largest four of seventeen) & Docs & Characters \\
-\midrule
-Satyam810/BhojpuriCorpus:fish\_food & 215{,}813 & 22{,}728{,}391 \\
-harsh\_indiccorp (personal prior collection) & 69{,}433 & 92{,}803{,}579 \\
-Satyam810/BhojpuriCorpus:jnu\_bhltr & 79{,}884 & 7{,}099{,}650 \\
-Satyam810/BhojpuriCorpus:hplt & 17{,}778 & 45{,}689{,}298 \\
-\bottomrule
-\end{tabular}
-\caption{Bhojpuri downloaded sources (largest four; full 17-source table in
-\texttt{dataset\_statistics.md}).}
-\end{table}
+\texttt{news\_onlinekhabar}'s dominance is a real, measured constraint:
+it is the manual source with the largest scrapable archive, and
+\texttt{nepali/scripts/auto\_grow\_and\_tokenize.py}'s growth loop raised
+its collection target specifically because the other manual sources are
+genuinely smaller pools for Nepali than their Hindi equivalents.
 
-\begin{table}[htbp]
-\centering
-\begin{tabular}{lp{11cm}}
-\toprule
-Source & Reason excluded \\
-\midrule
-bhojpuriplanet.com & domain expired \\
-bhojpuri.blog & DNS-unregistered \\
-CulturaX, sil-ai/bloom-lm & gated behind an authenticated HF token \\
-AI4Bharat Sangraha, Glot500 & zero Bhojpuri rows in the current release \\
-MADLAD-400 & no \texttt{bho}/\texttt{bho\_Deva} config \\
-CC-100 & legacy \texttt{datasets}-library script format, no longer supported \\
-\bottomrule
-\end{tabular}
-\caption{Bhojpuri sources evaluated and excluded, with reasons.}
-\end{table}
+\textbf{Downloaded sources:} \texttt{ai4bharat/sangraha:verified}
+(579{,}743 docs, 258.5M tokens), \texttt{ai4bharat/sangraha:unverified}
+(341{,}901 docs, 141.9M tokens), \texttt{ai4bharat/IndicCorpV2}
+(658{,}838 docs, 67.1M tokens).
 
-\textbf{Open item, documented rather than hidden:} the BHLTR corpus
-(\texttt{bhltr\_monolingual}/\texttt{bhltr\_monolingual\_v02}, git-cloned
-from \url{https://github.com/shashwatup9k/BHLTR}, CC-BY-NC-SA-4.0) likely
-overlaps with \texttt{Satyam810/BhojpuriCorpus:jnu\_bhltr}, which
-redistributes the same underlying corpus under a different label. The two
-are not deduplicated by source name specifically, but the pipeline's
-content-hash dedup (\texttt{dedup\_key}, Section~\ref{sec:cleaning}) still
-catches any exact-text overlap between them regardless of label.
-
-\emph{Note on the raw total:} the same kind of small gap exists here --
-\texttt{clean\_stats.json}'s \texttt{chars\_in} reads 318{,}528{,}901,
-77{,}825 characters (0.024\%) below the 318{,}606{,}726 source-table sum,
-for the same reason as Hindi's gap above.
-
-\textbf{A real, measured cross-contamination risk worth naming
-explicitly:} \texttt{kavita\_kosh} (a Hindi manual source) is a large
-poetry wiki that also hosts smaller Bhojpuri, Awadhi, and Maithili
-sections mixed into the same MediaWiki namespace -- the crawl itself is
-not language-pure at the point of collection. This is exactly the kind of
-risk the language-ID filter (Section~\ref{sec:cleaning}) exists to catch,
-and it is why that filter's coarse-marker limitation (documented honestly
-below) matters in practice, not just in theory.
+\textbf{Growth mechanism.} Rather than collecting once and hoping the
+target was hit, \texttt{auto\_grow\_and\_tokenize.py} ran the full
+S02--S14 pipeline, checked both absolute lane targets against the real
+measured output, and -- for whichever lane fell short -- raised that
+lane's still-growable sources' collection targets and re-ran, up to 4
+rounds, with a per-source growth ceiling. Both targets were met without
+ever loosening a cleaning filter to manufacture volume.
 
 % =====================================================================
 \section{Cleaning Pipeline}
 \label{sec:cleaning}
 % =====================================================================
 
-Both languages share one cleaning implementation,
-\texttt{scripts/clean\_lib.py}, run separately per language
-(\texttt{clean\_hindi.py} / \texttt{clean\_bhojpuri.py}) against that
-language's own \texttt{raw/} tree only. The measured stage order,
-confirmed below from \texttt{clean\_stats.json}'s own checkpoints (not
-assumed from documentation), is:
-\begin{quote}\centering
-raw $\rightarrow$ malformed-Unicode removal $\rightarrow$
-too-short removal $\rightarrow$ language-ID filter $\rightarrow$
-exact/near-duplicate removal $\rightarrow$ cleaned
-\end{quote}
+Hindi and Nepali use two different cleaning implementations, described
+separately below.
 
-\textbf{Why this order is verified, not assumed:} \texttt{clean\_stats.json}
-records a mid-pipeline checkpoint, \texttt{docs\_interim}, taken after
-malformed+short-doc removal but before the language filter. For Hindi:
-$773{,}606 - 17 - 63{,}132 = 710{,}457 = \texttt{docs\_interim}$ exactly.
-Then $710{,}457 - 3{,}371 - 2{,}983 = 704{,}103 = \texttt{docs\_cleaned}$
-(pre-cross-language-correction figure -- see below). The same arithmetic
-holds exactly for Bhojpuri.
+\subsection{Hindi cleaning pipeline}
 
-\textbf{Normalization: NFC, not NFKC.} Unicode NFC (canonical composition)
-is used, not NFKC (compatibility composition). NFKC would strip or alter
-U+200C (ZWNJ) and U+200D (ZWJ) -- zero-width joiner/non-joiner characters
-that look like formatting noise but are \textbf{semantically meaningful}
-in Devanagari: they control whether a consonant cluster forms a conjunct
-ligature or stays visually separate. Stripping them would silently
-corrupt real orthographic distinctions in both Hindi and Bhojpuri text.
-NFC preserves them; only genuine zero-width/control characters unrelated
-to Devanagari orthography are stripped separately.
+\texttt{scripts/clean\_lib.py}, run via \texttt{clean\_hindi.py}. Measured
+stage order, confirmed from \texttt{clean\_stats.json}'s own checkpoints:
 
-\textbf{Latin-token removal, digits kept.} Hindi: 8{,}016{,}102 Latin
-tokens removed; Bhojpuri: 1{,}576{,}446. Digits are kept, since numerals
-are not script-specific noise the way stray Latin words are.
+\begin{center}
+raw $\to$ malformed-Unicode removal $\to$ too-short removal $\to$
+language-ID filter $\to$ exact/near-duplicate removal $\to$ cleaned
+\end{center}
 
-\textbf{Language filter.} \texttt{langdetect} has \textbf{no \texttt{bho}
-label} -- it cannot itself identify Bhojpuri text, and Hindi/Bhojpuri
-share vocabulary and script closely enough that this is a real problem.
-Quoted directly from each language's \texttt{clean\_stats.json}:
+\textbf{Normalization: NFC, not NFKC.} NFKC would strip or alter U+200C
+(ZWNJ) and U+200D (ZWJ) -- zero-width joiner/non-joiner characters that
+are \textbf{semantically meaningful} in Devanagari, controlling whether a
+consonant cluster forms a conjunct ligature or stays visually separate.
+NFC preserves them.
 
-\begin{quote}\small
-Hindi (\texttt{bhojpuri\_reject\_caveat}): \textit{``langdetect has no
-`bho' label, so it cannot itself catch Bhojpuri text misclassified as
-Hindi (they share vocabulary and script).
-\texttt{dropped\_language.likely\_bhojpuri} is an active reject filter,
-not just a count: any document where Bhojpuri lexical markers
+\textbf{Latin-token removal, digits kept.} 8{,}016{,}102 residual
+Latin-script tokens were stripped. Digits are kept.
+
+\textbf{Language filter.} \texttt{langdetect} has \textbf{no `bho' label}
+-- it cannot itself identify Bhojpuri text, and Hindi/Bhojpuri share
+vocabulary and script closely enough that mislabeled Bhojpuri leaking
+into Hindi's corpus was a real risk during collection (Bhojpuri was this
+project's original Model L -- see Section~\ref{sec:results} for why it
+was superseded by Nepali; this filter and the correction below predate
+that switch and remain part of Hindi's own cleaning history, run
+unconditionally regardless of which language is currently Model L).
+\texttt{dropped\_language.likely\_bhojpuri} is an active reject filter:
+any document where Bhojpuri lexical markers
 (\dn{बा}/\dn{बाटे}/\dn{बाड़ें}/\dn{एगो}/\dn{गइल}/\dn{भइल}/\dn{कइल}/etc.,
 $\geq$2 hits) outnumber Hindi markers
 (\dn{है}/\dn{हैं}/\dn{एक}/\dn{गया}/\dn{हुआ}/\dn{किया}/etc.) is dropped
-before reaching \texttt{data/cleaned/}. This is a coarse lexical
-heuristic, not a language model, so it will not catch every case --
-documented as a known limitation, not a solved problem.''}
-\end{quote}
+before reaching \texttt{data/cleaned/}. 1{,}365 documents were dropped by
+this filter.
 
-\begin{quote}\small
-Bhojpuri (\texttt{language\_id\_caveat}): \textit{``langdetect has no
-`bho' label; Devanagari-script-ratio was used as a practical proxy and
-cannot distinguish Bhojpuri from closely-related Hindi/Nepali text
-mislabeled at the source. \texttt{likely\_hindi\_contamination} is a
-coarse lexical-marker count among docs that otherwise passed cleaning --
-it is \textbf{NOT} a filter, documents counted here are still included in
-\texttt{data/cleaned/}.''}
-\end{quote}
-
-On the Hindi side, \texttt{likely\_bhojpuri} is an \textbf{active reject
-filter} -- 1{,}365 documents dropped. On the Bhojpuri side,
-\texttt{likely\_hindi\_contamination} (\textbf{11{,}164} documents) is a
-\textbf{measurement only} -- flagged but not removed.
-
-\textbf{This limitation is not hypothetical.}
-\texttt{scripts/validate\_phase1.py}'s cross-language check independently
-caught 2 documents whose content hash was shared between the Hindi and
-Bhojpuri cleaned corpora -- genuinely Bhojpuri news text sourced as
-\texttt{hin} by \texttt{ai4bharat/sangraha} while the same text was
-correctly labeled \texttt{bho\_Deva} by \texttt{HuggingFaceFW/fineweb-2}.
-Both were removed from Hindi's cleaned corpus. This is why Hindi's final
-cleaned count is \textbf{704{,}101}, not \texttt{clean\_stats.json}'s own
-recorded 704{,}103.
+\textbf{Historical cross-language correction (Hindi $\leftrightarrow$
+Bhojpuri).} \texttt{scripts/validate\_phase1.py}'s cross-language check,
+run while Bhojpuri was still Model L, caught 2 documents whose content
+hash was shared between the Hindi and Bhojpuri cleaned corpora --
+genuinely Bhojpuri news text that \texttt{ai4bharat/sangraha} had sourced
+as \texttt{hin}, an upstream labeling error. Both were removed from
+Hindi's cleaned corpus. This is why Hindi's final cleaned count is
+\textbf{704{,}101}, not \texttt{clean\_stats.json}'s own recorded
+704{,}103. This correction is permanent, independent of which language is
+currently Model L.
 
 \textbf{Deduplication.} Exact-hash matching on normalized text
-(\texttt{dedup\_key}); on a tie between a manual-lane and a
-downloaded-lane document, the \textbf{manual copy wins}. Near-duplicate
-detection beyond exact-hash matching (e.g. MinHash/LSH) was \textbf{not}
-run on the Hindi/Bhojpuri pipelines -- see Section~\ref{sec:limitations}.
+(\texttt{dedup\_key}); on a manual/downloaded tie, the manual copy wins.
+Near-duplicate detection beyond exact-hash matching was \textbf{not} run
+on Hindi's pipeline -- see Section~\ref{sec:limitations}.
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{lrr}
+\begin{tabular}{lr}
 \toprule
-Reason & Hindi & Bhojpuri \\
+Reason & Docs \\
 \midrule
-Malformed Unicode & 17 & 23 \\
-Too short ($<$200 chars) & 63{,}132 & 4{,}665 \\
-Low Devanagari ratio & 228 & 1{,}501 \\
-Likely Bhojpuri (active reject, Hindi only) & 1{,}365 & --- \\
-langdetect mismatch & 1{,}778 & --- \\
-Exact/near-duplicate & 2{,}983 & 94{,}080 \\
-Cross-language duplicate (targeted correction) & 2 & 0 \\
+Malformed Unicode & 17 \\
+Too short ($<$200 chars) & 63{,}132 \\
+Low Devanagari ratio & 228 \\
+Likely Bhojpuri (active reject filter) & 1{,}365 \\
+langdetect mismatch & 1{,}778 \\
+Exact/near-duplicate & 2{,}983 \\
+Cross-language duplicate (targeted correction) & 2 \\
 \midrule
-\textbf{Total dropped} & \textbf{69{,}505} & \textbf{100{,}269} \\
-\textbf{Docs in $\rightarrow$ cleaned} & 773{,}606 $\rightarrow$ 704{,}101 & 608{,}263 $\rightarrow$ 507{,}994 \\
+\textbf{Total dropped} & \textbf{69{,}505} \\
+\textbf{Docs in $\to$ cleaned} & 773{,}606 $\to$ 704{,}101 \\
 \bottomrule
 \end{tabular}
-\caption{Measured drop counts, both languages.}
+\caption{Hindi measured drop counts. Too-short documents are the largest single loss (90.8\%).}
 \end{table}
 
-\fig{03_cleaning_funnel.png}{Cleaning funnel: documents remaining after each filter stage, in the pipeline's real, verified order.}{funnel}
-\fig{04_drop_reasons.png}{Drop reasons breakdown, ranked, per language.}{dropreasons}
+\subsection{Nepali cleaning pipeline}
 
-Too-short documents are by far the largest single loss for Hindi
-(90.8\% of all drops); for Bhojpuri, exact/near-duplicate dominates
-(93.8\%) -- several overlapping \texttt{Satyam810/BhojpuriCorpus}
-partitions turned out to share substantial exact-duplicate text once
-normalized.
+Stage-based (\texttt{nepali/scripts/s00\_doctor.py} through
+\texttt{s14\_corpus\_stats.py}), sharing the same \texttt{corpuslib} code
+as Hindi's own Nepali-parallel pipeline copy (byte-identical, hashed at
+CI time, operating on entirely separate data) -- not shared with Hindi's
+\texttt{clean\_lib.py}.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Stage & Docs in & Docs out & Retention \\
+\midrule
+S03 normalise & 2{,}655{,}504 & 2{,}655{,}504 & 100.00\% \\
+S04 language ID & 2{,}655{,}504 & 2{,}649{,}643 & 99.78\% \\
+S07 train-pool split-off & 2{,}649{,}643 & 2{,}251{,}378 & 84.97\% \\
+S05 heuristic filters & 2{,}251{,}378 & 2{,}245{,}354 & 99.73\% \\
+S06 perplexity filter & 2{,}245{,}354 & 2{,}178{,}418 & 97.02\% \\
+S08 dedup (MinHash/LSH) & 2{,}178{,}418 & 2{,}126{,}334 & 97.61\% \\
+S09 decontaminate & 2{,}126{,}334 & 2{,}109{,}223 & 99.20\% \\
+S10 balance lanes (train only) & 2{,}109{,}223 & 1{,}520{,}000 & 72.06\% \\
+\bottomrule
+\end{tabular}
+\caption{Nepali document retention through the pipeline.}
+\end{table}
+
+\textbf{Language ID.} \texttt{narrow\_margin\_vs\_hi} (600 of 2{,}655{,}504
+docs) is the language-ID model catching documents too ambiguous to
+confidently call Nepali rather than Hindi -- the same underlying risk
+Hindi's \texttt{likely\_bhojpuri} filter addresses for its neighbor
+language, handled here via a margin-vs-Hindi check.
+
+\textbf{Deduplication is MinHash/LSH, not exact-hash}
+(\texttt{num\_perm=100, bands=20, rows=5, shingle\_size=5,
+threshold=0.55}) -- a near-duplicate method Hindi's pipeline does not
+use. Removed 52{,}084 of 2{,}178{,}418 documents (2{,}350 exact, 49{,}734
+near); 21{,}273 cross-lane duplicate pairs, all resolved to the manual
+copy.
+
+\textbf{Decontamination (S09)} -- a step Hindi's pipeline has no
+equivalent of: 17{,}111 train documents matching held-out (val+test)
+content were removed. A rescan afterward found 0 remaining matches.
+
+\textbf{Lane balancing (S10).} Train's raw manual share was 23.27\% going
+into S10. Rather than loosening a filter, S10 trimmed the
+\textbf{downloaded} lane (589{,}223 docs dropped, manual untouched) to
+reach 27.42\%.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lr}
+\toprule
+Reason & Docs \\
+\midrule
+wrong\_language (S04) & 1{,}599 \\
+low\_confidence (S04) & 1{,}189 \\
+narrow\_margin\_vs\_hi (S04) & 600 \\
+too\_short (S04) & 251 \\
+other script-ratio buckets, $\leq$5 each (S04) & 121 \\
+repeated\_lines (S05) & 1{,}858 \\
+too\_few\_sentences (S05) & 1{,}226 \\
+too\_short (S05) & 382 \\
+link\_farm (S05) & 481 \\
+low\_lexical\_diversity (S05) & 5 \\
+too\_few\_words (S05) & 8 \\
+mean\_word\_too\_long (S05) & 1 \\
+\bottomrule
+\end{tabular}
+\caption{Nepali measured drop reasons (S04 language-ID + S05 heuristics).}
+\end{table}
+
+\fig{03_cleaning_funnel.png}{Cleaning funnel per language.}{funnel}
+\fig{04_drop_reasons.png}{Drop reasons breakdown per language.}{drops}
+
+\subsection{Cross-language check (current: Hindi vs.\ Nepali)}
+\label{sec:crosslang}
+
+Run via \texttt{scripts/check\_nepali\_hindi\_overlap.py}: every one of
+Nepali's 1{,}918{,}265 final documents had its \texttt{dedup\_key}
+(identical algorithm to \texttt{clean\_lib.dedup\_key}, computed fresh)
+checked against the full set of 704{,}101 dedup\_keys already computed
+for Hindi's cleaned corpus. \textbf{Result: 0 shared documents.} Full run
+took 467.7 seconds.
 
 % =====================================================================
 \section{Splits}
 % =====================================================================
 
-Both languages split at the \textbf{document level}, seed 42, using
-deterministic hashing of \texttt{document\_id} so that the same document
-can never land in two different splits and no split boundary depends on
-processing order.
+Hindi splits at the \textbf{document level}, seed 42, using deterministic
+hashing of \texttt{document\_id}.
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{lrr}
+\begin{tabular}{lr}
 \toprule
- & Hindi (train/val/test) & Bhojpuri (train/val/test) \\
+& Hindi (train/val/test) \\
 \midrule
-Documents & 675{,}937 / 14{,}082 / 14{,}082 & 487{,}674 / 10{,}160 / 10{,}160 \\
-Ratio & $\sim$95.9\% / 2.0\% / 2.0\% & $\sim$96.0\% / 2.0\% / 2.0\% \\
+Documents & 675{,}937 / 14{,}082 / 14{,}082 \\
+Ratio & $\sim$95.9\% / 2.0\% / 2.0\% \\
 \bottomrule
 \end{tabular}
-\caption{Train/validation/test split sizes.}
 \end{table}
 
-\texttt{scripts/validate\_phase1.py}'s leakage check -- a
-\texttt{document\_id} set intersection across all three splits per
-language -- reports \textbf{no overlap} for both languages
-(\texttt{validate\_final.log}, lines 10--11 and 20--21).
+Nepali's split happens earlier, at S07 -- val/test are held out from the
+full document pool \textit{before} S08 (dedup), S09 (decontamination), and
+S10 (lane balancing) run on what remains, so those later stages never
+touch documents that will end up in eval.
 
-\fig{05_split_sizes.png}{Train/validation/test split sizes, both languages, log scale.}{splits}
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lr}
+\toprule
+& Nepali (train/val/test) \\
+\midrule
+Documents & 1{,}520{,}000 / 199{,}428 / 198{,}837 \\
+Ratio & $\sim$79.2\% / 10.4\% / 10.4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\texttt{scripts/validate\_phase1.py} reports no overlap for Hindi.
+\texttt{scripts/validate\_phase1\_nepali.py} and
+\texttt{split\_stats.json} (\texttt{zero\_doc\_id\_overlap: true})
+independently confirm the same for Nepali.
+
+\fig{05_split_sizes.png}{Train/validation/test split sizes, both languages.}{splits}
 
 % =====================================================================
 \section{Tokenizers}
 % =====================================================================
 
-\subsection{Why SentencePiece Unigram, not BPE}
+\subsection{Hindi: SentencePiece Unigram}
 
-Both tokenizers are SentencePiece \textbf{Unigram}, trained separately per
-language on that language's own \texttt{data/splits/train/} only.
+Trained on Hindi's own train split only. Unigram treats the segmentation
+itself as a latent variable, re-estimating piece probabilities via EM --
+argued to suit Hindi's agglutinative-suffixing morphology and Devanagari
+conjunct clusters better than BPE's greedy, order-dependent merging. This
+is structural, not empirically confirmed for Hindi specifically (see
+Section~\ref{sec:limitations}) -- though the Nepali subsection below
+reports an actual BPE-vs-Unigram comparison that did run, for the other
+language. Unigram's suffix-array stage peaked near 5.9GB on this
+project's 16GB machine.
 
-BPE builds a vocabulary by greedily merging the most frequent adjacent
-pair of symbols, one merge at a time, with no mechanism to reconsider an
-earlier merge. Unigram instead treats the \emph{segmentation itself} as a
-latent variable: it starts from a large candidate set of subword pieces,
-then uses EM to iteratively re-estimate piece probabilities and prune the
-candidate set down to the target vocabulary size.
+\subsection{Nepali: SentencePiece BPE}
 
-This matters for Hindi and Bhojpuri specifically because both are
-morphologically rich, agglutinative-suffixing languages layered on top of
-Devanagari's conjunct-cluster orthography (a single visual glyph can
-correspond to a multi-codepoint sequence forming a consonant conjunct).
-BPE's greedy, order-dependent merging has no way to revisit a bad early
-merge inside a conjunct cluster or a common suffix chain; Unigram's
-probabilistic re-estimation can. This is a structural argument, not a
-measured one for this project -- no side-by-side BPE run was performed
-here to confirm it empirically (Section~\ref{sec:limitations}).
+\texttt{nepali/configs/tokenizer.yaml} configures \texttt{model\_type:
+bpe} as this pipeline's default, configured independently of Hindi's
+Unigram choice. The config includes a genuine safety net:
+\texttt{compare\_unigram.enabled: true}, set to also train Unigram and
+keep whichever scores better \textit{if} BPE's fertility exceeded 2.10
+tokens/word. It never triggered -- BPE's measured fertility
+(1.4825--1.6988) stayed well under that threshold.
 
-\textbf{The cost:} Unigram's suffix-array construction stage is
-memory-heavy. On this project's 16GB training machine, Hindi's
-suffix-array stage was the binding memory constraint, peaking near 5.9GB.
+\texttt{byte\_fallback} is explicitly \textbf{disabled}
+(\texttt{byte\_fallback: false}), unlike Hindi's \texttt{byte\_fallback=
+True} -- a real methodological difference for interpreting UNK rate
+below.
 
 \subsection{Full sweep table}
 
-Vocabulary range: \textbf{5{,}000--10{,}000}, per a course-TA ruling
-capping vocab size at this range for a $\sim$25M-parameter model (see
-embedding budget below). Every number below was \textbf{re-measured
-fresh} for this report by \texttt{report/phase1/make\_plots.py}, loading
-each trained \texttt{.model} file directly and encoding the same held-out
-sample every existing measurement used: the first 2{,}000 non-empty
-documents from \texttt{data/splits/validation/text/}, sorted-filename
-order. The fresh numbers match \texttt{hindi\_pipeline\_manifest.json}
-and \texttt{bhojpuri\_tokenizer\_sweep.log} exactly to 4+ decimal places.
+Vocabulary range: \textbf{5{,}000--10{,}000} for both languages, per a
+course-TA ruling capping vocab size at this range for a
+$\sim$25M-parameter model. Every number below was \textbf{re-measured
+fresh} by \texttt{report/phase1/make\_plots.py}, loading each trained
+\texttt{.model} file and encoding the first 2{,}000 non-empty documents
+of each language's own held-out validation split. Hindi's fresh numbers
+match \texttt{hindi\_pipeline\_manifest.json} exactly. Nepali's fresh
+numbers are close to but not bit-identical to its own pipeline's
+\texttt{selection\_report.json} (e.g.\ fertility 1.4825 here vs.\ 1.4868
+there, at vocab=10{,}000) -- both real measurements, on two different
+same-methodology 2{,}000-document samples.
 
 \begin{table}[htbp]
 \centering
@@ -496,131 +463,117 @@ Vocab & chars/tok & fertility & UNK & byte-fb & coverage & unused ids \\
 \toprule
 Vocab & chars/tok & fertility & UNK & byte-fb & coverage & unused ids \\
 \midrule
-5{,}000 & 3.1314 & 1.6037 & 0.000000 & 0.001649 & 0.9230 & 385 \\
-6{,}000 & 3.2394 & 1.5502 & 0.000000 & 0.001706 & 0.9122 & 527 \\
-8{,}000 & 3.3900 & 1.4814 & 0.000000 & 0.001785 & 0.8776 & 979 \\
-10{,}000 & 3.4935 & 1.4375 & 0.000000 & 0.001840 & 0.8321 & 1{,}679 \\
+5{,}000 & 3.7882 & 1.6988 & 0.000000 & 0.000000 & 0.9776 & 112 \\
+6{,}000 & 3.9410 & 1.6329 & 0.000000 & 0.000000 & 0.9727 & 164 \\
+8{,}000 & 4.1725 & 1.5424 & 0.000000 & 0.000000 & 0.9616 & 307 \\
+10{,}000 & 4.3410 & 1.4825 & 0.000000 & 0.000000 & 0.9458 & 542 \\
 \bottomrule
 \end{tabular}
-\caption{Bhojpuri tokenizer sweep.}
+\caption{Nepali tokenizer sweep.}
 \end{table}
 
 \fig{06_vocab_chars_per_token.png}{Vocab sweep: characters per token, both languages.}{cpt}
 \fig{07_vocab_fertility.png}{Vocab sweep: fertility (tokens per word), both languages.}{fert}
 \fig{08_vocab_byte_fallback.png}{Vocab sweep: byte-fallback rate, both languages.}{bf}
 
-\subsection{Why UNK rate is meaningless here}
+\subsection{Why UNK rate is meaningless for Hindi but real for Nepali}
 
-UNK rate reads \textbf{exactly 0.0} at every vocab size for both
-languages. This is not a sign the vocabulary covers everything -- it is
-structural. \texttt{byte\_fallback=True} means any character sequence the
-model cannot represent as a normal subword piece falls back to raw-byte
-pieces (\texttt{<0xNN>} tokens) instead of the \texttt{<unk>} token. So
-UNK never fires; the metric that actually tracks coverage is the
-\textbf{byte-fallback rate}. Hindi's byte-fallback rate (1.83\%--2.02\%)
-is roughly 11x Bhojpuri's (0.16\%--0.18\%) -- consistent with Hindi's more
-heterogeneous source mix.
+For \textbf{Hindi}, UNK rate reads exactly 0.0 at every vocab size, but
+this is structural: \texttt{byte\_fallback=True} means any character
+sequence the model cannot represent normally falls back to raw-byte
+pieces instead of \texttt{<unk>}. The metric that actually tracks real
+out-of-vocabulary pressure for Hindi is \textbf{byte-fallback rate}
+(1.83\%--2.02\% across the sweep).
 
-\subsection{Vocab-size choice: 8,000 for both languages}
+For \textbf{Nepali}, \texttt{byte\_fallback} is disabled, so a 0.0 UNK
+rate at every vocab size is not masked by a fallback mechanism -- it
+means the trained vocabulary genuinely represented 100\% of the
+validation sample's characters directly, with zero fallback of any kind.
+This is a real, meaningful difference in what ``UNK rate = 0'' means
+between the two languages' tokenizers.
 
-At a $\sim$25M-parameter model with tied input/output embeddings, the
-embedding table costs $\text{vocab\_size} \times \text{model\_dim}$
-parameters. The course-TA ruling ($\sim$49\% of the model at 24k vocab)
-corresponds almost exactly to $\text{model\_dim}=512$:
-$24{,}000 \times 512 = 12{,}288{,}000 = 49.15\%$ of 25{,}000{,}000.
+\subsection{Vocab-size choice}
+
+\textbf{Hindi: 8{,}000}, chosen on a fertility/embedding-budget trade-off.
+The fertility gain from 8k$\to$10k (2.7\% relative) is much smaller than
+5k$\to$8k (6.7\% relative), for meaningfully more embedding cost. Measured
+directly: 8{,}000 produces more total tokens than 10{,}000 for Hindi
+(505{,}852{,}028 vs.\ 491{,}883{,}387), pushing Hindi to 101.2\% of target
+versus 10{,}000's 98.4\%.
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{rrr}
+\begin{tabular}{lrr}
 \toprule
-Vocab & Embed params ($d{=}512$) & \% of 25M \\
+Vocab & Embed params (d=512) & \% of 25M \\
 \midrule
-8{,}000 & 4{,}096{,}000 & \textbf{16.38\%} \\
+8{,}000 & 4{,}096{,}000 & 16.38\% \\
 10{,}000 & 5{,}120{,}000 & 20.48\% \\
-24{,}000 (ruled out) & 12{,}288{,}000 & 49.15\% \\
 \bottomrule
 \end{tabular}
-\caption{Embedding parameter budget at $d=512$.}
+\caption{Embedding parameter budget at a $\sim$25M-param model.}
 \end{table}
 
-8{,}000 keeps the embedding table a clear minority of the 25M budget
-while capturing most of the achievable fertility/utilization gain over
-5{,}000. Measured directly: \textbf{8{,}000 produces more total tokens
-than 10{,}000 for Hindi} (505{,}852{,}028 vs. 491{,}883{,}387), pushing
-Hindi to 101.2\% of the 500M target versus 10{,}000's 98.4\%.
+\textbf{Nepali: 10{,}000}, chosen by the pipeline's own fertility-elbow
+rule, not a manually argued trade-off:
+\texttt{selection\_report.json} records \textit{``no elbow found within
+the swept range; fertility was still improving by more than 3\% at every
+step, so the largest candidate (10{,}000) was selected.''} At 10{,}000,
+Nepali's embedding table is 5{,}120{,}000 params (20.48\% of a 25M
+budget) -- still within the TA's cap, at the top of the range rather than
+the middle Hindi landed on.
 
-\subsection{Sample tokenizations (real script output, vocab\_size=8,000)}
+\subsection{Sample tokenizations (real model output)}
 
-SentencePiece's word-start marker (the raw output piece \texttt{U+2581},
-shown as ``\_'' below purely for font-compatibility in this PDF) precedes
-every piece that begins a new whitespace-delimited word; pieces without it
-attach to the previous piece with no space.
+\textbf{Hindi} (vocab\_size=8,000):
 
-\textbf{Hindi} (\texttt{hindi\_analyze\_8000\_final.log}):
-
-\begin{quote}\small
 \dn{text: अतुल माहेश्वरी के निधन के कई महीनों बाद अमर उजाला में...} \\
-pieces: [`\dn{\_अ}', `\dn{तुल}', `\dn{\_माह}', `\dn{ेश्वर}', `\dn{ी}', `\dn{\_के}', `\dn{\_निधन}', `\dn{\_के}', \ldots] \\
-ids: [357, 4081, 1847, 1993, 279, 259, 3143, 259, \ldots]
+pieces: [`\dn{\_अ}', `\dn{तुल}', `\dn{\_माह}', `\dn{ेश्वर}', `\dn{ी}', `\dn{\_के}', `\dn{\_निधन}', \ldots]
 
-\medskip
+\vspace{0.5em}
 \dn{text: नई दिल्ली} \\
-pieces: [`\dn{\_नई}', `\dn{\_दिल्ली}', `\texttt{<0x0A>}', `\dn{नर}', `\dn{ेंद्र}', `\dn{\_मोदी}', \ldots] \\
-ids: [648, 513, 13, 1796, 2061, 713, \ldots]
+pieces: [`\dn{\_नई}', `\dn{\_दिल्ली}', `\texttt{<0x0A>}', `\dn{नर}', `\dn{ेंद्र}', `\dn{\_मोदी}', \ldots]
 
-\medskip
-\dn{text: दिल्ली: अदालत ने सैयद अहमद बुखारी के तर्क को बताया...} \\
-pieces: [`\dn{\_दिल्ली}', `:', `\dn{\_अदालत}', `\dn{\_ने}', `\dn{\_सैयद}', `\dn{\_अहमद}', \ldots] \\
-ids: [513, 388, 1802, 273, 7550, 3344, \ldots]
-\end{quote}
+\vspace{1em}
+\textbf{Nepali} (vocab\_size=10,000):
 
-\textbf{Bhojpuri} (\texttt{bhojpuri\_tokenizer\_sweep.log}, vocab\_size=8000):
+\dn{text: नेपाली पद वर्ग सङ्खेय नाम अर्थ कमजोर भएको अवस्था; गल्ती} \\
+pieces: [`\dn{\_नेपाली}', `\dn{\_पद}', `\dn{\_वर्ग}', `\dn{\_सङ्}', `\dn{खे}', `\dn{य}', `\dn{\_नाम}', \ldots] (45 tokens total)
 
-\begin{quote}\small
-\dn{text: कांग्रेस अब आरोप थोपो पार्टी बन कर रह गई है।} \\
-pieces: [`\dn{\_कांग्रेस}', `\dn{\_अब}', `\dn{\_आरोप}', `\dn{\_}', `\dn{थो}', `\dn{पो}', `\dn{\_पार्टी}', \ldots] \\
-ids: [680, 346, 1011, 263, 4466, 1263, 707, \ldots]
+\vspace{0.5em}
+\dn{text: नेपाली पद वर्ग नाम अर्थ मान्छे; मानिस} \\
+pieces: [`\dn{\_नेपाली}', `\dn{\_पद}', `\dn{\_वर्ग}', `\dn{\_नाम}', `\dn{\_अर्थ}', `\dn{\_मान्छे}', `;', \ldots] (45 tokens total)
 
-\medskip
-\dn{text: तूने जो कौड़ियां भेंट दी हैं वे किसकी दी हुई हैं।} \\
-pieces: [`\dn{\_तू}', `\dn{ने}', `\dn{\_जो}', `\dn{\_कौ}', `\dn{ड़िया}', `\dn{ं}', `\dn{\_भेंट}', \ldots] \\
-ids: [661, 403, 706, 2714, 3049, 308, 2037, \ldots]
+\vspace{1em}
+See Figure~\ref{fig:freq} for how these pieces fit into the whole
+vocabulary's usage distribution.
 
-\medskip
-\dn{text: कांग्रेसियन के आवे वाला पीढ़ी ले निश्चिंत बा कि ओकर...} \\
-pieces: [`\dn{\_कांग्रेस}', `\dn{ियन}', `\dn{\_के}', `\dn{\_आवे}', `\dn{\_वाला}', `\dn{\_पीढ़ी}', \ldots] \\
-ids: [680, 494, 259, 544, 320, 3583, \ldots]
-\end{quote}
+\fig{09_token_frequency_loglog.png}{Token frequency distribution (log-log), each language at its own selected vocab size.}{freq}
 
-\fig{09_token_frequency_loglog.png}{Token frequency distribution (log-log), vocab\_size=8000, both languages. The Zipf-shaped curve shows a small number of high-frequency pieces (postpositions, punctuation) covering most tokens, with a long tail.}{loglog}
+Both languages show the expected Zipf-shaped curve, plotted at each
+language's own selected vocab size (Hindi 8{,}000, Nepali 10{,}000 --
+they differ, unlike Hindi/Bhojpuri which happened to both choose 8{,}000).
 
-\subsection{Training sample size, stated plainly}
+\subsection{Training sample size -- stated plainly}
 
-SentencePiece does not train on the entire train split. It uses
-\texttt{input\_sentence\_size=2{,}000{,}000} with
-\texttt{shuffle\_input\_sentence=True}, reservoir-sampling up to
-2{,}000{,}000 sentences from the full train split.
+SentencePiece does not train on the entire train split. Hindi uses
+\texttt{input\_sentence\_size=2{,}000{,}000}; Nepali's config sets
+\texttt{input\_sentence\_size=3{,}000{,}000}.
 
 \begin{table}[htbp]
 \centering
 \begin{tabular}{lrrr}
 \toprule
-Language & Chars used & Train split total chars & Fraction sampled \\
+Language & Chars used for training & Train split total chars & Fraction \\
 \midrule
 Hindi & $\sim$372.7M & 1{,}692{,}881{,}268 & 22.0\% \\
-Bhojpuri & 217{,}511{,}027 & 271{,}000{,}251 & 80.3\% \\
 \bottomrule
 \end{tabular}
-\caption{Fraction of the train split SentencePiece actually saw during training.}
 \end{table}
 
-This is SentencePiece's standard, documented mechanism for bounding
-training cost -- its own trainer log warns ``Too many sentences are
-loaded'' and recommends exactly this option. The held-out evaluation
-above is run separately, on the validation split, so it measures the
-trained tokenizer's real generalization regardless of how much of train
-it saw while fitting. Full-corpus token counts (Section~\ref{sec:results})
-are exact and unsampled.
+Nepali's exact sampled-character count was not separately logged by its
+pipeline the way Hindi's was -- a real reporting gap, noted rather than
+backfilled with an estimate (Section~\ref{sec:limitations}).
 
 % =====================================================================
 \section{Results}
@@ -629,29 +582,33 @@ are exact and unsampled.
 
 \textbf{Hindi:} 505{,}852{,}028 total tokens (train 485{,}280{,}741 +
 validation 10{,}484{,}640 + test 10{,}086{,}647) -- \textbf{101.2\% of
-the $\sim$500M target}. Manual share: \textbf{28.65\% char-weighted}
-(505{,}509{,}566 / 1{,}764{,}596{,}782), \textbf{30.66\% token-weighted}
-(155{,}104{,}651 / 505{,}852{,}028).
+the $\sim$500M target}. Manual share: \textbf{28.65\% char-weighted},
+\textbf{30.66\% token-weighted}. Both clear the 20\% floor.
 
-\textbf{Bhojpuri:} 84{,}217{,}032 total tokens (train 80{,}610{,}590 +
-validation 2{,}085{,}234 + test 1{,}521{,}208) -- \textbf{16.8\% of the
-$\sim$500M target}. Manual share: \textbf{28.59\% char-weighted}
-(80{,}843{,}912 / 282{,}815{,}177), \textbf{29.89\% token-weighted}
-(25{,}169{,}871 / 84{,}217{,}032).
+\textbf{Nepali:} 635{,}204{,}333 total tokens (train 519{,}906{,}359 +
+val 57{,}839{,}396 + test 57{,}458{,}578) -- \textbf{127.0\% of the
+$\sim$500M target}, exceeding it by a wider margin than Hindi. Manual
+share: \textbf{26.41\% token-weighted} (Nepali's pipeline never tracked
+per-lane characters, so no char-weighted figure exists for it). Both of
+the pipeline's own absolute lane targets are also cleared independently:
+manual 167{,}787{,}251 $\geq$ 100{,}000{,}000; downloaded 467{,}417{,}082
+$\geq$ 400{,}000{,}000.
 
-\fig{10_token_count_vs_target.png}{Total token count vs. the 500M planning target, both languages.}{target}
+\fig{10_token_count_vs_target.png}{Token count vs.\ the 500M target, both languages.}{target}
 
-\textbf{Bhojpuri's shortfall is expected and spec-permitted, not a gap in
-effort.} The assignment explicitly allows the lower-resource model to
-fall short of the 500M-token target if public sources cannot reach it,
-provided the shortfall is honestly documented (no padding or duplication
-was done -- Section~\ref{sec:cleaning}). All four dedicated manual crawl
-sources were recrawled uncapped and confirmed exhausted; every
-Bhojpuri-labeled HF dataset was evaluated. Published prior Bhojpuri
-monolingual resources are, at most, on the order of a 45{,}000-sentence
-corpus (JNU BHLTR) and a $\sim$169{,}000-word web corpus -- this project's
-282.8M-character cleaned corpus is orders of magnitude larger than
-anything previously publicly available for this language.
+\textbf{Nepali was not always the plan.} This project's original Model L
+was \textbf{Bhojpuri}: fully built, cleaned, split, tokenized, and
+passing every validation check, with a documented, spec-permitted
+16.8\%-of-target shortfall (84{,}217{,}032 tokens) since Bhojpuri's
+available public data is genuinely much smaller than Nepali's.
+\texttt{bhojpuri/} and its own numbers are kept in the repository,
+untouched, as a complete working record -- they are simply no longer
+this report's Model L. Nepali's pipeline was resumed after a course-wide
+deadline extension made finishing it worthwhile;
+\texttt{auto\_grow\_and\_tokenize.py} then grew whichever lane fell short
+of its absolute target and re-ran the full pipeline until both targets
+were met, landing at 127.0\% of the planning target rather than a
+documented shortfall.
 
 % =====================================================================
 \section{Reproducibility}
@@ -659,191 +616,93 @@ anything previously publicly available for this language.
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{ll}
+\begin{tabular}{lll}
 \toprule
-Item & Value \\
+& Hindi & Nepali \\
 \midrule
-Split seed & 42 (both languages, document-level) \\
-Tokenizer determinism & SentencePiece \texttt{shuffle\_input\_sentence=True} \\
-Git commit (Hindi pipeline) & \texttt{0b0012ecb3deb08b61a81cc6e989c9bc60289a31} \\
-Python & 3.14.0 \\
-sentencepiece & 0.2.2 \\
-Platform & Windows-11-10.0.26200-SP0 \\
+Split mechanism & seed 42, hash & S07 holdout, pre-S08--S10 \\
+Tokenizer determinism & \texttt{shuffle\_input\_sentence=True} & \texttt{shuffle\_input\_sentence=True} \\
+Python & 3.14.0 & 3.14.0 \\
+sentencepiece & 0.2.2 & 0.2.2 \\
 \bottomrule
 \end{tabular}
-\caption{Reproducibility metadata.}
 \end{table}
 
-\textbf{To rerun a stage} (per language, \texttt{<lang>} = \texttt{hindi}
-or \texttt{bhojpuri}):
+\textbf{To rerun Hindi:}
+\begin{verbatim}
+python hindi/data/pipeline/download_hindi.py
+python hindi/data/pipeline/ingest_manual.py
+python hindi/data/pipeline/clean_hindi.py
+python hindi/data/pipeline/split_hindi.py
+python hindi/tokenizer/train_tokenizer.py --vocab-size 8000
+python scripts/validate_phase1.py
+\end{verbatim}
 
-\begin{quote}\small\ttfamily
-python <lang>/data/pipeline/download\_<lang>.py \\
-python <lang>/data/pipeline/ingest\_manual.py \\
-python <lang>/data/pipeline/ingest\_wikipedia\_dump.py \\
-python <lang>/data/pipeline/clean\_<lang>.py \\
-python <lang>/data/pipeline/split\_<lang>.py \\
-python <lang>/tokenizer/train\_tokenizer.py --vocab-size 8000 \\
-python scripts/validate\_phase1.py \\
-python report/phase1/make\_plots.py
-\end{quote}
+\textbf{To rerun Nepali:}
+\begin{verbatim}
+cd nepali/scripts
+python s00_doctor.py
+python auto_grow_and_tokenize.py
+python ../../scripts/validate_phase1_nepali.py
+python ../../scripts/check_nepali_hindi_overlap.py
+\end{verbatim}
 
-Large artifacts (raw corpora, cleaned corpora, tokenizer files) are hosted
-on OneDrive: \url{https://iiithydstudents-my.sharepoint.com/personal/swaraj_kumar_students_iiit_ac_in/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fswaraj%5Fkumar%5Fstudents%5Fiiit%5Fac%5Fin%2FDocuments%2FLMA%20DATA%20SET&ga=1}
-(``LMA DATA SET'' shared OneDrive folder, requires an IIIT account with
-access) -- see the repository root \texttt{README.md}'s artifact table for
-current upload status.
+\textbf{Provenance note (Nepali only):} the corpus/tokenizer artifacts
+this report cites for Nepali were produced by running
+\texttt{nepali/scripts/} on a separate machine (the $\sim$30+ hour S08
+MinHash dedup pass was impractical on the primary machine within the
+deadline window); only the pipeline's output files were transferred into
+this repo, not live per-stage console logs. \texttt{log.md}'s Nepali
+S08(production)--S14 entries are reconstructed from those output files,
+flagged inline in \texttt{log.md} itself.
+
+\textbf{Large artifacts} are hosted on OneDrive:
+\url{https://iiithydstudents-my.sharepoint.com/personal/swaraj_kumar_students_iiit_ac_in/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fswaraj%5Fkumar%5Fstudents%5Fiiit%5Fac%5Fin%2FDocuments%2FLMA%20DATA%20SET&ga=1}
+(an IIIT-institutional link, used deliberately rather than Google Drive).
 
 % =====================================================================
 \section{Limitations and What I Would Do Differently}
 \label{sec:limitations}
 % =====================================================================
 
+\textbf{Hindi:}
 \begin{itemize}
-\item \textbf{The language-ID proxy is a real, acknowledged weak point.}
-\texttt{langdetect} has no Bhojpuri label at all, so both directions of
-this problem are handled by coarse Devanagari-script-ratio plus
-hand-picked lexical markers, not a trained classifier. It is asymmetric
-by design: Hindi's \texttt{likely\_bhojpuri} is an active reject filter,
-Bhojpuri's \texttt{likely\_hindi\_contamination} is only a measurement.
-\texttt{validate\_phase1.py}'s cross-language check caught 2 real misses
-this heuristic let through -- there are almost certainly more that a
-hash-based check cannot catch. Given more time, this would be the first
-thing to replace with a real trained classifier.
-
-\item \textbf{SentencePiece training samples the corpus}, most
-aggressively for Hindi (22.0\% of train characters). This does not bias
-the held-out evaluation numbers (measured separately, on unseen
-validation text either way), but it does mean the trained model saw
-under a quarter of Hindi's train split's characters.
-
+\item \textbf{The language-ID proxy is a real, acknowledged weak point},
+though now largely historical since Bhojpuri is no longer this project's
+Model L. \texttt{langdetect} has no Bhojpuri label, so
+\texttt{likely\_bhojpuri} is a coarse lexical-marker filter, not a
+trained classifier. This filter still runs unconditionally as part of
+Hindi's own cleaning, even though its original purpose no longer applies
+day to day.
+\item \textbf{SentencePiece training samples the corpus} (22.0\% of
+train characters). Standard practice; does not bias the held-out
+evaluation numbers.
 \item \textbf{Near-duplicate detection beyond exact-hash matching was cut
-for time.} Both languages only dedup on an exact normalized-text hash.
-Given Bhojpuri's several overlapping \texttt{Satyam810/BhojpuriCorpus}
-partitions and the BHLTR/jnu\_bhltr overlap, a MinHash/LSH pass would
-likely find more duplication than the exact-hash pass did.
-
-\item \textbf{The BPE-vs-Unigram argument (Section~\ref{sec:results}) is
-structural, not empirically confirmed here.} No side-by-side BPE sweep
-was run on this data to measure whether Unigram's advantage on
-agglutinative suffixing and Devanagari conjuncts actually shows up as a
-measurable difference for Hindi/Bhojpuri specifically.
-
-\item \textbf{Two small raw-total discrepancies} (Hindi: 0.00003\%;
-Bhojpuri: 0.024\%, both between the per-source breakdown sum and
-\texttt{clean\_stats.json}'s own \texttt{chars\_in}) were not root-caused.
-Both are too small to affect any pass/fail check.
+for time on Hindi's pipeline specifically.} Nepali's pipeline, by
+contrast, does run MinHash/LSH -- now an asymmetry between the two
+languages, not a shared gap.
+\item \textbf{The BPE-vs-Unigram argument for Hindi is structural, not
+empirically confirmed for Hindi specifically.} Nepali's pipeline, by
+contrast, runs this comparison automatically -- it just never triggered.
+\item \textbf{A small raw-total discrepancy} (528 characters, 0.00003\%)
+was not root-caused. Too small to affect any pass/fail check.
 \end{itemize}
 
-% =====================================================================
-\section{The Nepali Attempt -- Now the Graded Model L}
-\label{sec:nepali}
-% =====================================================================
-
-\textbf{Update: this section originally documented an exploratory,
-unfinished attempt (text preserved below for the record). Nepali has
-since finished, clears both the pipeline's absolute token targets and the
-20\% manual floor, and is now the graded Model L, superseding Bhojpuri.
-The full report for Nepali -- data collection, cleaning funnel, splits,
-tokenizer sweep, sample tokenizations, and the cross-language check
-against Hindi (0 shared documents) -- is the standalone companion document
-\texttt{phase1\_report\_nepali.tex} / \texttt{phase1\_report\_nepali.pdf}.
-Bhojpuri's own results (below and throughout the rest of this report) are
-kept exactly as they were: complete, validated, and simply no longer the
-submission's Model L.}
-
-\bigskip
-\noindent\textit{Original text, as written when Nepali was still
-exploratory and stalled at S08:}
-
-\medskip
-
-Alongside the (at-the-time) graded Model L (Bhojpuri), a second,
-independent low-resource candidate -- \textbf{Nepali}, also on the
-assignment's allowed list -- was attempted using a more elaborate,
-config-driven pipeline (\texttt{nepali/scripts/run\_pipeline.py}, stages
-S02--S14). This was exploratory: Nepali has more public data available
-than Bhojpuri, so it was worth checking whether it could clear the 20\%
-manual-share floor with a stronger overall corpus than Bhojpuri's.
-
-\textbf{What happened.} An early run of that pipeline measured only
-\textbf{6.3\% manual share} -- failing the hard 20\% floor. This turned
-out to be a \textbf{stale measurement}: most of the raw manual data (in
-particular a 200{,}804-document news-scrape source, \texttt{onlinekhabar},
-$\sim$72M words) had not finished collecting when that run happened. Once
-$\sim$84.4M raw manual words were confirmed actually on disk (versus the
-$\sim$15.4M that had fed the stale run), the pipeline was relaunched from
-a clean state against the complete raw corpus.
-
-\textbf{Progress on the rerun}, all confirmed from the pipeline's own
-event log (\texttt{log.md}):
-
-\begin{table}[htbp]
-\centering
-\begin{tabular}{lll}
-\toprule
-Stage & Result & Retention \\
-\midrule
-S02 Token calibration & Success & --- \\
-S03 Normalize & Success & 1{,}658{,}065 / 1{,}658{,}065 docs, 0 dropped \\
-S04 Language ID & Success & 99.77\% \\
-S07 Holdout split & Success & train 1{,}406{,}033 / val 124{,}042 / test 124{,}221 \\
-S05 Heuristic filters & Success & 99.72\% \\
-S06 Perplexity filter & Success & 97.04\% \\
-S08 Deduplication (MinHash/LSH) & \textbf{Stalled} & --- \\
-\bottomrule
-\end{tabular}
-\caption{Nepali rerun progress, by pipeline stage.}
-\end{table}
-
-A real environment bug was hit and fixed along the way: \texttt{fasttext}
-had no prebuilt wheel for this environment's Python 3.14, so the S04
-language-ID stage alone was routed through a separate Python 3.11
-install already on the machine -- the language-ID logic itself was not
-bypassed, only its runtime. A second real bug was also fixed:
-\texttt{nepali/configs/tokenizer.yaml} was configured to sweep a
-16k--40k BPE vocabulary range, which violates the same course-TA ruling
-covered in Section~\ref{sec:results}; it was corrected to
-\texttt{[5000, 6000, 8000, 10000]} before the tokenizer stage could run
-on it.
-
-\textbf{Why it was not used at that point.} S08, the MinHash/LSH
-deduplication pass over $\sim$1.36M documents, is single-threaded for its
-bucket-insertion phase (needed to keep manual-priority collision
-resolution deterministic) after a parallel signature-computation phase.
-At its measured pace during that rerun, this stage alone was on track to
-take on the order of 10+ hours to complete -- before stages S09 through
-S14 (decontamination, lane balancing, final split, tokenizer training,
-tokenizer evaluation, corpus statistics) could even begin. That was not a
-safe bet against the original Phase 1 deadline, so \textbf{Bhojpuri was
-kept as Model L at that time.}
-
-\medskip
-\noindent\textit{End of original text.}
-
-\bigskip
-\textbf{What happened next.} A 2-day course-wide deadline extension made
-finishing the Nepali run worthwhile. S08 was resumed and completed;
-S09--S14 (decontamination, lane balancing, final split, tokenizer
-training and evaluation, corpus statistics) all ran successfully on a
-separate machine, and \texttt{nepali/scripts/auto\_grow\_and\_tokenize.py}
-(an unattended driver, written after this exploratory attempt) grew
-whichever lane fell short of its absolute token target and re-ran the
-pipeline until both were met. The result: 635{,}204{,}333 final tokens
-(167{,}787{,}251 manual $\geq$ 100M target, 467{,}417{,}082 downloaded
-$\geq$ 400M target), a BPE tokenizer at vocab\_size=10{,}000, and 0 shared
-documents against Hindi (see ``Cross-Language Check'' in
-\texttt{phase1\_report\_nepali.pdf}). \texttt{scripts/validate\_phase1\_nepali.py}
-passes every check. \textbf{Nepali is now the final, graded Model L.}
-
-\texttt{bhojpuri/} and this report's Bhojpuri content are kept in the
-repository exactly as they were -- nothing deleted, nothing re-run -- as
-a complete, working fallback and a record of that earlier work. The
-Nepali pipeline's code (\texttt{nepali/scripts/}, \texttt{nepali/configs/})
-is versioned the same way Hindi's and Bhojpuri's own pipeline code is;
-its data (raw/interim/final, $\sim$20GB) is not versioned, for the same
-``code in git, corpus data elsewhere'' reason Hindi and Bhojpuri's own
-raw/cleaned corpora are not versioned either.
+\textbf{Nepali:}
+\begin{itemize}
+\item \textbf{Manual share is token-weighted, not char-weighted}, unlike
+Hindi's -- Nepali's pipeline never added per-lane character tracking.
+\item \textbf{Manual-lane concentration}: 91.6\% of manual tokens come
+from one source (\texttt{news\_onlinekhabar}).
+\item \textbf{SentencePiece's sampled-character count was not logged} by
+Nepali's pipeline the way Hindi's was.
+\item \textbf{The Nepali pipeline ran on a separate machine}; its
+per-stage console logs for S08--S14 were not captured live, only
+reconstructed from output artifacts in \texttt{log.md}.
+\item \textbf{Cross-language check covers Nepali vs.\ Hindi only}
+(Section~\ref{sec:crosslang}), not Nepali vs.\ Bhojpuri, since Bhojpuri is
+not part of the final submission.
+\end{itemize}
 
 % =====================================================================
 \section*{Sources and References}
@@ -853,45 +712,30 @@ raw/cleaned corpora are not versioned either.
 \begin{enumerate}
 \item Hindi Wikipedia XML dump (self-extracted via WikiExtractor).
 Source: Wikimedia dumps, \url{https://dumps.wikimedia.org}.
-\item Bhojpuri Wikipedia XML dump (self-extracted via WikiExtractor).
+\item Nepali Wikipedia, Wikibooks, Wiktionary XML dumps (self-parsed).
 Source: Wikimedia dumps, \url{https://dumps.wikimedia.org}.
 \item Gadya Kosh (Hindi prose wiki). \url{https://gadyakosh.org}.
-Author-copyright content, collected for coursework research use.
-\item Kavita Kosh (Hindi/Urdu poetry wiki, also hosts Bhojpuri/Awadhi/
-Maithili sections). \url{https://kavitakosh.org}. Author-copyright content,
-collected for coursework research use.
-\item Patrika (Hindi newspaper archive, Rajasthan Patrika group).
-\url{https://www.patrika.com}. Collected for coursework research use.
-\item Khabar Bhojpuri (Bhojpuri news site). \url{https://khabarbhojpuri.com}.
-\item Anjoria (Bhojpuri content site). \url{https://anjoria.com}.
-\item Jogira (Bhojpuri literature/culture site). \url{https://jogira.com}.
-\item Sirijan (Bhojpuri quarterly e-magazine). \url{https://sirijan.com}.
-\item Internet Archive (OCR/text extraction of books, journals, government
-debate transcripts). \url{https://archive.org}.
-\item HuggingFaceFW/fineweb-2 (Hindi and Bhojpuri partitions).
+\item Patrika (Hindi newspaper archive). \url{https://www.patrika.com}.
+\item OnlineKhabar (Nepali news, largest manual source).
+\url{https://www.onlinekhabar.com}.
+\item BBC Nepali, Ekantipur, Ratopati, Nagarik (Nepali news sites).
+\item Internet Archive (OCR/text extraction). \url{https://archive.org}.
+\item HuggingFaceFW/fineweb-2 (Hindi partition).
 \url{https://huggingface.co/datasets/HuggingFaceFW/fineweb-2}.
-\item AI4Bharat Sangraha (verified and unverified Hindi partitions).
-\url{https://huggingface.co/datasets/ai4bharat/sangraha}.
-\item Satyam810/BhojpuriCorpus (17 partitions: fish\_food, jnu\_bhltr,
-hplt, wikipedia, eng\_bho, bhojpuri\_lr\_v3, kumar\_bhojpuri, iit\_bhu,
-fleurs\_bhojpuri, google\_smol, glotcc, rural\_women, ud\_bhtb, and others).
-\url{https://huggingface.co/datasets/Satyam810/BhojpuriCorpus}.
-\item BHLTR: Bhojpuri-Hindi Language Technology Resources (JNU), monolingual
-and parallel corpora. \url{https://github.com/shashwatup9k/BHLTR},
-CC-BY-NC-SA-4.0.
+\item AI4Bharat Sangraha (verified and unverified Hindi and Nepali
+partitions). \url{https://huggingface.co/datasets/ai4bharat/sangraha}.
+\item AI4Bharat IndicCorpV2 (Nepali partition).
+\url{https://huggingface.co/datasets/ai4bharat/IndicCorpV2}.
 \item \texttt{wikimedia/wikipedia:20231101.hi} -- evaluated, quarantined,
-not used (redundant with the self-extracted Hindi Wikipedia dump above).
+not used (redundant with the self-extracted Hindi Wikipedia dump).
 \url{https://huggingface.co/datasets/wikimedia/wikipedia}.
-\item CulturaX, sil-ai/bloom-lm, AI4Bharat Sangraha (Bhojpuri rows),
-Glot500, MADLAD-400, CC-100 -- evaluated for Bhojpuri and excluded; see
-Section~\ref{sec:cleaning} for reasons per source.
 \item SentencePiece (tokenizer library). Kudo, T. and Richardson, J.
 (2018). \textit{SentencePiece: A simple and language independent subword
 tokenizer and detokenizer for neural text processing.} EMNLP 2018 (System
 Demonstrations). \url{https://github.com/google/sentencepiece}.
-\item \texttt{langdetect} (Python language-identification library used as
-one signal in the language filter, with known no-Bhojpuri-label
-limitation documented throughout Section~\ref{sec:cleaning}).
+\item \texttt{langdetect} (Python language-identification library, used
+by Hindi's pipeline; known no-Bhojpuri-label limitation documented
+throughout Section~\ref{sec:cleaning}).
 \url{https://pypi.org/project/langdetect/}.
 \end{enumerate}
 
