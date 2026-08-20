@@ -40,24 +40,34 @@
 \begin{document}
 \maketitle
 
+\noindent\fbox{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule}{%
+\textbf{Update:} Nepali (Section~\ref{sec:nepali} below) has since
+\textbf{succeeded} and is now the graded Model L, superseding Bhojpuri.
+Nepali's full report is the standalone companion document
+\texttt{phase1\_report\_nepali.tex} / \texttt{.pdf}. Everything below this
+note describes the original Hindi/Bhojpuri submission exactly as it was
+built -- kept intact, not deleted, as a complete working record -- except
+Section~\ref{sec:nepali}, which is updated in place to reflect the outcome.}}
+\vspace{1em}
+
 \begin{abstract}
 \noindent
 This report covers Phase 1 of the Language Models and Agents individual
 project: dataset collection, cleaning, splitting, and tokenizer
 construction for two independent, from-scratch decoder-only Transformer
 language models. Model H (higher-resource) is \textbf{Hindi}; Model L
-(lower-resource, from the assignment's allowed list) is \textbf{Bhojpuri}.
+(lower-resource, from the assignment's allowed list) was originally
+\textbf{Bhojpuri}, later superseded by \textbf{Nepali} (see the update
+note above and Section~\ref{sec:nepali}).
 Every number in this report is read directly from a file produced by the
 project's own pipeline code -- \texttt{clean\_stats.json},
 \texttt{hindi\_pipeline\_manifest.json}, \texttt{validate\_final.log}, or
 the trained tokenizer model files re-measured directly -- never estimated.
-Both languages clear the assignment's hard 20\% manual-collection floor;
-Hindi exceeds the 500M-token planning target (101.2\%) while Bhojpuri's
-documented shortfall (16.8\%) is explicitly permitted by the assignment
-for the low-resource model. A parallel, exploratory attempt to build
-Model L in \textbf{Nepali} instead is also documented in
-Section~\ref{sec:nepali}, along with why Bhojpuri was kept as the final
-choice.
+Both Hindi and Bhojpuri clear the assignment's hard 20\% manual-collection
+floor; Hindi exceeds the 500M-token planning target (101.2\%) while
+Bhojpuri's documented shortfall (16.8\%) was explicitly permitted by the
+assignment for the low-resource model. Nepali, now the graded Model L,
+reaches 127.0\% of the target -- see \texttt{phase1\_report\_nepali.pdf}.
 \end{abstract}
 
 \tableofcontents
@@ -726,17 +736,35 @@ Both are too small to affect any pass/fail check.
 \end{itemize}
 
 % =====================================================================
-\section{The Nepali Attempt}
+\section{The Nepali Attempt -- Now the Graded Model L}
 \label{sec:nepali}
 % =====================================================================
 
-Alongside the graded Model L (Bhojpuri), a second, independent
-low-resource candidate -- \textbf{Nepali}, also on the assignment's
-allowed list -- was attempted using a more elaborate, config-driven
-pipeline (\texttt{nepali/scripts/run\_pipeline.py}, stages S02--S14). This
-was exploratory: Nepali has more public data available than Bhojpuri, so
-it was worth checking whether it could clear the 20\% manual-share floor
-with a stronger overall corpus than Bhojpuri's.
+\textbf{Update: this section originally documented an exploratory,
+unfinished attempt (text preserved below for the record). Nepali has
+since finished, clears both the pipeline's absolute token targets and the
+20\% manual floor, and is now the graded Model L, superseding Bhojpuri.
+The full report for Nepali -- data collection, cleaning funnel, splits,
+tokenizer sweep, sample tokenizations, and the cross-language check
+against Hindi (0 shared documents) -- is the standalone companion document
+\texttt{phase1\_report\_nepali.tex} / \texttt{phase1\_report\_nepali.pdf}.
+Bhojpuri's own results (below and throughout the rest of this report) are
+kept exactly as they were: complete, validated, and simply no longer the
+submission's Model L.}
+
+\bigskip
+\noindent\textit{Original text, as written when Nepali was still
+exploratory and stalled at S08:}
+
+\medskip
+
+Alongside the (at-the-time) graded Model L (Bhojpuri), a second,
+independent low-resource candidate -- \textbf{Nepali}, also on the
+assignment's allowed list -- was attempted using a more elaborate,
+config-driven pipeline (\texttt{nepali/scripts/run\_pipeline.py}, stages
+S02--S14). This was exploratory: Nepali has more public data available
+than Bhojpuri, so it was worth checking whether it could clear the 20\%
+manual-share floor with a stronger overall corpus than Bhojpuri's.
 
 \textbf{What happened.} An early run of that pipeline measured only
 \textbf{6.3\% manual share} -- failing the hard 20\% floor. This turned
@@ -779,23 +807,41 @@ covered in Section~\ref{sec:results}; it was corrected to
 \texttt{[5000, 6000, 8000, 10000]} before the tokenizer stage could run
 on it.
 
-\textbf{Why it was not used for the final submission.} S08, the
-MinHash/LSH deduplication pass over $\sim$1.36M documents, is
-single-threaded for its bucket-insertion phase (needed to keep
-manual-priority collision resolution deterministic) after a parallel
-signature-computation phase. At its measured pace during the rerun, this
-stage alone was on track to take on the order of 10+ hours to complete --
-before stages S09 through S14 (decontamination, lane balancing, final
-split, tokenizer training, tokenizer evaluation, corpus statistics) could
-even begin. That was not a safe bet against the Phase 1 deadline.
+\textbf{Why it was not used at that point.} S08, the MinHash/LSH
+deduplication pass over $\sim$1.36M documents, is single-threaded for its
+bucket-insertion phase (needed to keep manual-priority collision
+resolution deterministic) after a parallel signature-computation phase.
+At its measured pace during that rerun, this stage alone was on track to
+take on the order of 10+ hours to complete -- before stages S09 through
+S14 (decontamination, lane balancing, final split, tokenizer training,
+tokenizer evaluation, corpus statistics) could even begin. That was not a
+safe bet against the original Phase 1 deadline, so \textbf{Bhojpuri was
+kept as Model L at that time.}
 
-\textbf{Bhojpuri is the final, graded Model L.} It was fully built,
-cleaned, split, tokenized, and passing every
-\texttt{scripts/validate\_phase1.py} check before the Nepali rerun was
-even relaunched, and nothing in this report depends on Nepali finishing.
-The Nepali pipeline's code (\texttt{nepali/scripts/}, \texttt{nepali/configs/})
-is kept in the project repository for transparency into this exploration;
-its data (raw and interim, $\sim$20GB) is not versioned, for the same
+\medskip
+\noindent\textit{End of original text.}
+
+\bigskip
+\textbf{What happened next.} A 2-day course-wide deadline extension made
+finishing the Nepali run worthwhile. S08 was resumed and completed;
+S09--S14 (decontamination, lane balancing, final split, tokenizer
+training and evaluation, corpus statistics) all ran successfully on a
+separate machine, and \texttt{nepali/scripts/auto\_grow\_and\_tokenize.py}
+(an unattended driver, written after this exploratory attempt) grew
+whichever lane fell short of its absolute token target and re-ran the
+pipeline until both were met. The result: 635{,}204{,}333 final tokens
+(167{,}787{,}251 manual $\geq$ 100M target, 467{,}417{,}082 downloaded
+$\geq$ 400M target), a BPE tokenizer at vocab\_size=10{,}000, and 0 shared
+documents against Hindi (see ``Cross-Language Check'' in
+\texttt{phase1\_report\_nepali.pdf}). \texttt{scripts/validate\_phase1\_nepali.py}
+passes every check. \textbf{Nepali is now the final, graded Model L.}
+
+\texttt{bhojpuri/} and this report's Bhojpuri content are kept in the
+repository exactly as they were -- nothing deleted, nothing re-run -- as
+a complete, working fallback and a record of that earlier work. The
+Nepali pipeline's code (\texttt{nepali/scripts/}, \texttt{nepali/configs/})
+is versioned the same way Hindi's and Bhojpuri's own pipeline code is;
+its data (raw/interim/final, $\sim$20GB) is not versioned, for the same
 ``code in git, corpus data elsewhere'' reason Hindi and Bhojpuri's own
 raw/cleaned corpora are not versioned either.
 
