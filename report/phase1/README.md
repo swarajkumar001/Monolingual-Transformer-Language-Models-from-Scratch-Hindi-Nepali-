@@ -130,7 +130,7 @@ documented 16.8%-of-target shortfall) was superseded by Nepali.
 
 ## OneDrive (raw + cleaned corpora, tokenizer files)
 
-**[LMA DATA SET — shared OneDrive folder](https://iiithydstudents-my.sharepoint.com/personal/swaraj_kumar_students_iiit_ac_in/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fswaraj%5Fkumar%5Fstudents%5Fiiit%5Fac%5Fin%2FDocuments%2FLMA%20DATA%20SET&ga=1)**
+**[LMA DATA SET — shared OneDrive folder](https://iiithydstudents-my.sharepoint.com/:f:/g/personal/swaraj_kumar_students_iiit_ac_in/IgCh3u8O2sr4QIJqmrUS1CllAV1C5HL0R9SOWUUVIzTgcdw?e=bgUHaG)**
 (an IIIT-institutional link, used deliberately rather than Google Drive —
 see the root README's "Large artifacts" note)
 
