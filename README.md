@@ -50,6 +50,22 @@ All 10 required figures (both languages, one series/subplot per language)
 are in [`report/phase1/figures/`](report/phase1/figures/) and embedded in
 the [full report](report/phase1/phase1_report.md).
 
+### Token counts, full breakdown
+
+| | Hindi (Model H) | Nepali (Model L) |
+|---|---:|---:|
+| Train tokens | 485,280,741 | 519,906,359 |
+| Validation tokens | 10,484,640 | 57,839,396 |
+| Test tokens | 10,086,647 | 57,458,578 |
+| **Total tokens** | **505,852,028** | **635,204,333** |
+| **% of ~500M target** | **101.2%** | **127.0%** |
+| Manual tokens | 155,104,651 | 167,787,251 |
+| Manual share (token-weighted) | 30.66% | 26.41% |
+| Clears 20% manual floor? | ✅ Yes | ✅ Yes |
+
+Every number above is exact and unsampled — every train/val/test document
+was actually tokenized and counted, not estimated from a sample.
+
 ---
 
 ## Phase 1 — Dataset Collection & Tokenizer Construction ✅ complete
@@ -235,12 +251,6 @@ are hosted on OneDrive instead:
 | Finetuned checkpoint (Model H) | Hindi | TODO — Phase 3 |
 | Finetuned checkpoint (Model L) | Nepali | TODO — Phase 3 |
 
-> **Note on hosting:** the course spec names Google Drive specifically for
-> large artifacts. This project uses an IIIT-institutional OneDrive link
-> instead — a deliberate choice, not an oversight — since it's the
-> storage already available and accessible to the course's
-> IIIT-affiliated graders.
-
 ## Hard constraints followed
 
 No pretrained models, no pretrained tokenizers, no HuggingFace Transformer
@@ -248,6 +258,52 @@ model classes. Positional embeddings, multi-head attention, and causal
 masking are student-implemented from primitive PyTorch layers (Phase 2). The
 two language corpora, tokenizers, vocabularies, and (from Phase 2 onward)
 model weights are fully independent — no sharing, no multilingual training.
+
+---
+
+## What's next: Phase 2 and Phase 3
+
+Phase 1 (this README) was just data + tokenizer. Nothing about the actual
+model exists yet — here's what's left, in plain terms.
+
+### 🔧 Phase 2 (due 5 Sep) — build and train the models
+
+- Write the Transformer ourselves in plain PyTorch — token embeddings +
+  positional embeddings, multi-head **causal** self-attention (build the
+  triangular mask by hand), feed-forward layers, residual connections,
+  layernorm. No `nn.Transformer`, no HuggingFace model classes — the point
+  is to understand every operation, not import it.
+- Keep each model around **~25M parameters**, one config per language
+  (vocab sizes differ: Hindi 8,000 vs. Nepali 10,000, so the embedding
+  layer sizes won't match either — that's expected and allowed).
+- Train both models separately with AdamW + a learning-rate schedule.
+  **Checkpoints must be resumable** — save weights, optimizer state,
+  scheduler state, and step number, since Colab-style sessions can die
+  mid-run.
+- Evaluate both models: validation loss → perplexity, bits-per-byte
+  (fairer comparison across the two tokenizers), generate text at a few
+  temperatures and score it with BLEU/chrF/ROUGE-L, check repetition and
+  vocabulary diversity.
+- Look inside the trained attention heads — heatmaps, how spread out vs.
+  focused each head is, how far back each head tends to look.
+
+### 🎯 Phase 3 (due 16 Sep, final) — teach it to reason, then wrap up
+
+- Build our **own** small dataset of comparison/reasoning questions
+  (e.g. "A is taller than B, B is taller than C — who's tallest?") —
+  written in Hindi and Nepali script, not English, and generated
+  programmatically so we actually know the right answers.
+- Finetune each pretrained model on its own language's reasoning data
+  only — keep the tokenizer fixed, don't mix languages.
+- Measure how much accuracy improved from pretrained → finetuned, and
+  whether the attention patterns changed after finetuning.
+- Write the final report tying it all together: how Hindi (more data) and
+  Nepali (less data, different tokenizer) actually compare, and what
+  factors explain the gap.
+
+None of `nepali/model/`, `nepali/train/`, `nepali/eval/` (or Hindi's
+equivalents) have real code yet — they're empty placeholder folders left
+over from the required repo layout, waiting for Phase 2.
 
 ---
 
