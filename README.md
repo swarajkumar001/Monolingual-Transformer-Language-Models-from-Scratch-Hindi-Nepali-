@@ -22,13 +22,13 @@ pipeline with MinHash/LSH dedup and absolute per-lane token targets), so
 most of the linked report describes each language separately rather than
 forcing one shared table.
 
-**📄 [Full Phase 1 report](report/phase1/phase1_report.md)** ([LaTeX](report/phase1/phase1_report.tex) · [PDF](report/phase1/phase1_report.pdf)) · **📋 [Deliverables index](report/phase1/README.md)**
+**[Full Phase 1 report](report/phase1/phase1_report.md)** ([LaTeX](report/phase1/phase1_report.tex) · [PDF](report/phase1/phase1_report.pdf)) · **[Deliverables index](report/phase1/README.md)**
 
 ---
 
 ## At a glance
 
-| | 🔵 Hindi — Model H | 🟣 Nepali — Model L |
+| | Hindi — Model H | Nepali — Model L |
 |---|---:|---:|
 | Pipeline | single-pass cleaner | stage-based, S00–S14 |
 | Raw docs | 773,606 | ~2,655,504 (pre-clean) |
@@ -38,8 +38,8 @@ forcing one shared table.
 | Manual share | 28.65% char / 30.66% token | 26.41% token |
 | Splits (train / val / test) | 675,937 / 14,082 / 14,082 | 1,520,000 / 199,428 / 198,837 |
 | Tokenizer | SentencePiece **Unigram**, **8,000** | SentencePiece **BPE**, **10,000** |
-| Leakage check | ✅ no overlap | ✅ no overlap |
-| Cross-language check | ✅ 0 shared docs vs. Nepali | ✅ 0 shared docs vs. Hindi |
+| Leakage check | no overlap | no overlap |
+| Cross-language check | 0 shared docs vs. Nepali | 0 shared docs vs. Hindi |
 
 <div align="center">
 <img src="report/phase1/figures/10_token_count_vs_target.png" width="47%" alt="Token count vs. 500M target">
@@ -61,14 +61,14 @@ the [full report](report/phase1/phase1_report.md).
 | **% of ~500M target** | **101.2%** | **127.0%** |
 | Manual tokens | 155,104,651 | 167,787,251 |
 | Manual share (token-weighted) | 30.66% | 26.41% |
-| Clears 20% manual floor? | ✅ Yes | ✅ Yes |
+| Clears 20% manual floor? | Yes | Yes |
 
 Every number above is exact and unsampled — every train/val/test document
 was actually tokenized and counted, not estimated from a sample.
 
 ---
 
-## Phase 1 — Dataset Collection & Tokenizer Construction ✅ complete
+## Phase 1 — Dataset Collection & Tokenizer Construction (complete)
 
 `scripts/validate_phase1.py` reports **ALL CHECKS PASSED** for Hindi.
 `scripts/validate_phase1_nepali.py` (Nepali's own parallel validator, since
@@ -91,7 +91,7 @@ recorded in [`phase1_report.md` §3](report/phase1/phase1_report.md).
 | 6 | Vocabulary files | `hindi/tokenizer/hindi_unigram_8000.vocab`; `nepali/tokenizer/nepali_bpe.vocab` (plus other swept sizes in `nepali/tokenizer/sweep/`) |
 | 7 | Tokenizer model files | `hindi/tokenizer/hindi_unigram_8000.model`; `nepali/tokenizer/nepali_bpe.model` |
 
-### 🔵 Hindi (Model H)
+### Hindi (Model H)
 
 **Resources, manual:** `hi_wikipedia_dump` (self-extracted Wikipedia XML
 dump via WikiExtractor — largest single manual source), `gadya_kosh`
@@ -103,7 +103,7 @@ wiki), 67 misc. `archive.org` items (debate transcripts, books).
 HF-mirrored `wikimedia/wikipedia:20231101.hi` (redundant with the
 self-extracted dump — would not count as manual regardless).
 
-### 🟣 Nepali (Model L)
+### Nepali (Model L)
 
 Nepali's pipeline gates on two **absolute** token targets rather than a
 ratio: manual ≥ 100M, downloaded ≥ 400M — both cleared (manual 167.8M,
@@ -237,19 +237,15 @@ are hosted on OneDrive instead:
 **[LMA DATA SET — shared OneDrive folder](https://iiithydstudents-my.sharepoint.com/:f:/g/personal/swaraj_kumar_students_iiit_ac_in/IgCh3u8O2sr4QIJqmrUS1CllAV1C5HL0R9SOWUUVIzTgcdw?e=bgUHaG)**
 (requires an IIIT account with access)
 
-| Artifact | Language | Status |
-|---|---|---|
-| Raw corpus (manual + downloaded) | Hindi | NOT YET CONFIRMED at this link |
-| Cleaned corpus | Hindi | NOT YET CONFIRMED at this link |
-| Tokenizer files | Hindi | NOT YET CONFIRMED at this link |
-| Raw corpus (manual + downloaded) | Nepali | NOT YET UPLOADED (~9.8GB raw + ~2.1MB interim) |
-| Final corpus (train/val/test) | Nepali | NOT YET UPLOADED (~9.2GB) |
-| Tokenizer files | Nepali | committed directly to git (small: model 495KB + vocab) |
-| Raw/cleaned corpus, tokenizer files | Bhojpuri (superseded) | NOT YET CONFIRMED at this link |
-| Pretrained checkpoint (Model H) | Hindi | TODO — Phase 2 |
-| Pretrained checkpoint (Model L) | Nepali | TODO — Phase 2 |
-| Finetuned checkpoint (Model H) | Hindi | TODO — Phase 3 |
-| Finetuned checkpoint (Model L) | Nepali | TODO — Phase 3 |
+### Key results (from the full report)
+
+| | Hindi (Model H) | Nepali (Model L) |
+|---|---:|---:|
+| Total tokens (train+val+test, exact, unsampled) | **505,852,028** | **635,204,333** |
+| % of ~500M target | **101.2%** | **127.0%** |
+| Manual share, char-weighted | 28.65% | not tracked (see report §2) |
+| Manual share, token-weighted | 30.66% | 26.41% |
+| Clears 20% manual floor? | Yes | Yes |
 
 ## Hard constraints followed
 
@@ -266,7 +262,7 @@ model weights are fully independent — no sharing, no multilingual training.
 Phase 1 (this README) was just data + tokenizer. Nothing about the actual
 model exists yet — here's what's left, in plain terms.
 
-### 🔧 Phase 2 (due 5 Sep) — build and train the models
+### Phase 2 (due 5 Sep) — build and train the models
 
 - Write the Transformer ourselves in plain PyTorch — token embeddings +
   positional embeddings, multi-head **causal** self-attention (build the
@@ -287,7 +283,7 @@ model exists yet — here's what's left, in plain terms.
 - Look inside the trained attention heads — heatmaps, how spread out vs.
   focused each head is, how far back each head tends to look.
 
-### 🎯 Phase 3 (due 16 Sep, final) — teach it to reason, then wrap up
+### Phase 3 (due 16 Sep, final) — teach it to reason, then wrap up
 
 - Build our **own** small dataset of comparison/reasoning questions
   (e.g. "A is taller than B, B is taller than C — who's tallest?") —
