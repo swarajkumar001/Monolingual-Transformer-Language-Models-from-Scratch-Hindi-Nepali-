@@ -59,8 +59,10 @@ different pipelines (Hindi: a single-pass cleaner; Nepali: a stage-based
 S00--S14 pipeline with MinHash/LSH dedup and absolute per-lane token
 targets), described separately throughout rather than forced into one
 shared schema. Nepali is this project's second Model L candidate --
-Bhojpuri was the original choice and is kept intact in the repository,
-superseded once Nepali's own pipeline finished (Section~\ref{sec:results}).
+Bhojpuri was the original choice, later superseded once Nepali's own
+pipeline finished; Bhojpuri's tracked pipeline code and tokenizer files
+have since been removed from the repository, with its measured numbers
+kept here as the historical record (Section~\ref{sec:results}).
 \end{abstract}
 
 \tableofcontents
@@ -601,9 +603,11 @@ was \textbf{Bhojpuri}: fully built, cleaned, split, tokenized, and
 passing every validation check, with a documented, spec-permitted
 16.8\%-of-target shortfall (84{,}217{,}032 tokens) since Bhojpuri's
 available public data is genuinely much smaller than Nepali's.
-\texttt{bhojpuri/} and its own numbers are kept in the repository,
-untouched, as a complete working record -- they are simply no longer
-this report's Model L. Nepali's pipeline was resumed after a course-wide
+Once Nepali's own pipeline cleared both its absolute lane targets,
+Bhojpuri's tracked pipeline code and tokenizer files were removed from
+the repository (\texttt{bhojpuri/}) -- its numbers above are the
+historical record of that work, not a live, browsable directory.
+Nepali's pipeline was resumed after a course-wide
 deadline extension made finishing it worthwhile;
 \texttt{auto\_grow\_and\_tokenize.py} then grew whichever lane fell short
 of its absolute target and re-ran the full pipeline until both targets

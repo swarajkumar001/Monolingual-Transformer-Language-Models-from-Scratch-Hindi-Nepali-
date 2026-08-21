@@ -143,8 +143,7 @@ Bhojpuri was this project's original Model L: fully built, cleaned,
 split, tokenized, and passing every `validate_phase1.py` check (507,994
 cleaned docs, 84,217,032 total tokens — 16.8% of the 500M target, a
 documented, spec-permitted shortfall). Superseded by Nepali once Nepali's
-own pipeline cleared both its absolute token targets. `bhojpuri/` and its
-numbers (folded into `phase1_report.md` alongside Hindi and Nepali, not a
-separate document) are left exactly as they were — nothing deleted,
-nothing re-run — as a complete, working fallback and a record of that
-earlier work.
+own pipeline cleared both its absolute token targets. Its tracked
+pipeline code and tokenizer files (`bhojpuri/`) have since been removed
+from the repository; its measured numbers (folded into `phase1_report.md`
+alongside Hindi and Nepali) remain as the historical record.

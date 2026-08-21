@@ -129,9 +129,8 @@ entries are reconstructed from those artifacts, flagged inline as such.
                                 # (both languages), dataset_statistics.md,
                                 # tokenizer_analysis.md, make_plots.py, figures/
     phase2/ phase3/
-  bhojpuri/                    # earlier, fully-complete Model L attempt,
-                                # superseded by Nepali — kept as-is, not the
-                                # graded submission — see "Bhojpuri (superseded)" below
+  # bhojpuri/ removed — earlier, fully-complete Model L attempt,
+  # superseded by Nepali; see "Bhojpuri (superseded)" below for its numbers
 ```
 
 ## Reproduction steps
@@ -240,13 +239,11 @@ superseded by **Nepali** once Nepali's own pipeline cleared both its
 absolute token targets — see `report/phase1/phase1_report.md` §6 for the
 full history and Bhojpuri's numbers.
 
-`bhojpuri/` and its report content (folded into `phase1_report.md`
-alongside Hindi and Nepali, not a separate document) are left exactly as
-they were — nothing deleted, nothing re-run — as a complete, working
-fallback and a record of that earlier work.
+Its tracked pipeline code and tokenizer files (`bhojpuri/`) have since
+been removed from the repository; `bhojpuri/data/` (the large, already-
+gitignored raw/cleaned corpus) was never tracked in git regardless. Its
+measured numbers remain in `phase1_report.md` as the historical record.
 
 `nepali/scripts/`, `nepali/configs/` (the pipeline code) are versioned in
-this repository the same way `hindi/`'s and `bhojpuri/`'s own pipeline code
-are; `nepali/data/` (~20GB of raw/interim/final pipeline output) is not,
-for the same "code in git, corpus data elsewhere" reason those two
-languages' raw/cleaned corpora are not versioned either.
+this repository; `nepali/data/` (~20GB of raw/interim/final pipeline
+output) is not, for the same "code in git, corpus data elsewhere" reason.

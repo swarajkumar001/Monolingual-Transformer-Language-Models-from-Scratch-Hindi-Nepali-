@@ -602,9 +602,11 @@ See **Figure 10**.
 **Bhojpuri**: fully built, cleaned, split, tokenized, and passing every
 validation check, with a documented, spec-permitted 16.8%-of-target
 shortfall (84,217,032 tokens) since Bhojpuri's available public data is
-genuinely much smaller than Nepali's. `bhojpuri/` and its own numbers are
-kept in the repository, untouched, as a complete working record — they are
-simply no longer this report's Model L. Nepali's pipeline was resumed
+genuinely much smaller than Nepali's. Once Nepali's own pipeline cleared
+both its absolute lane targets, Bhojpuri's tracked pipeline code and
+tokenizer files were removed from the repository (`bhojpuri/`) — its
+numbers above are the historical record of that work, not a live,
+browsable directory. Nepali's pipeline was resumed
 after a course-wide deadline extension made finishing it worthwhile;
 `nepali/scripts/auto_grow_and_tokenize.py` then grew whichever lane fell
 short of its absolute target and re-ran the full pipeline until both
