@@ -1,18 +1,23 @@
-"""Validate Phase 1 deliverables for both languages against the course spec.
+"""Validate Phase 1 deliverables for Hindi against the course spec.
 
 Every check reads its numbers from the pipeline's own JSONL provenance files
 (data/raw/*/metadata.jsonl, data/cleaned/metadata.jsonl, data/splits/*_manifest.json)
 rather than from any hardcoded count, so this script stays correct as the
-corpus keeps changing. Run after clean_<lang>.py and split_<lang>.py.
+corpus keeps changing. Run after clean_hindi.py and split_hindi.py.
 
-Checks per language:
+Checks:
   - both raw/manual and raw/downloaded sources are non-empty
   - manual token share (char-weighted, from source_type) is >= 20%
   - train/validation/test splits exist and do not overlap (no shared document_id)
   - a SentencePiece tokenizer model has been trained
 
-Cross-language check:
-  - no document_id or content (dedup_key) is shared between the two cleaned corpora
+Originally also validated Bhojpuri and the cross-language overlap between
+Hindi and Bhojpuri, back when Bhojpuri was Model L. Bhojpuri has since been
+superseded by Nepali and its tracked files removed from the repo, so this
+script now covers Hindi only. Nepali has its own parallel validator
+(scripts/validate_phase1_nepali.py, since its pipeline/data layout differs)
+and its own cross-language check against Hindi
+(scripts/check_nepali_hindi_overlap.py) - run those separately.
 
 Prints PASS/FAIL per check and exits 1 if any check fails.
 """
@@ -23,7 +28,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANUAL_FLOOR_PCT = 20.0
-LANGUAGES = ["hindi", "bhojpuri"]
+LANGUAGES = ["hindi"]
 
 
 def load_jsonl(path: Path):
@@ -154,40 +159,6 @@ def check_tokenizer_trained(lang: str):
     return True, f"{len(models)} tokenizer model(s): {names}"
 
 
-def check_no_cross_language_sharing():
-    """WHY: the spec forbids sharing documents across the two language
-    corpora; checking only document_id would miss a document that was
-    ingested independently into both corpora under different ids but with
-    identical content (exactly what happened with 2 real Bhojpuri-labeled
-    Sangraha/FineWeb-2 documents - see dataset_statistics.md's
-    "Cross-language contamination" section), so this checks both id and
-    content-hash (dedup_key).
-    INPUT: none (reads both languages' cleaned metadata via LANGUAGES).
-    OUTPUT: (passed, detail) - passed iff there is zero overlap in
-    document_id and zero overlap in dedup_key between the two corpora."""
-    cleaned = {}
-    for lang in LANGUAGES:
-        meta_path = REPO_ROOT / lang / "data" / "cleaned" / "metadata.jsonl"
-        cleaned[lang] = list(load_jsonl(meta_path))
-
-    if not all(cleaned.values()):
-        missing = [lang for lang, docs in cleaned.items() if not docs]
-        return False, f"cannot check yet - no cleaned metadata for: {', '.join(missing)}"
-
-    ids = {lang: {d["document_id"] for d in docs} for lang, docs in cleaned.items()}
-    keys = {
-        lang: {d["dedup_key"] for d in docs if d.get("dedup_key")}
-        for lang, docs in cleaned.items()
-    }
-
-    id_overlap = ids[LANGUAGES[0]] & ids[LANGUAGES[1]]
-    key_overlap = keys[LANGUAGES[0]] & keys[LANGUAGES[1]]
-
-    if id_overlap or key_overlap:
-        return False, f"shared document_ids={len(id_overlap)}, shared dedup_keys(content)={len(key_overlap)}"
-    return True, f"0 shared document_ids, 0 shared dedup_keys across {LANGUAGES[0]}/{LANGUAGES[1]}"
-
-
 def main():
     """WHY: single command to answer "is Phase 1 actually done" without
     manually re-deriving every number from the raw data each time.
@@ -215,11 +186,9 @@ def main():
             print(f"  [{status}] {name}\n         {detail}")
             all_passed = all_passed and passed
 
-    print(f"\n--- cross-language ---")
-    passed, detail = check_no_cross_language_sharing()
-    status = "PASS" if passed else "FAIL"
-    print(f"  [{status}] no shared documents between {LANGUAGES[0]} and {LANGUAGES[1]}\n         {detail}")
-    all_passed = all_passed and passed
+    print(f"\n--- cross-language (Nepali vs. Hindi) ---")
+    print("  see scripts/check_nepali_hindi_overlap.py - not run here, since")
+    print("  this script only reads Hindi's own cleaned metadata")
 
     print("\n" + "=" * 70)
     print("ALL CHECKS PASSED" if all_passed else "SOME CHECKS FAILED")
