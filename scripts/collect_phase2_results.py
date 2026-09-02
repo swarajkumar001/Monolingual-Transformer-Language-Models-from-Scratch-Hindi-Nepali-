@@ -148,19 +148,40 @@ def summarise() -> str:
         return "_No evaluation results collected yet._"
 
     langs = list(reports)
-    rows = [
+    rows: list = [
         ("Parameters (total)",
          lambda r: f"{r['parameter_count']['total']:,}"),
         ("Parameters (non-embedding)",
          lambda r: f"{r['parameter_count']['non_embedding']:,}"),
         ("Vocabulary", lambda r: f"{r['model_config']['vocab_size']:,}"),
         ("Checkpoint step", lambda r: f"{r['checkpoint_step']:,}"),
-        ("Test cross-entropy (nats)",
-         lambda r: f"{r['intrinsic']['cross_entropy_nats']:.4f}"),
-        ("Test perplexity", lambda r: f"{r['intrinsic']['perplexity']:.2f}"),
-        ("**Bits per byte**", lambda r: f"**{r['intrinsic']['bits_per_byte']:.4f}**"),
-        ("Tokens scored", lambda r: f"{r['intrinsic']['tokens_scored']:,}"),
     ]
+
+    def split_metric(split, key, fmt=".4f", bold=False):
+        """Build a row accessor for one split's intrinsic metric."""
+        def get(r):
+            data = r.get("intrinsic_by_split", {}).get(split)
+            if data is None:
+                # Older result files carried only the headline split.
+                data = r["intrinsic"] if r["intrinsic"].get("split") == split else None
+            if data is None:
+                return "n/a"
+            text = format(data[key], fmt)
+            return f"**{text}**" if bold else text
+        return get
+
+    # The spec asks explicitly for validation cross-entropy and perplexity, and
+    # for bits-per-byte "on the same held-out text". Both splits are reported.
+    for split in ("val", "test"):
+        label = "Validation" if split == "val" else "Test"
+        rows += [
+            (f"{label} cross-entropy (nats)",
+             split_metric(split, "cross_entropy_nats")),
+            (f"{label} perplexity", split_metric(split, "perplexity", ".2f")),
+            (f"**{label} bits-per-byte**",
+             split_metric(split, "bits_per_byte", ".4f", bold=True)),
+            (f"{label} tokens scored", split_metric(split, "tokens_scored", ",")),
+        ]
     header = "| Metric | " + " | ".join(
         ("Model H (Hindi)" if l == "hindi" else "Model L (Nepali)") for l in langs
     ) + " |"

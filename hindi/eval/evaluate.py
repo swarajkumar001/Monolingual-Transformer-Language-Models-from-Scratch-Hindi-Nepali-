@@ -143,9 +143,14 @@ def diversity_metrics(texts: list[str], rep_n: int = 4) -> dict[str, float]:
     return {
         "repetition_rate": (repeated / total_ngrams) if total_ngrams else 0.0,
         "repetition_ngram_order": rep_n,
+        # Distinct-n over whitespace words. Word-level is the standard reading
+        # of "unique unigrams / bigrams over generated tokens" and is
+        # comparable across the two models despite their different tokenizers;
+        # subword-level Distinct-n is reported alongside it by the caller.
         "distinct_1": (len(unigrams) / total_tokens) if total_tokens else 0.0,
         "distinct_2": (sum(bigrams.values()) and len(bigrams) / sum(bigrams.values()))
         or 0.0,
+        "distinct_unit": "whitespace word",
         "generated_tokens": total_tokens,
     }
 
@@ -419,25 +424,49 @@ class Evaluator:
         summary["uniform_baseline_entropy"] = uniform_baseline_entropy(
             summary["sequence_length"]
         )
+        # The spec requires the heatmaps to "include example sentences in the
+        # model's language". The figure's tick labels degrade to numeric
+        # positions when no Devanagari font is installed, so the sentences are
+        # recorded here as text too and quoted in the report - otherwise the
+        # example being visualised would be unrecoverable from the artifacts.
+        summary["split"] = split
+        summary["example_sentences"] = [
+            self.decode(row) for row in x[:2].cpu().numpy()
+        ]
+        summary["example_tokens"] = [
+            self.decode([int(t)]) for t in x[0][:48].cpu().numpy()
+        ]
         return summary
 
     def full_report(self, split: str = "test") -> dict:
         """Run every evaluation and return one consolidated result dictionary.
 
+        Intrinsic metrics are computed on **both** the validation and the test
+        split. The spec asks specifically for "validation cross-entropy loss and
+        perplexity", while the held-out test split is the cleaner number to
+        report for a final model, so both are produced rather than choosing one.
+        ``intrinsic`` keeps the requested split for convenience;
+        ``intrinsic_by_split`` carries every split that was scored.
+
         Args:
-            split: Held-out split to evaluate on.
+            split: The split reported as the headline ``intrinsic`` result.
 
         Returns:
             A dict with model metadata, intrinsic metrics, generation metrics
             and attention statistics.
         """
+        by_split = {}
+        for name in ("val", "test"):
+            if name in self.data.streams:
+                by_split[name] = self.perplexity_and_bpb(name)
         return {
             "language": self.language,
             "checkpoint_step": self.step,
             "parameter_count": self.model.parameter_count(),
             "model_config": self.model_config.to_dict(),
             "corpus": self.data.describe(),
-            "intrinsic": self.perplexity_and_bpb(split),
+            "intrinsic": by_split.get(split, self.perplexity_and_bpb(split)),
+            "intrinsic_by_split": by_split,
             "generation": self.generation_suite(split),
             "attention": self.attention_report(split),
         }
