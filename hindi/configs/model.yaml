@@ -1,0 +1,95 @@
+# Model H — Hindi. Phase 2 pretraining configuration.
+#
+# Independent of Model L in every graded respect: its own corpus
+# (hindi/data/packed/), its own SentencePiece Unigram tokenizer and 8,000-token
+# vocabulary from Phase 1, and its own weights. Only source code is shared.
+
+model:
+  # Phase 1 tokenizer: hindi/tokenizer/hindi_unigram_8000.model
+  vocab_size: 8000
+
+  # Context length. Learned absolute positional embeddings make this a hard
+  # ceiling — there is no embedding row for position 512 or beyond, so the model
+  # cannot be evaluated on longer sequences without retraining that table.
+  # 512 keeps the T x T attention matrix at 262k entries per head, which is what
+  # makes a ~500M-token budget affordable inside a Colab session.
+  block_size: 512
+
+  # Depth/width trade-off. At n_embd=512 the block stack costs ~3.15M parameters
+  # per layer, so 6 layers plus the 4.1M-parameter embedding table lands at
+  # 23,273,472 total — just under the ~25M target. Seven layers would overshoot
+  # to 26.4M. Depth was spent on 6 blocks rather than a wider 4-block model
+  # because attention needs several rounds of composition to build multi-hop
+  # dependencies, and because a wider model would grow the feed-forward cost
+  # quadratically for the same parameter budget.
+  #
+  # Note that n_layer/n_head/n_embd/d_ff are IDENTICAL to Model L's. The
+  # non-embedding parameter count is therefore identical (18,915,328) for both
+  # models, so any difference in results is attributable to data and tokenizer
+  # rather than to model capacity.
+  n_layer: 6
+  n_head: 8
+  n_embd: 512
+  d_ff: 2048
+
+  dropout: 0.1
+  bias: true
+
+  # Ties the output projection to the input embedding, saving 8000 x 512 =
+  # 4,096,000 parameters (~15% of the model) that would otherwise be spent on a
+  # second representation of the same vocabulary.
+  tie_weights: true
+
+  # Learned absolute. Chosen over sinusoidal because the model is trained and
+  # evaluated at a single fixed context length, where the extrapolation benefit
+  # of sinusoidal encodings does not apply, and learned positions let the model
+  # allocate resolution where the data needs it. Set to "none" to reproduce the
+  # optional bonus ablation.
+  pos_encoding: learned
+
+  init_std: 0.02
+
+train:
+  language: hindi
+  data_dir: hindi/data/packed
+  out_dir: checkpoints/hindi
+
+  # 15,000 steps x 32,768 tokens/step = 491.5M tokens, i.e. approximately one
+  # epoch over the 485M-token Hindi train split and on target for the spec's
+  # ~500M-token budget. Model L uses the same step count and the same
+  # tokens-per-step, so the two models are trained on equal token budgets.
+  max_steps: 15000
+
+  # Effective batch = 32 x 2 x 512 = 32,768 tokens. batch_size is the micro-batch
+  # that must fit in VRAM; grad_accum_steps decouples the effective batch from
+  # the available memory. Lower batch_size and raise grad_accum_steps to keep
+  # the same effective batch on a smaller GPU.
+  batch_size: 32
+  grad_accum_steps: 2
+
+  learning_rate: 6.0e-4
+  min_lr: 6.0e-5
+  warmup_steps: 500
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+
+  eval_interval: 500
+  eval_iters: 100
+  log_interval: 20
+
+  # Checkpoints carry weights, optimizer state, scheduler state, step and this
+  # config, so an interrupted Colab session resumes exactly where it stopped.
+  checkpoint_interval: 500
+  keep_last_n: 2
+
+  seed: 20260902
+  device: auto
+  dtype: bfloat16
+  compile_model: false
+
+notes: >
+  Model H (higher-resource). Corpus: 505,852,028 tokens across 704,101 documents,
+  30.66% from manual collection. Tokenizer: SentencePiece Unigram, vocab 8,000,
+  test fertility measured in Phase 1.

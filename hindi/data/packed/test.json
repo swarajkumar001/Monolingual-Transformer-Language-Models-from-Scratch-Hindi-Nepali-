@@ -1,0 +1,21 @@
+{
+  "language": "hindi",
+  "split": "test",
+  "tokens": 10100729,
+  "documents": 14082,
+  "empty_documents": 0,
+  "unk_tokens": 0,
+  "unk_rate": 0.0,
+  "expected_documents": 14082,
+  "dtype": "uint16",
+  "bytes_on_disk": 20201458,
+  "tokenizer_model": "hindi/tokenizer/hindi_unigram_8000.model",
+  "vocab_size": 8000,
+  "eos_id": 2,
+  "bos_id": 1,
+  "unk_id": 0,
+  "pad_id": -1,
+  "documents_shuffled": true,
+  "shuffle_seed": 20260902,
+  "seconds": 59.2
+}
