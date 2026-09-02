@@ -60,7 +60,30 @@ bhojpuri/data/external/
 # content, just a third-party binary the pipeline fetches itself if absent.
 lid.176.bin
 
-# Nepali exploratory pipeline (not the graded Model L - see README.md "About
-# the Nepali attempt"). Same "code only, data goes to Drive/local, not git"
-# convention as hindi/bhojpuri above - nepali/data/ alone is ~20GB.
-nepali/data/
+# Nepali corpus data. Same "code only, corpus data goes elsewhere" convention as
+# hindi above - nepali/data/ alone is ~20GB. Enumerated by subdirectory rather
+# than ignoring nepali/data/ wholesale, because that directory also holds Model
+# L's own dataset code (dataset.py, pack_corpus.py), which IS a deliverable.
+nepali/data/raw/
+nepali/data/interim/
+nepali/data/final/
+nepali/data/*.json
+
+# Phase 2 packed token streams (uint16 memmaps produced by scripts/pack_corpus.py).
+# ~1GB per language and fully regenerable from the Phase 1 splits + tokenizer,
+# so they follow the same "code in git, corpus data elsewhere" rule as the
+# splits themselves. The small .json sidecars ARE tracked - they record the
+# exact token counts the report cites.
+hindi/data/packed/*.bin
+nepali/data/packed/*.bin
+
+# ...but the packed sidecars and every .py file under data/ ARE tracked: the
+# sidecars record the exact token counts the Phase 2 report cites, and the
+# dataset/packing code is a graded deliverable.
+!hindi/data/packed/*.json
+!nepali/data/packed/*.json
+
+# Local zip of the Hindi corpus, staged for upload to external hosting. 6GB of
+# already-gitignored data in a single file - the spec is explicit that large
+# binary artifacts do not go in git.
+hindi/data.zip
