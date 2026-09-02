@@ -30,6 +30,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = REPO_ROOT / "notebooks/kaggle_pretrain.ipynb"
 
+# Valid values include NvidiaTeslaT4, NvidiaTeslaP100 and Tpu1VmV38.
+ACCELERATOR = "NvidiaTeslaT4"
+
 # Kaggle derives a kernel's slug from its TITLE and silently ignores the slug in
 # the id field, so the two must be kept consistent by hand or the kernel ends up
 # at an address the API cannot then poll. slugify() below asserts they agree.
@@ -178,6 +181,13 @@ def push(lang: str, dry_run: bool = False) -> str:
             "kernel_type": "notebook",
             "is_private": True,
             "enable_gpu": True,
+            # Request the T4 explicitly. Kaggle's default GPU is a P100, which
+            # is Pascal (sm_60), and current PyTorch has dropped Pascal: the
+            # card gets allocated and then every kernel launch fails with
+            # "not compatible with the current PyTorch installation". The T4 is
+            # sm_75 and supported. It also has tensor cores, so float16
+            # training is faster on it than on the P100 regardless.
+            "machine_shape": ACCELERATOR,
             "enable_internet": True,
             # Only this language's corpus is attached. The notebook additionally
             # raises if it ever sees the other one mounted.
