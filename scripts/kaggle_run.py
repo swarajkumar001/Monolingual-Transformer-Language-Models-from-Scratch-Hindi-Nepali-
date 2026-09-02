@@ -29,6 +29,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = REPO_ROOT / "notebooks/kaggle_pretrain.ipynb"
+EVAL_NOTEBOOK = REPO_ROOT / "notebooks/kaggle_evaluate.ipynb"
 
 # Valid values include NvidiaTeslaT4, NvidiaTeslaP100 and Tpu1VmV38.
 ACCELERATOR = "NvidiaTeslaT4"
@@ -39,10 +40,14 @@ ACCELERATOR = "NvidiaTeslaT4"
 LANGUAGES = {
     "hindi": {"slug": "lma-phase-2-model-h-hindi",
               "title": "LMA Phase 2 Model H Hindi",
-              "dataset": "lma-hindi-packed"},
+              "dataset": "lma-hindi-packed",
+              "eval_slug": "lma-phase-2-eval-model-h-hindi",
+              "eval_title": "LMA Phase 2 Eval Model H Hindi"},
     "nepali": {"slug": "lma-phase-2-model-l-nepali",
                "title": "LMA Phase 2 Model L Nepali",
-               "dataset": "lma-nepali-packed"},
+               "dataset": "lma-nepali-packed",
+               "eval_slug": "lma-phase-2-eval-model-l-nepali",
+               "eval_title": "LMA Phase 2 Eval Model L Nepali"},
 }
 
 
@@ -59,6 +64,10 @@ def slugify(title: str) -> str:
 
 
 for _lang, _spec in LANGUAGES.items():
+    assert slugify(_spec["eval_title"]) == _spec["eval_slug"], (
+        f"{_lang}: eval title {_spec['eval_title']!r} slugifies to "
+        f"{slugify(_spec['eval_title'])!r}, not {_spec['eval_slug']!r}"
+    )
     assert slugify(_spec["title"]) == _spec["slug"], (
         f"{_lang}: title {_spec['title']!r} slugifies to "
         f"{slugify(_spec['title'])!r}, not {_spec['slug']!r}; the kernel would be "
@@ -90,7 +99,7 @@ def kaggle_username() -> str:
     raise RuntimeError("Kaggle CLI is not authenticated.")
 
 
-def build_notebook(lang: str) -> dict:
+def build_notebook(lang: str, notebook: Path = NOTEBOOK) -> dict:
     """Load the notebook and pin it to one language.
 
     The notebook carries ``LANGUAGE = "hindi"`` as its editable default. For a
@@ -105,7 +114,7 @@ def build_notebook(lang: str) -> dict:
     Raises:
         RuntimeError: If the language constant could not be found.
     """
-    nb = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
+    nb = json.loads(notebook.read_text(encoding="utf-8"))
     patched = 0
     for cell in nb["cells"]:
         if cell["cell_type"] != "code":
@@ -153,7 +162,7 @@ def validate_notebook(nb: dict) -> None:
             ) from exc
 
 
-def push(lang: str, dry_run: bool = False) -> str:
+def push(lang: str, dry_run: bool = False, evaluate: bool = False) -> str:
     """Push the kernel for one language and start it running.
 
     Args:
@@ -165,18 +174,22 @@ def push(lang: str, dry_run: bool = False) -> str:
     """
     spec = LANGUAGES[lang]
     user = kaggle_username()
-    kernel_id = f"{user}/{spec['slug']}"
+    slug = spec["eval_slug"] if evaluate else spec["slug"]
+    title = spec["eval_title"] if evaluate else spec["title"]
+    notebook = EVAL_NOTEBOOK if evaluate else NOTEBOOK
+    kernel_id = f"{user}/{slug}"
 
     with tempfile.TemporaryDirectory(prefix=f"kernel_{lang}_") as tmp:
         stage = Path(tmp)
-        nb = build_notebook(lang)
-        (stage / "kaggle_pretrain.ipynb").write_text(
+        nb = build_notebook(lang, notebook)
+        code_file = "kaggle_evaluate.ipynb" if evaluate else "kaggle_pretrain.ipynb"
+        (stage / code_file).write_text(
             json.dumps(nb, indent=1), encoding="utf-8"
         )
         metadata = {
             "id": kernel_id,
-            "title": spec["title"],
-            "code_file": "kaggle_pretrain.ipynb",
+            "title": title,
+            "code_file": code_file,
             "language": "python",
             "kernel_type": "notebook",
             "is_private": True,
@@ -193,7 +206,11 @@ def push(lang: str, dry_run: bool = False) -> str:
             # raises if it ever sees the other one mounted.
             "dataset_sources": [f"{user}/lma-code", f"{user}/{spec['dataset']}"],
             "competition_sources": [],
-            "kernel_sources": [],
+            # Evaluation reads the trained weights from the pretraining kernel's
+            # saved output, so that run is attached as a kernel source. Training
+            # is the expensive part; evaluation can be redone against the same
+            # checkpoint as often as needed.
+            "kernel_sources": [f"{user}/{spec['slug']}"] if evaluate else [],
         }
         (stage / "kernel-metadata.json").write_text(
             json.dumps(metadata, indent=2), encoding="utf-8"
@@ -223,7 +240,7 @@ def push(lang: str, dry_run: bool = False) -> str:
     return kernel_id
 
 
-def status(lang: str) -> str:
+def status(lang: str, evaluate: bool = False) -> str:
     """Report the current status of one language's kernel.
 
     Args:
@@ -233,7 +250,8 @@ def status(lang: str) -> str:
         The raw status string reported by Kaggle.
     """
     user = kaggle_username()
-    kernel_id = f"{user}/{LANGUAGES[lang]['slug']}"
+    key = "eval_slug" if evaluate else "slug"
+    kernel_id = f"{user}/{LANGUAGES[lang][key]}"
     result = subprocess.run(
         kaggle_cli() + ["kernels", "status", kernel_id],
         capture_output=True, text=True,
@@ -243,7 +261,7 @@ def status(lang: str) -> str:
     return text
 
 
-def fetch(lang: str, out_dir: Path | None = None) -> None:
+def fetch(lang: str, out_dir: Path | None = None, evaluate: bool = False) -> None:
     """Download a finished kernel's output files.
 
     Args:
@@ -251,7 +269,8 @@ def fetch(lang: str, out_dir: Path | None = None) -> None:
         out_dir: Destination directory; defaults to ``kaggle_output/<lang>/``.
     """
     user = kaggle_username()
-    kernel_id = f"{user}/{LANGUAGES[lang]['slug']}"
+    key = "eval_slug" if evaluate else "slug"
+    kernel_id = f"{user}/{LANGUAGES[lang][key]}"
     dest = out_dir or (REPO_ROOT / "kaggle_output" / lang)
     dest.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
@@ -269,14 +288,21 @@ def main() -> None:
     parser.add_argument("--status", action="store_true", help="Report status only.")
     parser.add_argument("--fetch", action="store_true", help="Download output only.")
     parser.add_argument("--dry-run", action="store_true", help="Stage but do not push.")
+    parser.add_argument(
+        "--eval",
+        dest="evaluate",
+        action="store_true",
+        help="Push the evaluation-only kernel, which scores the checkpoint "
+        "produced by that language's pretraining run.",
+    )
     args = parser.parse_args()
 
     if args.status:
-        status(args.lang)
+        status(args.lang, evaluate=args.evaluate)
     elif args.fetch:
-        fetch(args.lang)
+        fetch(args.lang, evaluate=args.evaluate)
     else:
-        push(args.lang, dry_run=args.dry_run)
+        push(args.lang, dry_run=args.dry_run, evaluate=args.evaluate)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,40 @@
+model:
+  vocab_size: 8000
+  block_size: 512
+  n_layer: 6
+  n_head: 8
+  n_embd: 512
+  d_ff: 2048
+  dropout: 0.1
+  bias: true
+  tie_weights: true
+  pos_encoding: learned
+  init_std: 0.02
+train:
+  language: hindi
+  data_dir: /kaggle/temp/data/hindi
+  out_dir: /kaggle/working/checkpoints/hindi
+  max_steps: 15000
+  batch_size: 32
+  grad_accum_steps: 2
+  learning_rate: 0.0006
+  min_lr: 6.0e-05
+  warmup_steps: 500
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+  eval_interval: 500
+  eval_iters: 100
+  log_interval: 20
+  checkpoint_interval: 500
+  keep_last_n: 2
+  seed: 20260902
+  device: auto
+  dtype: bfloat16
+  compile_model: false
+notes: 'Model H (higher-resource). Corpus: 505,852,028 tokens across 704,101 documents,
+  30.66% from manual collection. Tokenizer: SentencePiece Unigram, vocab 8,000, test
+  fertility measured in Phase 1.
+
+  '
