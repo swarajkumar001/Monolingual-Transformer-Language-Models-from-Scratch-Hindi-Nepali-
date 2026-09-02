@@ -19,6 +19,7 @@ Usage
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
@@ -118,7 +119,35 @@ def build_notebook(lang: str) -> dict:
         raise RuntimeError(
             f"expected exactly one LANGUAGE assignment, patched {patched}"
         )
+    validate_notebook(nb)
     return nb
+
+
+def validate_notebook(nb: dict) -> None:
+    """Parse every code cell exactly as Jupyter will join it.
+
+    nbformat stores a cell's source as a list of lines, and every element
+    except the last must carry its own trailing newline. A generator that
+    strips them produces a notebook that looks fine in JSON but collapses into
+    one unbroken line when executed. That failure cost a GPU session once; this
+    check runs before every push so it cannot happen silently again.
+
+    Args:
+        nb: The notebook as a dict.
+
+    Raises:
+        SyntaxError: If any code cell fails to parse as joined.
+    """
+    for i, cell in enumerate(nb["cells"]):
+        if cell["cell_type"] != "code":
+            continue
+        source = "".join(cell["source"])  # exactly how Jupyter joins it
+        try:
+            ast.parse(source)
+        except SyntaxError as exc:
+            raise SyntaxError(
+                f"code cell {i} does not parse as Jupyter would join it: {exc}"
+            ) from exc
 
 
 def push(lang: str, dry_run: bool = False) -> str:
