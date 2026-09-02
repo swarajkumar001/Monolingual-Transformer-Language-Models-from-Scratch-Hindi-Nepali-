@@ -1,0 +1,21 @@
+{
+  "language": "nepali",
+  "split": "train",
+  "tokens": 521426359,
+  "documents": 1520000,
+  "empty_documents": 0,
+  "unk_tokens": 858354,
+  "unk_rate": 0.001646165340866475,
+  "expected_documents": -1,
+  "dtype": "uint16",
+  "bytes_on_disk": 1042852718,
+  "tokenizer_model": "nepali/tokenizer/nepali_bpe.model",
+  "vocab_size": 10000,
+  "eos_id": 3,
+  "bos_id": 2,
+  "unk_id": 1,
+  "pad_id": 0,
+  "documents_shuffled": false,
+  "shuffle_seed": null,
+  "seconds": 378.0
+}

@@ -1,0 +1,76 @@
+# Model L — Nepali. Phase 2 pretraining configuration.
+#
+# Independent of Model H in every graded respect: its own corpus
+# (nepali/data/packed/), its own SentencePiece BPE tokenizer and 10,000-token
+# vocabulary from Phase 1, and its own weights. Only source code is shared.
+
+model:
+  # Phase 1 tokenizer: nepali/tokenizer/nepali_bpe.model
+  # Larger than Hindi's 8,000 because Nepali's Phase 1 vocabulary sweep found no
+  # fertility elbow below 10,000 — fertility was still improving by more than 3%
+  # at every step up to the top of the swept range.
+  vocab_size: 10000
+
+  # Same context length as Model H, so perplexity and bits-per-byte are computed
+  # over comparably sized windows.
+  block_size: 512
+
+  # Identical depth and width to Model H by design. The non-embedding parameter
+  # count is therefore exactly the same (18,915,328); the models differ only in
+  # the vocabulary-sized embedding layer (10,000 x 512 here vs. 8,000 x 512),
+  # giving 24,297,472 total against Hindi's 23,273,472. Holding capacity fixed
+  # is what lets the Phase 3 report attribute any H-vs-L gap to data scale,
+  # data quality and tokenizer fertility rather than to model size.
+  n_layer: 6
+  n_head: 8
+  n_embd: 512
+  d_ff: 2048
+
+  dropout: 0.1
+  bias: true
+
+  # Saves 10000 x 512 = 5,120,000 parameters (~21% of the model here — a larger
+  # share than for Hindi, precisely because the vocabulary is larger).
+  tie_weights: true
+
+  pos_encoding: learned
+  init_std: 0.02
+
+train:
+  language: nepali
+  data_dir: nepali/data/packed
+  out_dir: checkpoints/nepali
+
+  # Same budget as Model H: 15,000 x 32,768 = 491.5M tokens, against a 520M-token
+  # train split. Equal token budgets across the two models is deliberate.
+  max_steps: 15000
+
+  batch_size: 32
+  grad_accum_steps: 2
+
+  learning_rate: 6.0e-4
+  min_lr: 6.0e-5
+  warmup_steps: 500
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+
+  eval_interval: 500
+  eval_iters: 100
+  log_interval: 20
+
+  checkpoint_interval: 500
+  keep_last_n: 2
+
+  # Different seed from Model H's, so the two runs are independent draws rather
+  # than the same run with different data.
+  seed: 20260903
+  device: auto
+  dtype: bfloat16
+  compile_model: false
+
+notes: >
+  Model L (lower-resource, from the spec's allowed list). Corpus: 635,204,333
+  tokens across 1,918,265 documents, 26.41% from manual collection. Tokenizer:
+  SentencePiece BPE, vocab 10,000, test fertility 1.4672, unknown-token rate 0.
