@@ -210,11 +210,16 @@ def push(lang: str, dry_run: bool = False) -> str:
             kaggle_cli() + ["kernels", "push", "-p", str(stage)],
             capture_output=True, text=True,
         )
-        print(result.stdout.strip() or result.stderr.strip())
-        if result.returncode != 0:
-            print(f"  push FAILED (exit {result.returncode})")
-        else:
-            print(f"  running -> https://www.kaggle.com/code/{kernel_id}")
+        output = (result.stdout + result.stderr).strip()
+        print(output)
+        # The CLI exits 0 even when the server rejects the push - a rejected
+        # push ("Maximum batch GPU session count of 2 reached") otherwise reads
+        # as a successful launch. Trust the message, not the exit code.
+        rejected = "error" in output.lower() and "successfully pushed" not in output
+        if result.returncode != 0 or rejected:
+            print(f"  push REJECTED - kernel was not started")
+            raise RuntimeError(output.splitlines()[-1] if output else "push failed")
+        print(f"  running -> https://www.kaggle.com/code/{kernel_id}")
     return kernel_id
 
 
