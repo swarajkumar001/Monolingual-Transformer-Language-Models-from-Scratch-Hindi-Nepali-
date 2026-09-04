@@ -5,6 +5,7 @@
 **Two independent, from-scratch, decoder-only Transformer language models, one per Indian language.**
 
 ![Phase 1](https://img.shields.io/badge/Phase%201-Complete-brightgreen)
+![Phase 2](https://img.shields.io/badge/Phase%202-Complete-brightgreen)
 ![Model H](https://img.shields.io/badge/Model%20H-Hindi-1f6f8b)
 ![Model L](https://img.shields.io/badge/Model%20L-Nepali-7a4fa3)
 ![Script](https://img.shields.io/badge/Script-Devanagari-orange)
@@ -142,13 +143,15 @@ tokens), `wikipedia_api` (self-parsed XML dump), `news_bbc_nepali`,
       metadata/                # clean_stats.json, dropped_documents.jsonl
       pipeline/                # download/ingest/clean/split scripts
     tokenizer/                 # SentencePiece model + vocab (Phase 1 deliverable)
-    model/ train/ eval/ configs/   # Phase 2+
+    model/ train/ eval/ configs/   # Phase 2: Transformer, training,
+                                 # evaluation, tests
   nepali/                      # Model L. Different pipeline shape (stage-based
                                 # S00-S14 under scripts/, corpuslib/ shared lib)
                                 # but the same required subfolders:
     data/raw/{manual,downloaded}/, data/final/{train,val,test}.jsonl
     tokenizer/                 # nepali_bpe.model/.vocab + sweep/
-    model/ train/ eval/ configs/   # Phase 2+
+    model/ train/ eval/ configs/   # Phase 2: Transformer, training,
+                                 # evaluation, tests
   scripts/                     # shared pipeline code (clean_lib.py, crawlers,
                                 # validate_phase1.py, validate_phase1_nepali.py,
                                 # check_nepali_hindi_overlap.py)
@@ -257,31 +260,102 @@ model weights are fully independent — no sharing, no multilingual training.
 
 ---
 
-## What's next: Phase 2 and Phase 3
+## Phase 2 — Model Implementation, Pretraining & Evaluation (complete)
 
-Phase 1 (this README) was just data + tokenizer. Nothing about the actual
-model exists yet — here's what's left, in plain terms.
+Two independent ~25M-parameter decoder-only Transformers, written from scratch
+in PyTorch, pretrained on separate corpora with separate tokenizers, and
+evaluated side by side.
 
-### Phase 2 (due 5 Sep) — build and train the models
+**[Full Phase 2 report](report/phase2/phase2_report.md)** ·
+**[Deliverables index](report/phase2/README.md)**
 
-- Write the Transformer ourselves in plain PyTorch — token embeddings +
-  positional embeddings, multi-head **causal** self-attention (build the
-  triangular mask by hand), feed-forward layers, residual connections,
-  layernorm. No `nn.Transformer`, no HuggingFace model classes — the point
-  is to understand every operation, not import it.
-- Keep each model around **~25M parameters**, one config per language
-  (vocab sizes differ: Hindi 8,000 vs. Nepali 10,000, so the embedding
-  layer sizes won't match either — that's expected and allowed).
-- Train both models separately with AdamW + a learning-rate schedule.
-  **Checkpoints must be resumable** — save weights, optimizer state,
-  scheduler state, and step number, since Colab-style sessions can die
-  mid-run.
-- Evaluate both models: validation loss → perplexity, bits-per-byte
-  (fairer comparison across the two tokenizers), generate text at a few
-  temperatures and score it with BLEU/chrF/ROUGE-L, check repetition and
-  vocabulary diversity.
-- Look inside the trained attention heads — heatmaps, how spread out vs.
-  focused each head is, how far back each head tends to look.
+| | Model H (Hindi) | Model L (Nepali) |
+|---|---:|---:|
+| Total parameters | 23,273,472 | 24,297,472 |
+| **Non-embedding parameters** | **18,915,328** | **18,915,328** |
+| Layers / heads / d_model / d_ff | 6 / 8 / 512 / 2048 | 6 / 8 / 512 / 2048 |
+| Context length | 512 | 512 |
+| Training steps | 14,520 | 14,440 |
+| Training tokens | 475,791,360 | 473,169,920 |
+| Wall clock (Tesla T4) | 11.0 h @ 12.0k tok/s | 11.0 h @ 12.0k tok/s |
+| **Validation perplexity** | **27.07** | 46.14 |
+| **Test perplexity** | **27.41** | 46.68 |
+| **Test bits-per-byte** | 0.5382 | **0.4846** |
+
+The two models are identical in every architectural dimension except
+vocabulary, so their non-embedding parameter counts match exactly and their
+token budgets differ by 0.55% — any difference in results is attributable to
+data and tokenizer, not to capacity or compute.
+
+**The headline finding is that perplexity and bits-per-byte disagree.**
+Perplexity favours Model H by 41%; bits-per-byte puts Model L marginally ahead.
+Nepali's BPE-10000 packs 11.44 bytes per token against Hindi's Unigram-8000 at
+8.88, so its tokens are individually harder to predict but carry more text.
+Reporting perplexity alone would have supported the conclusion that the
+lower-resource model is substantially worse; the tokenizer-neutral metric shows
+they are close. See [the report](report/phase2/phase2_report.md) §4.
+
+Both models independently converged on the same attention organisation,
+including a previous-token head at layer 3 (entropy 0.06 at distance 1.3 for
+Model H, 0.14 at 1.1 for Model L), with mean entropy about 2 nats below the
+uniform-attention baseline of 5.256.
+
+### Deliverables
+
+| # | Deliverable | Where |
+|---|---|---|
+| 1 | Transformer (MHA, positional embeddings, causal mask) | [`hindi/model/transformer.py`](hindi/model/transformer.py), [`nepali/model/transformer.py`](nepali/model/transformer.py) |
+| 2 | Model configuration files | [`hindi/configs/model.yaml`](hindi/configs/model.yaml), [`nepali/configs/model.yaml`](nepali/configs/model.yaml) |
+| 3 | Parameter counts; training scripts; checkpoints | report §1; `*/train/train.py`; Drive links below |
+| 4 | Training logs and loss curves | `report/phase2/*_training_log.jsonl`, `figures/loss_curves_both*.png` |
+| 5 | PPL / BPB tables; BLEU, chrF, ROUGE-L | report §4–5, `report/phase2/*_eval.json` |
+| 6 | Generated samples; diversity / repetition | report §5.2, `*_eval.json` → `generation.samples` |
+| 7 | Attention heatmaps; entropy / distance | `figures/*_attention_layer{0,5}.png`, `figures/attention_summary_both.png`, `*_attention.json` |
+| 8 | Resource-level comparison write-up | report §7 |
+
+### Reproduction
+
+Every command names exactly one language; no entry point runs both.
+
+```
+python hindi/data/pack_corpus.py            # Phase 1 splits -> uint16 streams
+python nepali/data/pack_corpus.py
+
+python hindi/tests/test_model.py            # 9/9, incl. causal-mask proof
+python nepali/tests/test_model.py
+
+python -m hindi.train.train  --config hindi/configs/model.yaml
+python -m nepali.train.train --config nepali/configs/model.yaml
+
+python -m hindi.eval.evaluate  --checkpoint checkpoints/hindi/ckpt_best.pt  --split test
+python -m nepali.eval.evaluate --checkpoint checkpoints/nepali/ckpt_best.pt --split test
+
+python scripts/make_phase2_figures.py     --hindi-checkpoint checkpoints/hindi/ckpt_best.pt     --nepali-checkpoint checkpoints/nepali/ckpt_best.pt
+```
+
+Pretraining ran on Kaggle via
+[`notebooks/kaggle_pretrain.ipynb`](notebooks/kaggle_pretrain.ipynb) (once per
+language, GPU T4) with
+[`notebooks/kaggle_evaluate.ipynb`](notebooks/kaggle_evaluate.ipynb) for
+evaluation from a finished checkpoint.
+
+### Phase 2 checkpoints
+
+> **TODO — upload and paste links.** Each bundle is ~1.3GB and contains
+> `ckpt_best.pt`, `ckpt_final.pt`, rolling step checkpoints, `config.yaml` and
+> `training_log.jsonl`. Every checkpoint carries model weights, optimizer
+> state, scheduler state, step, tokens consumed and the full run config, so
+> training resumes exactly. Permissions must be open so graders can download
+> without requesting access.
+
+| Model | Checkpoint bundle |
+|---|---|
+| Model H (Hindi) | _pending upload_ |
+| Model L (Nepali) | _pending upload_ |
+
+---
+
+## What's next: Phase 3
 
 ### Phase 3 (due 16 Sep, final) — teach it to reason, then wrap up
 
@@ -296,10 +370,6 @@ model exists yet — here's what's left, in plain terms.
 - Write the final report tying it all together: how Hindi (more data) and
   Nepali (less data, different tokenizer) actually compare, and what
   factors explain the gap.
-
-None of `nepali/model/`, `nepali/train/`, `nepali/eval/` (or Hindi's
-equivalents) have real code yet — they're empty placeholder folders left
-over from the required repo layout, waiting for Phase 2.
 
 ---
 
