@@ -23,7 +23,9 @@ pipeline with MinHash/LSH dedup and absolute per-lane token targets), so
 most of the linked report describes each language separately rather than
 forcing one shared table.
 
-**[Full Phase 1 report](report/phase1/phase1_report.md)** ([LaTeX](report/phase1/phase1_report.tex) · [PDF](report/phase1/phase1_report.pdf)) · **[Deliverables index](report/phase1/README.md)**
+**[Phase 2 report](report/phase2/phase2_report.md)** — models, training, evaluation · **[Phase 2 deliverables](report/phase2/README.md)**
+
+**[Phase 1 report](report/phase1/phase1_report.md)** ([LaTeX](report/phase1/phase1_report.tex) · [PDF](report/phase1/phase1_report.pdf)) — data, tokenizers · **[Phase 1 deliverables](report/phase1/README.md)**
 
 ---
 
@@ -122,141 +124,6 @@ tokens), `wikipedia_api` (self-parsed XML dump), `news_bbc_nepali`,
 > transferred into this repo, not live per-stage logs — `log.md`'s
 > S08(production)–S14 entries are reconstructed from those artifacts,
 > flagged inline as such.
-
----
-
-## Repository layout
-
-<details>
-<summary>Click to expand</summary>
-
-```
-<repo>/
-  README.md                    # this file
-  requirements.txt
-  hindi/
-    data/
-      raw/{manual,downloaded}/ # source text + metadata.jsonl (provenance)
-      interim/                 # post-normalization, pre-language-filter snapshot
-      cleaned/                 # final cleaned corpus
-      splits/                  # train/validation/test (document-level split)
-      metadata/                # clean_stats.json, dropped_documents.jsonl
-      pipeline/                # download/ingest/clean/split scripts
-    tokenizer/                 # SentencePiece model + vocab (Phase 1 deliverable)
-    model/ train/ eval/ configs/   # Phase 2: Transformer, training,
-                                 # evaluation, tests
-  nepali/                      # Model L. Different pipeline shape (stage-based
-                                # S00-S14 under scripts/, corpuslib/ shared lib)
-                                # but the same required subfolders:
-    data/raw/{manual,downloaded}/, data/final/{train,val,test}.jsonl
-    tokenizer/                 # nepali_bpe.model/.vocab + sweep/
-    model/ train/ eval/ configs/   # Phase 2: Transformer, training,
-                                 # evaluation, tests
-  scripts/                     # shared pipeline code (clean_lib.py, crawlers,
-                                # validate_phase1.py, validate_phase1_nepali.py,
-                                # check_nepali_hindi_overlap.py)
-  report/
-    phase1/                    # README.md (deliverables index), phase1_report.{md,tex,pdf}
-                                # (both languages), dataset_statistics.md,
-                                # tokenizer_analysis.md, make_plots.py, figures/
-    phase2/ phase3/
-  logs/                        # every *.log produced by the pipelines (gitignored)
-  # bhojpuri/ removed — earlier, fully-complete Model L attempt,
-  # superseded by Nepali; see "Bhojpuri (superseded)" below for its numbers
-```
-
-</details>
-
-## Reproduction steps
-
-<details>
-<summary>Click to expand</summary>
-
-**1. Environment**
-
-```
-python -m venv .venv
-.venv/Scripts/activate      # or: source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-**2. Hindi pipeline**
-
-```
-python hindi/data/pipeline/download_hindi.py       # public/HF corpora -> raw/downloaded/
-python hindi/data/pipeline/ingest_manual.py         # scraped/self-extracted sources -> raw/manual/
-python hindi/data/pipeline/ingest_wikipedia_dump.py # self-extracted Wikipedia XML dump -> raw/manual/
-python hindi/data/pipeline/clean_hindi.py           # raw/ -> interim/ -> cleaned/ (full rebuild by default)
-python hindi/data/pipeline/split_hindi.py           # cleaned/ -> splits/{train,validation,test}/
-python hindi/tokenizer/train_tokenizer.py --vocab-size 8000
-```
-
-`clean_hindi.py` always rebuilds `interim/`/`cleaned/` from `raw/` from
-scratch; pass `--resume` only to continue an interrupted run without
-reprocessing already-seen documents. `clean_hindi.py`/`split_hindi.py`
-take an OS-level single-instance lock (`data/metadata/.clean.lock` /
-`.split.lock`) — delete a stale lock older than 15 minutes if a run was
-killed uncleanly.
-
-**3. Nepali pipeline** (stage-based, config-driven — different shape from
-Hindi's, see `nepali/scripts/` docstrings for each stage)
-
-```
-cd nepali/scripts
-python s00_doctor.py                # environment/config sanity check
-python auto_grow_and_tokenize.py    # full S02-S14: collect -> clean -> dedup ->
-                                     # decontaminate -> balance -> split -> tokenize,
-                                     # growing whichever lane (manual/downloaded) falls
-                                     # short of its absolute token target, up to 4 rounds
-```
-
-Or run stages individually (`s01_collect.py` ... `s14_corpus_stats.py`) via
-`python run_pipeline.py <stage>` for finer control. S08 (MinHash/LSH dedup
-over ~2.2M documents) is the slow stage — budget several hours.
-
-**4. Validate Phase 1 deliverables**
-
-```
-python scripts/validate_phase1.py            # Hindi
-python scripts/validate_phase1_nepali.py     # Nepali (different data layout)
-python scripts/check_nepali_hindi_overlap.py # cross-language: Nepali vs. Hindi
-```
-
-**5. Regenerate the report figures** (both languages, one script — it
-live-measures each language's tokenizer sweep against its own held-out
-validation split)
-
-```
-python report/phase1/make_plots.py
-```
-
-</details>
-
-## Large artifacts (OneDrive)
-
-Raw corpora, cleaned corpora, and tokenizer files are too large for git and
-are hosted on OneDrive instead:
-
-**[LMA DATA SET — shared OneDrive folder](https://iiithydstudents-my.sharepoint.com/:f:/g/personal/swaraj_kumar_students_iiit_ac_in/IgCh3u8O2sr4QIJqmrUS1CllAV1C5HL0R9SOWUUVIzTgcdw?e=bgUHaG)**
-(requires an IIIT account with access)
-
-### Key results (from the full report)
-
-| | Hindi (Model H) | Nepali (Model L) |
-|---|---:|---:|
-| Total tokens (train+val+test, exact, unsampled) | **505,852,028** | **635,204,333** |
-| % of ~500M target | **101.2%** | **127.0%** |
-| Manual share, char-weighted | 28.65% | not tracked (see report §2) |
-| Manual share, token-weighted | 30.66% | 26.41% |
-| Clears 20% manual floor? | Yes | Yes |
-
-## Hard constraints followed
-
-No pretrained models, no pretrained tokenizers, no HuggingFace Transformer
-model classes. Positional embeddings, multi-head attention, and causal
-masking are student-implemented from primitive PyTorch layers (Phase 2). The
-two language corpora, tokenizers, vocabularies, and (from Phase 2 onward)
-model weights are fully independent — no sharing, no multilingual training.
 
 ---
 
@@ -359,6 +226,154 @@ To evaluate a checkpoint after downloading:
 python -m hindi.eval.evaluate  --checkpoint <path>/hindi/ckpt_best.pt  --split test
 python -m nepali.eval.evaluate --checkpoint <path>/nepali/ckpt_best.pt --split test
 ```
+
+---
+
+## Repository layout
+
+<details>
+<summary>Click to expand</summary>
+
+```
+<repo>/
+  README.md                    # this file
+  requirements.txt
+  hindi/
+    data/
+      raw/{manual,downloaded}/ # source text + metadata.jsonl (provenance)
+      interim/                 # post-normalization, pre-language-filter snapshot
+      cleaned/                 # final cleaned corpus
+      splits/                  # train/validation/test (document-level split)
+      metadata/                # clean_stats.json, dropped_documents.jsonl
+      pipeline/                # download/ingest/clean/split scripts
+    tokenizer/                 # SentencePiece model + vocab (Phase 1 deliverable)
+      packed/                  # uint16 token streams for training (gitignored;
+                                # .json sidecars with exact token counts tracked)
+    model/                     # config.py, transformer.py  (Phase 2)
+    train/                     # train.py                   (Phase 2)
+    eval/                      # evaluate.py, attention.py, viz.py
+    tests/                     # test_model.py (incl. causal-mask proof)
+    configs/                   # model.yaml
+  nepali/                      # Model L. Different pipeline shape (stage-based
+                                # S00-S14 under scripts/, corpuslib/ shared lib)
+                                # but the same required subfolders:
+    data/raw/{manual,downloaded}/, data/final/{train,val,test}.jsonl
+    tokenizer/                 # nepali_bpe.model/.vocab + sweep/
+    model/ train/ eval/ tests/ configs/   # same shape as hindi/, independent copy
+  notebooks/                   # kaggle_pretrain.ipynb (one run per language),
+                                # kaggle_evaluate.ipynb (score a checkpoint)
+  scripts/                     # Phase 1: clean_lib.py, crawlers, validate_phase1*.py,
+                                # check_nepali_hindi_overlap.py
+                                # Phase 2: kaggle_push.py (stage datasets),
+                                # kaggle_run.py (launch/poll kernels),
+                                # collect_phase2_results.py, make_phase2_figures.py
+  report/
+    phase1/                    # README.md (deliverables index), phase1_report.{md,tex,pdf}
+                                # (both languages), dataset_statistics.md,
+                                # tokenizer_analysis.md, make_plots.py, figures/
+    phase2/                    # phase2_report.md, README.md (deliverables index),
+                                # {hindi,nepali}_{eval,attention}.json,
+                                # {hindi,nepali}_training_log.jsonl, configs, figures/
+    phase3/
+  logs/                        # every *.log produced by the pipelines (gitignored)
+  # bhojpuri/ removed — earlier, fully-complete Model L attempt,
+  # superseded by Nepali; see "Bhojpuri (superseded)" below for its numbers
+```
+
+</details>
+
+## Reproduction steps
+
+<details>
+<summary>Click to expand</summary>
+
+**1. Environment**
+
+```
+python -m venv .venv
+.venv/Scripts/activate      # or: source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+**2. Hindi pipeline**
+
+```
+python hindi/data/pipeline/download_hindi.py       # public/HF corpora -> raw/downloaded/
+python hindi/data/pipeline/ingest_manual.py         # scraped/self-extracted sources -> raw/manual/
+python hindi/data/pipeline/ingest_wikipedia_dump.py # self-extracted Wikipedia XML dump -> raw/manual/
+python hindi/data/pipeline/clean_hindi.py           # raw/ -> interim/ -> cleaned/ (full rebuild by default)
+python hindi/data/pipeline/split_hindi.py           # cleaned/ -> splits/{train,validation,test}/
+python hindi/tokenizer/train_tokenizer.py --vocab-size 8000
+```
+
+`clean_hindi.py` always rebuilds `interim/`/`cleaned/` from `raw/` from
+scratch; pass `--resume` only to continue an interrupted run without
+reprocessing already-seen documents. `clean_hindi.py`/`split_hindi.py`
+take an OS-level single-instance lock (`data/metadata/.clean.lock` /
+`.split.lock`) — delete a stale lock older than 15 minutes if a run was
+killed uncleanly.
+
+**3. Nepali pipeline** (stage-based, config-driven — different shape from
+Hindi's, see `nepali/scripts/` docstrings for each stage)
+
+```
+cd nepali/scripts
+python s00_doctor.py                # environment/config sanity check
+python auto_grow_and_tokenize.py    # full S02-S14: collect -> clean -> dedup ->
+                                     # decontaminate -> balance -> split -> tokenize,
+                                     # growing whichever lane (manual/downloaded) falls
+                                     # short of its absolute token target, up to 4 rounds
+```
+
+Or run stages individually (`s01_collect.py` ... `s14_corpus_stats.py`) via
+`python run_pipeline.py <stage>` for finer control. S08 (MinHash/LSH dedup
+over ~2.2M documents) is the slow stage — budget several hours.
+
+**4. Validate Phase 1 deliverables**
+
+```
+python scripts/validate_phase1.py            # Hindi
+python scripts/validate_phase1_nepali.py     # Nepali (different data layout)
+python scripts/check_nepali_hindi_overlap.py # cross-language: Nepali vs. Hindi
+```
+
+**5. Regenerate the report figures** (both languages, one script — it
+live-measures each language's tokenizer sweep against its own held-out
+validation split)
+
+```
+python report/phase1/make_plots.py
+```
+
+</details>
+
+## Phase 1 corpora (OneDrive)
+
+Raw corpora, cleaned corpora, and tokenizer files are too large for git and
+are hosted on OneDrive instead:
+
+**[LMA DATA SET — shared OneDrive folder](https://iiithydstudents-my.sharepoint.com/:f:/g/personal/swaraj_kumar_students_iiit_ac_in/IgCh3u8O2sr4QIJqmrUS1CllAV1C5HL0R9SOWUUVIzTgcdw?e=bgUHaG)**
+(requires an IIIT account with access)
+
+### Key results (from the full report)
+
+| | Hindi (Model H) | Nepali (Model L) |
+|---|---:|---:|
+| Total tokens (train+val+test, exact, unsampled) | **505,852,028** | **635,204,333** |
+| % of ~500M target | **101.2%** | **127.0%** |
+| Manual share, char-weighted | 28.65% | not tracked (see report §2) |
+| Manual share, token-weighted | 30.66% | 26.41% |
+| Clears 20% manual floor? | Yes | Yes |
+
+## Hard constraints followed
+
+No pretrained models, no pretrained tokenizers, no HuggingFace Transformer
+model classes. Positional embeddings, multi-head attention, and causal
+masking are student-implemented from primitive PyTorch layers — verified by a
+test that walks the module tree and fails on any pre-built attention block.
+The two language corpora, tokenizers, vocabularies and model weights are fully
+independent: `hindi/` and `nepali/` are separate packages, neither importing
+the other, and no multilingual training was performed.
 
 ---
 
