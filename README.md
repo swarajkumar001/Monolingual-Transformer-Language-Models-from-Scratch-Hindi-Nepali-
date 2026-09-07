@@ -339,19 +339,26 @@ language, GPU T4) with
 [`notebooks/kaggle_evaluate.ipynb`](notebooks/kaggle_evaluate.ipynb) for
 evaluation from a finished checkpoint.
 
-### Phase 2 checkpoints
+### Phase 2 checkpoints (Google Drive)
 
-> **TODO — upload and paste links.** Each bundle is ~1.3GB and contains
-> `ckpt_best.pt`, `ckpt_final.pt`, rolling step checkpoints, `config.yaml` and
-> `training_log.jsonl`. Every checkpoint carries model weights, optimizer
-> state, scheduler state, step, tokens consumed and the full run config, so
-> training resumes exactly. Permissions must be open so graders can download
-> without requesting access.
+**[LMA CHECKPOINT — shared Drive folder](https://drive.google.com/drive/folders/15kYy6N9YaCx1wk2JMg8k8udf1szQfneT?usp=sharing)**
 
-| Model | Checkpoint bundle |
-|---|---|
-| Model H (Hindi) | _pending upload_ |
-| Model L (Nepali) | _pending upload_ |
+| Model | Bundle | Size | Contents |
+|---|---|---:|---|
+| Model H (Hindi) | `model_H_hindi_checkpoints.zip` | 1.28 GB | `hindi/` — `ckpt_best.pt` (step 14,500), `ckpt_final.pt`, `latest.pt`, `ckpt_step014000.pt`, `ckpt_step014500.pt` |
+| Model L (Nepali) | `model_L_nepali_checkpoints.zip` | 1.33 GB | `nepali/` — `ckpt_best.pt` (step 14,000), `ckpt_final.pt`, `latest.pt`, `ckpt_step013500.pt`, `ckpt_step014000.pt` |
+
+Every checkpoint contains model weights, optimizer state, scheduler state, the
+current step, tokens consumed, best validation loss, the full run configuration
+and both RNG states — so training resumes exactly rather than approximately.
+Resume was verified across three consecutive sessions before the real runs.
+
+To evaluate a checkpoint after downloading:
+
+```
+python -m hindi.eval.evaluate  --checkpoint <path>/hindi/ckpt_best.pt  --split test
+python -m nepali.eval.evaluate --checkpoint <path>/nepali/ckpt_best.pt --split test
+```
 
 ---
 
