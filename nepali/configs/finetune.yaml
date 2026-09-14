@@ -1,0 +1,66 @@
+# Model L — Nepali. Phase 3 reasoning-finetuning configuration.
+#
+# Independent of Model H in every graded respect: its own reasoning corpus
+# (nepali/reasoning/data/, no sentence or entity name shared with Hindi), its
+# own Phase 1 BPE tokenizer and 10,000-token vocabulary, and its own pretrained
+# weights. Only source code is shared.
+#
+# Every hyperparameter below is identical to Model H's. That is deliberate: the
+# project compares two resource tiers, so any difference in reasoning results
+# has to be attributable to data and tokenizer rather than to a difference in
+# how the two models were finetuned.
+#
+# The architecture is NOT specified here. It is read out of the pretrained
+# checkpoint, so a mismatch between this file and the trained model is
+# impossible by construction.
+
+language: nepali
+
+# Starting point: Model L's own Phase 2 checkpoint. The spec forbids
+# initialising one language's model from the other's, and forbids starting from
+# scratch — this must be the Nepali pretrained checkpoint and nothing else.
+pretrained_checkpoint: checkpoints/nepali/ckpt_best.pt
+
+data_dir: nepali/reasoning/data
+
+# Held fixed from Phase 1, as the protocol requires. Keeping the tokenizer means
+# the embedding and output matrices keep their pretrained rows; swapping it
+# would strand every one of them.
+tokenizer_model: nepali/tokenizer/nepali_bpe.model
+
+out_dir: checkpoints/nepali_reasoning
+
+# 3 epochs over 20,000 examples at batch 32 = 1,875 optimiser steps, matching
+# Model H exactly.
+epochs: 3
+batch_size: 32
+
+# Peak LR is 6e-5, one tenth of the 6e-4 pretraining peak. See Model H's config
+# for the reasoning; the value is shared so the comparison stays controlled.
+learning_rate: 6.0e-5
+min_lr: 6.0e-6
+warmup_steps: 100
+
+weight_decay: 0.1
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+
+eval_interval: 100
+log_interval: 25
+
+# Differs from Model H's seed only so the two runs are not accidentally
+# correlated through their initialisation of the data order.
+seed: 20260915
+device: auto
+
+# float16 with a GradScaler. The Kaggle T4 is compute-capability 7.5 and has no
+# bfloat16 support, so the pretraining config's bfloat16 cannot be reused here.
+dtype: float16
+
+notes: >
+  Model L (lower-resource) reasoning finetuning. 20,000 synthetic Nepali
+  comparative-reasoning examples across four task families, with entity names
+  and sentence templates both held out across splits. Numerals are written with
+  Arabic digits because Model L's BPE vocabulary contains no Devanagari digit
+  and has no byte fallback. Answer-token loss only.

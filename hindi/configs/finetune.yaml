@@ -1,0 +1,61 @@
+# Model H — Hindi. Phase 3 reasoning-finetuning configuration.
+#
+# Independent of Model L in every graded respect: its own reasoning corpus
+# (hindi/reasoning/data/, no sentence or entity name shared with Nepali), its
+# own Phase 1 tokenizer and 8,000-token vocabulary, and its own pretrained
+# weights. Only source code is shared.
+#
+# The architecture is NOT specified here. It is read out of the pretrained
+# checkpoint, so a mismatch between this file and the trained model is
+# impossible by construction.
+
+language: hindi
+
+# Starting point: Model H's own Phase 2 checkpoint. The spec forbids
+# initialising one language's model from the other's, and forbids starting from
+# scratch — this must be the Hindi pretrained checkpoint and nothing else.
+pretrained_checkpoint: checkpoints/hindi/ckpt_best.pt
+
+data_dir: hindi/reasoning/data
+
+# Held fixed from Phase 1, as the protocol requires. Keeping the tokenizer means
+# the embedding and output matrices keep their pretrained rows; swapping it
+# would strand every one of them.
+tokenizer_model: hindi/tokenizer/hindi_unigram_8000.model
+
+out_dir: checkpoints/hindi_reasoning
+
+# 3 epochs over 20,000 examples at batch 32 = 1,875 optimiser steps. The task
+# has 14 training templates and 40 training names, so it is learnable quickly;
+# more epochs mainly memorise the name-answer pairs the held-out splits are
+# designed to detect.
+epochs: 3
+batch_size: 32
+
+# Peak LR is 6e-5, one tenth of the 6e-4 pretraining peak. The model already
+# holds a language model worth keeping, and a pretraining-sized step would
+# overwrite it before the task is learned — the usual failure mode is a model
+# that answers in the right format but has forgotten how to read the question.
+learning_rate: 6.0e-5
+min_lr: 6.0e-6
+warmup_steps: 100
+
+weight_decay: 0.1
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+
+eval_interval: 100
+log_interval: 25
+
+seed: 20260914
+device: auto
+
+# float16 with a GradScaler. The Kaggle T4 is compute-capability 7.5 and has no
+# bfloat16 support, so the pretraining config's bfloat16 cannot be reused here.
+dtype: float16
+
+notes: >
+  Model H (higher-resource) reasoning finetuning. 20,000 synthetic Hindi
+  comparative-reasoning examples across four task families, with entity names
+  and sentence templates both held out across splits. Answer-token loss only.
