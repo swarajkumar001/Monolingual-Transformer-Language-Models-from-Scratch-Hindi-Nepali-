@@ -1,0 +1,72 @@
+{
+  "language": "hindi",
+  "splits": {
+    "train": {
+      "examples": 20000,
+      "by_task": {
+        "transitive3": 5000,
+        "numeric2": 5000,
+        "numeric3": 5000,
+        "compare2": 5000
+      },
+      "by_attribute": {
+        "speed": 2033,
+        "height": 5239,
+        "weight": 5357,
+        "age": 5365,
+        "wealth": 2006
+      },
+      "distinct_templates": 14,
+      "distinct_answers": 40,
+      "distinct_prompts": 20000,
+      "mean_prompt_chars": 71.1
+    },
+    "val": {
+      "examples": 2000,
+      "by_task": {
+        "compare2": 500,
+        "numeric2": 500,
+        "numeric3": 500,
+        "transitive3": 500
+      },
+      "by_attribute": {
+        "age": 548,
+        "speed": 196,
+        "weight": 550,
+        "wealth": 208,
+        "height": 498
+      },
+      "distinct_templates": 4,
+      "distinct_answers": 10,
+      "distinct_prompts": 2000,
+      "mean_prompt_chars": 72.6
+    },
+    "test": {
+      "examples": 2000,
+      "by_task": {
+        "numeric3": 500,
+        "transitive3": 500,
+        "compare2": 500,
+        "numeric2": 500
+      },
+      "by_attribute": {
+        "age": 527,
+        "weight": 539,
+        "wealth": 201,
+        "height": 531,
+        "speed": 202
+      },
+      "distinct_templates": 4,
+      "distinct_answers": 10,
+      "distinct_prompts": 2000,
+      "mean_prompt_chars": 76.9
+    }
+  },
+  "leakage_check": {
+    "entity_names_disjoint_across_splits": true,
+    "templates_disjoint_across_splits": true,
+    "train_names": 40,
+    "val_names": 10,
+    "test_names": 10
+  }
+}
