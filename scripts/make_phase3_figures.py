@@ -65,6 +65,29 @@ def regenerate(lang: str, pretrained: Path, finetuned: Path) -> dict:
     )
 
 
+def finetuning_curves() -> Path | None:
+    """Plot both models' finetuning loss on shared axes.
+
+    Drawing them together is what makes the overfitting legible: training loss
+    falls steadily while validation loss turns upward within the first hundred
+    steps, and the turn happens at the same place for both models.
+
+    Returns:
+        The figure path, or ``None`` if no finetuning logs are present.
+    """
+    viz = importlib.import_module("hindi.eval.viz")
+    logs = {lang: REPORT_DIR / f"{lang}_finetune_log.jsonl" for lang in LANGS}
+    present = {k: v for k, v in logs.items() if v.is_file()}
+    if not present:
+        print("  no finetuning logs found")
+        return None
+    out = viz.plot_loss_curves(
+        present, FIG_DIR / "finetune_loss_curves_both.png", x_axis="step",
+        stage="reasoning finetuning")
+    print(f"  wrote {out.relative_to(REPO_ROOT)}")
+    return out
+
+
 def main() -> None:
     """Regenerate both models' Phase 3 attention figures."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -80,6 +103,9 @@ def main() -> None:
     if font is None:
         print("  WARNING: no Devanagari font found; labels will be positions "
               "again, which is the thing this script exists to fix")
+
+    print("finetuning loss curves:")
+    finetuning_curves()
 
     for lang in LANGS:
         print(f"[{lang}]")

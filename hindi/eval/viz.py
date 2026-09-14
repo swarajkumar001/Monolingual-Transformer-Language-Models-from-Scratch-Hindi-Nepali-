@@ -90,6 +90,7 @@ def plot_loss_curves(
     logs: dict[str, str | Path],
     out_path: str | Path,
     x_axis: str = "tokens",
+    stage: str = "pretraining",
 ) -> Path:
     """Plot training and validation loss for one or both models.
 
@@ -97,6 +98,9 @@ def plot_loss_curves(
         logs: Mapping from language name to its ``training_log.jsonl`` path.
         out_path: Where to write the figure.
         x_axis: ``"tokens"`` to plot against tokens consumed, or ``"step"``.
+        stage: Named in the axis titles. Defaults to ``"pretraining"`` so the
+            Phase 2 figures are unchanged; Phase 3 passes ``"finetuning"``,
+            since a chart of finetuning labelled "pretraining" is simply wrong.
 
     Returns:
         The path the figure was written to.
@@ -121,13 +125,13 @@ def plot_loss_curves(
                     label=f"{lang} — validation")
 
     xlabel = "Training tokens consumed (millions)" if x_axis == "tokens" else "Step"
-    ax_loss.set_title("Cross-entropy loss during pretraining")
+    ax_loss.set_title(f"Cross-entropy loss during {stage}")
     ax_loss.set_xlabel(xlabel)
     ax_loss.set_ylabel("Cross-entropy loss (nats/token)")
     ax_loss.grid(alpha=0.3)
     ax_loss.legend()
 
-    ax_ppl.set_title("Validation perplexity during pretraining")
+    ax_ppl.set_title(f"Validation perplexity during {stage}")
     ax_ppl.set_xlabel(xlabel)
     ax_ppl.set_ylabel("Perplexity (exp of cross-entropy)")
     ax_ppl.set_yscale("log")
