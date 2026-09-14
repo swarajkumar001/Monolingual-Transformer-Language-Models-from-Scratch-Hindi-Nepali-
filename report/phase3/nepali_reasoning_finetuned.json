@@ -1,0 +1,358 @@
+{
+  "language": "nepali",
+  "tag": "finetuned",
+  "stage": "reasoning_finetune",
+  "checkpoint": "/kaggle/working/repo/checkpoints/nepali_reasoning/ckpt_best.pt",
+  "checkpoint_step": 100,
+  "split": "test",
+  "examples": 2000,
+  "sequence_stats": {
+    "examples": 2000,
+    "prompt_tokens_mean": 24.8,
+    "prompt_tokens_max": 39,
+    "answer_tokens_mean": 2.81,
+    "answer_tokens_max": 4,
+    "total_tokens_max": 43,
+    "total_tokens": 55207
+  },
+  "exact_match": {
+    "accuracy": 0.149,
+    "correct": 298,
+    "by_task": {
+      "compare2": {
+        "accuracy": 0.148,
+        "correct": 74,
+        "total": 500
+      },
+      "numeric2": {
+        "accuracy": 0.308,
+        "correct": 154,
+        "total": 500
+      },
+      "numeric3": {
+        "accuracy": 0.126,
+        "correct": 63,
+        "total": 500
+      },
+      "transitive3": {
+        "accuracy": 0.014,
+        "correct": 7,
+        "total": 500
+      }
+    },
+    "by_hops": {
+      "1": {
+        "accuracy": 0.194,
+        "correct": 291,
+        "total": 1500
+      },
+      "2": {
+        "accuracy": 0.014,
+        "correct": 7,
+        "total": 500
+      }
+    },
+    "by_attribute": {
+      "age": {
+        "accuracy": 0.1578,
+        "correct": 83,
+        "total": 526
+      },
+      "height": {
+        "accuracy": 0.166,
+        "correct": 87,
+        "total": 524
+      },
+      "speed": {
+        "accuracy": 0.0822,
+        "correct": 18,
+        "total": 219
+      },
+      "wealth": {
+        "accuracy": 0.0845,
+        "correct": 18,
+        "total": 213
+      },
+      "weight": {
+        "accuracy": 0.1776,
+        "correct": 92,
+        "total": 518
+      }
+    }
+  },
+  "forced_choice": {
+    "accuracy": 0.4095,
+    "correct": 819,
+    "chance_accuracy": 0.4167,
+    "by_task": {
+      "compare2": {
+        "accuracy": 0.476,
+        "correct": 238,
+        "total": 500
+      },
+      "numeric2": {
+        "accuracy": 0.524,
+        "correct": 262,
+        "total": 500
+      },
+      "numeric3": {
+        "accuracy": 0.312,
+        "correct": 156,
+        "total": 500
+      },
+      "transitive3": {
+        "accuracy": 0.326,
+        "correct": 163,
+        "total": 500
+      }
+    },
+    "by_hops": {
+      "1": {
+        "accuracy": 0.4373,
+        "correct": 656,
+        "total": 1500
+      },
+      "2": {
+        "accuracy": 0.326,
+        "correct": 163,
+        "total": 500
+      }
+    },
+    "by_attribute": {
+      "age": {
+        "accuracy": 0.4087,
+        "correct": 215,
+        "total": 526
+      },
+      "height": {
+        "accuracy": 0.4122,
+        "correct": 216,
+        "total": 524
+      },
+      "speed": {
+        "accuracy": 0.4384,
+        "correct": 96,
+        "total": 219
+      },
+      "wealth": {
+        "accuracy": 0.4225,
+        "correct": 90,
+        "total": 213
+      },
+      "weight": {
+        "accuracy": 0.39,
+        "correct": 202,
+        "total": 518
+      }
+    }
+  },
+  "answer_token_loss": {
+    "answer_token_loss": 1.6166,
+    "answer_token_perplexity": 5.036,
+    "answer_tokens_scored": 5614
+  },
+  "qualitative_generation": {
+    "correct": [
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु पुष्पाभन्दा गरिब छ। गरिब को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: पुष्पा निरुभन्दा धनी छ। गरिब को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु पुष्पाभन्दा छिटो छ। छिटो को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु उर्मिलाभन्दा छिटो छ। छिटो को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु उर्मिलाभन्दा धनी छ। धनी को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कुमार दीपेशभन्दा छिटो छ। ढिलो को हो?",
+        "gold": "दीपेश",
+        "model": "दीपेश"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: सुबास कुमारभन्दा गरिब छ। गरिब को हो?",
+        "gold": "सुबास",
+        "model": "सुबास"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु पुष्पाभन्दा धनी छ। धनी को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      }
+    ],
+    "incorrect": [
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा गरिब छ। धनी को हो?",
+        "gold": "कल्पना",
+        "model": "सिर्जना"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा छिटो छ। छिटो को हो?",
+        "gold": "कल्पना",
+        "model": "सिर्जना"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा ढिलो छ। छिटो को हो?",
+        "gold": "कल्पना",
+        "model": "सिर्जना"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा धनी छ। धनी को हो?",
+        "gold": "निरु",
+        "model": "सिर्जना"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा ढिलो छ। ढिलो को हो?",
+        "gold": "निरु",
+        "model": "सिर्जना"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा धनी छ। धनी को हो?",
+        "gold": "कल्पना",
+        "model": "सिर्जना"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा ढिलो छ। छिटो को हो?",
+        "gold": "निरु",
+        "model": "सिर्जना"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा छिटो छ। छिटो को हो?",
+        "gold": "निरु",
+        "model": "सिर्जना"
+      }
+    ]
+  },
+  "qualitative_forced_choice": {
+    "correct": [
+      {
+        "task": "numeric2",
+        "prompt": "दिइएको छ कि रबिनको उमेर 22 वर्ष र भोजराजको उमेर 49 वर्ष छ। जेठो को हो?",
+        "gold": "भोजराज",
+        "model": "भोजराज"
+      },
+      {
+        "task": "numeric2",
+        "prompt": "दिइएको छ कि कल्पनाको उमेर 64 वर्ष र निरुको उमेर 53 वर्ष छ। कान्छी को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      },
+      {
+        "task": "numeric2",
+        "prompt": "दिइएको छ कि कुमारको उचाइ 178 सेन्टिमिटर र भोजराजको उचाइ 146 सेन्टिमिटर छ। होचो को हो?",
+        "gold": "भोजराज",
+        "model": "भोजराज"
+      },
+      {
+        "task": "numeric2",
+        "prompt": "दिइएको छ कि पुष्पाको उमेर 59 वर्ष र उर्मिलाको उमेर 54 वर्ष छ। जेठी को हो?",
+        "gold": "पुष्पा",
+        "model": "पुष्पा"
+      },
+      {
+        "task": "numeric2",
+        "prompt": "दिइएको छ कि उर्मिलाको उचाइ 171 सेन्टिमिटर र निरुको उचाइ 159 सेन्टिमिटर छ। होची को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      },
+      {
+        "task": "numeric2",
+        "prompt": "दिइएको छ कि कुमारको उचाइ 166 सेन्टिमिटर र रबिनको उचाइ 175 सेन्टिमिटर छ। अग्लो को हो?",
+        "gold": "रबिन",
+        "model": "रबिन"
+      },
+      {
+        "task": "numeric3",
+        "prompt": "यहाँ कल्पनाको तौल 37 किलो, उर्मिलाको तौल 59 किलो, तथा पुष्पाको तौल 62 किलो छ। सबैभन्दा गह्रौं को हो?",
+        "gold": "पुष्पा",
+        "model": "पुष्पा"
+      },
+      {
+        "task": "numeric3",
+        "prompt": "यहाँ पुष्पाको उचाइ 158 सेन्टिमिटर, निरुको उचाइ 180 सेन्टिमिटर, तथा उर्मिलाको उचाइ 164 सेन्टिमिटर छ। सबैभन्दा अग्ली को हो?",
+        "gold": "निरु",
+        "model": "निरु"
+      }
+    ],
+    "incorrect": [
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कल्पना उर्मिलाभन्दा छिटो छ। छिटो को हो?",
+        "gold": "कल्पना",
+        "model": "उर्मिला"
+      },
+      {
+        "task": "transitive3",
+        "prompt": "दीपेश रबिनभन्दा होचो छ। त्यसै गरी रबिन सुबासभन्दा होचो छ। सबैभन्दा होचो को हो?",
+        "gold": "दीपेश",
+        "model": "सुबास"
+      },
+      {
+        "task": "numeric2",
+        "prompt": "दिइएको छ कि पुष्पाको तौल 92 किलो र सञ्जिताको तौल 73 किलो छ। हलुका को हो?",
+        "gold": "सञ्जिता",
+        "model": "पुष्पा"
+      },
+      {
+        "task": "transitive3",
+        "prompt": "भोजराज सुबासभन्दा छिटो छ। त्यसै गरी सुबास कुमारभन्दा छिटो छ। सबैभन्दा ढिलो को हो?",
+        "gold": "कुमार",
+        "model": "सुबास"
+      },
+      {
+        "task": "numeric3",
+        "prompt": "यहाँ दीपेशको तौल 55 किलो, भोजराजको तौल 93 किलो, तथा सुबासको तौल 78 किलो छ। सबैभन्दा गह्रौं को हो?",
+        "gold": "भोजराज",
+        "model": "दीपेश"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कल्पना सञ्जिताभन्दा होची छ। होची को हो?",
+        "gold": "कल्पना",
+        "model": "सञ्जिता"
+      },
+      {
+        "task": "numeric2",
+        "prompt": "दिइएको छ कि उर्मिलाको उमेर 13 वर्ष र निरुको उमेर 29 वर्ष छ। कान्छी को हो?",
+        "gold": "उर्मिला",
+        "model": "निरु"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कल्पना पुष्पाभन्दा छिटो छ। छिटो को हो?",
+        "gold": "कल्पना",
+        "model": "पुष्पा"
+      }
+    ]
+  }
+}

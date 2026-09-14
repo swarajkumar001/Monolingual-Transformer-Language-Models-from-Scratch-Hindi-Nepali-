@@ -1,0 +1,24 @@
+language: hindi
+pretrained_checkpoint: /kaggle/input/notebooks/swaraj001/lma-phase-2-model-h-hindi/checkpoints/hindi/ckpt_best.pt
+data_dir: hindi/reasoning/data
+tokenizer_model: /kaggle/working/repo/hindi/tokenizer/hindi_unigram_8000.model
+out_dir: checkpoints/hindi_reasoning
+epochs: 3
+batch_size: 32
+learning_rate: 6.0e-05
+min_lr: 6.0e-06
+warmup_steps: 100
+weight_decay: 0.1
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+eval_interval: 100
+log_interval: 25
+seed: 20260914
+device: cuda
+dtype: float16
+notes: 'Model H (higher-resource) reasoning finetuning. 20,000 synthetic Hindi comparative-reasoning
+  examples across four task families, with entity names and sentence templates both
+  held out across splits. Answer-token loss only.
+
+  '

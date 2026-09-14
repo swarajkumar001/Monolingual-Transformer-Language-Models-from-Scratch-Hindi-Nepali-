@@ -27,6 +27,12 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+# Every path this script prints can contain Devanagari, and a Windows console
+# defaults to cp1252, which cannot encode it. Without this the whole collection
+# succeeds and then dies on the final print.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = REPO_ROOT / "report/phase3"
 FIG_DIR = REPORT_DIR / "figures"
@@ -49,25 +55,26 @@ def kaggle_cli() -> list[str]:
 
 
 def kaggle_username() -> str:
-    """Read the Kaggle username from the credentials file or environment.
+    """Look up the authenticated Kaggle username.
+
+    Asks the CLI rather than reading ``kaggle.json`` directly, so this agrees
+    with whatever credentials the CLI is actually using -- environment
+    variables, a config directory override, or the default file.
 
     Returns:
-        The username.
+        The username string.
 
     Raises:
-        RuntimeError: If no credentials can be found.
+        RuntimeError: If the CLI is not authenticated.
     """
-    import os
-
-    if os.environ.get("KAGGLE_USERNAME"):
-        return os.environ["KAGGLE_USERNAME"]
-    for candidate in (
-        Path.home() / ".kaggle/kaggle.json",
-        Path(os.environ.get("KAGGLE_CONFIG_DIR", "")) / "kaggle.json",
-    ):
-        if candidate.is_file():
-            return json.loads(candidate.read_text())["username"]
-    raise RuntimeError("no Kaggle credentials found")
+    out = subprocess.run(kaggle_cli() + ["config", "view"],
+                         capture_output=True, text=True).stdout
+    for line in out.splitlines():
+        if "username:" in line:
+            name = line.split("username:", 1)[1].strip()
+            if name and name != "None":
+                return name
+    raise RuntimeError("Kaggle CLI is not authenticated.")
 
 
 def download_output(lang: str, dest: Path) -> Path:
@@ -83,16 +90,31 @@ def download_output(lang: str, dest: Path) -> Path:
     Raises:
         RuntimeError: If the download fails.
     """
+    import os
+
     kernel_id = f"{kaggle_username()}/{KERNELS[lang]}"
     dest.mkdir(parents=True, exist_ok=True)
+    # The Kaggle CLI prints each downloaded path, and the kernel output contains
+    # Devanagari filenames. On a Windows console the child process inherits
+    # cp1252, cannot encode them, and dies *after* downloading everything -- so
+    # the failure looks like a download error when the files are already there.
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     result = subprocess.run(
         kaggle_cli() + ["kernels", "output", kernel_id, "-p", str(dest)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        env=env,
     )
     output = (result.stdout + result.stderr).strip()
-    print(f"  {output.splitlines()[-1] if output else 'no output'}")
-    if result.returncode != 0:
+    downloaded = sorted(dest.rglob("*"))
+    print(f"  {len(downloaded)} paths under {dest}")
+    # The CLI can still die while *printing* its file list even with UTF-8
+    # forced, since some of its output goes through a stream this process does
+    # not control. Judge success by whether the files arrived, not by the exit
+    # code -- otherwise a completed download is reported as a failure.
+    if not downloaded:
         raise RuntimeError(f"could not download {kernel_id}: {output}")
+    if result.returncode != 0:
+        print(f"  note: CLI exited {result.returncode} but files are present")
     return dest
 
 

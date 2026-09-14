@@ -1,0 +1,26 @@
+language: nepali
+pretrained_checkpoint: /kaggle/input/notebooks/swaraj001/lma-phase-2-model-l-nepali/checkpoints/nepali/ckpt_best.pt
+data_dir: nepali/reasoning/data
+tokenizer_model: /kaggle/working/repo/nepali/tokenizer/nepali_bpe.model
+out_dir: checkpoints/nepali_reasoning
+epochs: 3
+batch_size: 32
+learning_rate: 6.0e-05
+min_lr: 6.0e-06
+warmup_steps: 100
+weight_decay: 0.1
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+eval_interval: 100
+log_interval: 25
+seed: 20260915
+device: cuda
+dtype: float16
+notes: 'Model L (lower-resource) reasoning finetuning. 20,000 synthetic Nepali comparative-reasoning
+  examples across four task families, with entity names and sentence templates both
+  held out across splits. Numerals are written with Arabic digits because Model L''s
+  BPE vocabulary contains no Devanagari digit and has no byte fallback. Answer-token
+  loss only.
+
+  '

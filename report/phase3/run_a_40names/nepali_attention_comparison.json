@@ -1,0 +1,782 @@
+{
+  "language": "nepali",
+  "split": "test",
+  "prompts_compared": 16,
+  "sequence_length": 39,
+  "uniform_baseline_entropy": 2.8061,
+  "example_prompts": [
+    "यहाँ रबिनको उचाइ 141 सेन्टिमिटर, भोजराजको उचाइ 175 सेन्टिमिटर, तथा कुमारको उचाइ 157 सेन्टिमिटर छ। सबैभन्दा होचो को हो?",
+    "यहाँ कुमारको उचाइ 179 सेन्टिमिटर, भोजराजको उचाइ 151 सेन्टिमिटर, तथा दीपेशको उचाइ 166 सेन्टिमिटर छ। सबैभन्दा होचो को हो?",
+    "यहाँ भोजराजको उचाइ 163 सेन्टिमिटर, दीपेशको उचाइ 165 सेन्टिमिटर, तथा कुमारको उचाइ 151 सेन्टिमिटर छ। सबैभन्दा होचो को हो?"
+  ],
+  "example_tokens": [
+    "यहाँ",
+    "र",
+    "बि",
+    "नको",
+    "उचाइ",
+    "14",
+    "1",
+    "सेन्",
+    "टि",
+    "मिटर",
+    ",",
+    "भोज",
+    "राज",
+    "को",
+    "उचाइ",
+    "17",
+    "5",
+    "सेन्",
+    "टि",
+    "मिटर",
+    ",",
+    "तथा",
+    "कु",
+    "मा",
+    "रको",
+    "उचाइ",
+    "15",
+    "7",
+    "सेन्",
+    "टि",
+    "मिटर",
+    "छ",
+    "।",
+    "सबैभन्दा",
+    "हो",
+    "चो",
+    "को",
+    "हो",
+    "?"
+  ],
+  "models": {
+    "pretrained": {
+      "checkpoint": "/kaggle/input/notebooks/swaraj001/lma-phase-2-model-l-nepali/checkpoints/nepali/ckpt_best.pt",
+      "stage": "pretrained",
+      "step": 14000,
+      "mean_entropy": 1.832709804798166,
+      "mean_distance": 9.414771022895971,
+      "per_head": {
+        "L0H0": {
+          "entropy": 2.5744,
+          "mean_distance": 9.2986
+        },
+        "L0H1": {
+          "entropy": 2.5605,
+          "mean_distance": 10.4496
+        },
+        "L0H2": {
+          "entropy": 2.3694,
+          "mean_distance": 9.0723
+        },
+        "L0H3": {
+          "entropy": 2.6378,
+          "mean_distance": 10.6917
+        },
+        "L0H4": {
+          "entropy": 2.6043,
+          "mean_distance": 10.2156
+        },
+        "L0H5": {
+          "entropy": 2.383,
+          "mean_distance": 11.1552
+        },
+        "L0H6": {
+          "entropy": 2.5126,
+          "mean_distance": 11.2281
+        },
+        "L0H7": {
+          "entropy": 2.4994,
+          "mean_distance": 10.6729
+        },
+        "L1H0": {
+          "entropy": 2.4179,
+          "mean_distance": 6.1603
+        },
+        "L1H1": {
+          "entropy": 2.3513,
+          "mean_distance": 9.3537
+        },
+        "L1H2": {
+          "entropy": 1.5203,
+          "mean_distance": 14.7966
+        },
+        "L1H3": {
+          "entropy": 2.0303,
+          "mean_distance": 12.421
+        },
+        "L1H4": {
+          "entropy": 2.5992,
+          "mean_distance": 9.4498
+        },
+        "L1H5": {
+          "entropy": 2.4085,
+          "mean_distance": 10.3807
+        },
+        "L1H6": {
+          "entropy": 1.6327,
+          "mean_distance": 13.6099
+        },
+        "L1H7": {
+          "entropy": 2.5045,
+          "mean_distance": 9.818
+        },
+        "L2H0": {
+          "entropy": 2.3857,
+          "mean_distance": 10.1672
+        },
+        "L2H1": {
+          "entropy": 1.9126,
+          "mean_distance": 3.5756
+        },
+        "L2H2": {
+          "entropy": 2.6502,
+          "mean_distance": 9.5038
+        },
+        "L2H3": {
+          "entropy": 1.6169,
+          "mean_distance": 3.0337
+        },
+        "L2H4": {
+          "entropy": 1.7887,
+          "mean_distance": 6.6269
+        },
+        "L2H5": {
+          "entropy": 1.2013,
+          "mean_distance": 14.8618
+        },
+        "L2H6": {
+          "entropy": 2.1403,
+          "mean_distance": 8.8403
+        },
+        "L2H7": {
+          "entropy": 1.8278,
+          "mean_distance": 2.7734
+        },
+        "L3H0": {
+          "entropy": 1.9963,
+          "mean_distance": 9.8336
+        },
+        "L3H1": {
+          "entropy": 1.4322,
+          "mean_distance": 4.6999
+        },
+        "L3H2": {
+          "entropy": 1.7048,
+          "mean_distance": 8.7401
+        },
+        "L3H3": {
+          "entropy": 1.3191,
+          "mean_distance": 6.6038
+        },
+        "L3H4": {
+          "entropy": 2.0027,
+          "mean_distance": 11.1344
+        },
+        "L3H5": {
+          "entropy": 1.1384,
+          "mean_distance": 2.3892
+        },
+        "L3H6": {
+          "entropy": 1.7645,
+          "mean_distance": 3.4907
+        },
+        "L3H7": {
+          "entropy": 0.102,
+          "mean_distance": 1.0204
+        },
+        "L4H0": {
+          "entropy": 2.0397,
+          "mean_distance": 11.0767
+        },
+        "L4H1": {
+          "entropy": 0.7052,
+          "mean_distance": 4.0957
+        },
+        "L4H2": {
+          "entropy": 1.6618,
+          "mean_distance": 7.3934
+        },
+        "L4H3": {
+          "entropy": 2.0015,
+          "mean_distance": 11.8234
+        },
+        "L4H4": {
+          "entropy": 1.8437,
+          "mean_distance": 11.8312
+        },
+        "L4H5": {
+          "entropy": 1.2973,
+          "mean_distance": 3.7186
+        },
+        "L4H6": {
+          "entropy": 0.6133,
+          "mean_distance": 13.7905
+        },
+        "L4H7": {
+          "entropy": 1.8247,
+          "mean_distance": 11.1098
+        },
+        "L5H0": {
+          "entropy": 1.8561,
+          "mean_distance": 10.9224
+        },
+        "L5H1": {
+          "entropy": 0.9389,
+          "mean_distance": 13.7678
+        },
+        "L5H2": {
+          "entropy": 1.1671,
+          "mean_distance": 13.3847
+        },
+        "L5H3": {
+          "entropy": 1.4159,
+          "mean_distance": 13.0338
+        },
+        "L5H4": {
+          "entropy": 1.8274,
+          "mean_distance": 11.3168
+        },
+        "L5H5": {
+          "entropy": 1.7746,
+          "mean_distance": 12.6108
+        },
+        "L5H6": {
+          "entropy": 0.7269,
+          "mean_distance": 14.8459
+        },
+        "L5H7": {
+          "entropy": 1.6865,
+          "mean_distance": 11.1188
+        }
+      },
+      "layers_plotted": [
+        0,
+        5
+      ]
+    },
+    "finetuned": {
+      "checkpoint": "/kaggle/working/repo/checkpoints/nepali_reasoning/ckpt_best.pt",
+      "stage": "reasoning_finetune",
+      "step": 100,
+      "mean_entropy": 1.804928229811291,
+      "mean_distance": 10.203418744107088,
+      "per_head": {
+        "L0H0": {
+          "entropy": 2.5642,
+          "mean_distance": 9.3423
+        },
+        "L0H1": {
+          "entropy": 2.5542,
+          "mean_distance": 10.4243
+        },
+        "L0H2": {
+          "entropy": 2.3633,
+          "mean_distance": 9.1719
+        },
+        "L0H3": {
+          "entropy": 2.6208,
+          "mean_distance": 10.7959
+        },
+        "L0H4": {
+          "entropy": 2.5905,
+          "mean_distance": 10.3371
+        },
+        "L0H5": {
+          "entropy": 2.4388,
+          "mean_distance": 10.9536
+        },
+        "L0H6": {
+          "entropy": 2.5374,
+          "mean_distance": 11.2798
+        },
+        "L0H7": {
+          "entropy": 2.5183,
+          "mean_distance": 10.6329
+        },
+        "L1H0": {
+          "entropy": 2.4466,
+          "mean_distance": 6.0099
+        },
+        "L1H1": {
+          "entropy": 2.4645,
+          "mean_distance": 9.2814
+        },
+        "L1H2": {
+          "entropy": 1.6207,
+          "mean_distance": 14.742
+        },
+        "L1H3": {
+          "entropy": 1.8685,
+          "mean_distance": 13.5992
+        },
+        "L1H4": {
+          "entropy": 2.6111,
+          "mean_distance": 9.7711
+        },
+        "L1H5": {
+          "entropy": 2.4239,
+          "mean_distance": 10.6063
+        },
+        "L1H6": {
+          "entropy": 1.5781,
+          "mean_distance": 14.1678
+        },
+        "L1H7": {
+          "entropy": 2.5532,
+          "mean_distance": 10.18
+        },
+        "L2H0": {
+          "entropy": 2.2632,
+          "mean_distance": 11.3501
+        },
+        "L2H1": {
+          "entropy": 1.8756,
+          "mean_distance": 3.4681
+        },
+        "L2H2": {
+          "entropy": 2.523,
+          "mean_distance": 11.128
+        },
+        "L2H3": {
+          "entropy": 1.6018,
+          "mean_distance": 2.7644
+        },
+        "L2H4": {
+          "entropy": 1.8663,
+          "mean_distance": 5.3441
+        },
+        "L2H5": {
+          "entropy": 0.964,
+          "mean_distance": 16.159
+        },
+        "L2H6": {
+          "entropy": 1.6277,
+          "mean_distance": 12.203
+        },
+        "L2H7": {
+          "entropy": 1.7532,
+          "mean_distance": 2.674
+        },
+        "L3H0": {
+          "entropy": 1.9394,
+          "mean_distance": 10.5744
+        },
+        "L3H1": {
+          "entropy": 1.4062,
+          "mean_distance": 6.0481
+        },
+        "L3H2": {
+          "entropy": 1.6203,
+          "mean_distance": 9.4124
+        },
+        "L3H3": {
+          "entropy": 1.123,
+          "mean_distance": 10.0488
+        },
+        "L3H4": {
+          "entropy": 1.7751,
+          "mean_distance": 14.4078
+        },
+        "L3H5": {
+          "entropy": 1.2999,
+          "mean_distance": 2.885
+        },
+        "L3H6": {
+          "entropy": 1.9015,
+          "mean_distance": 4.1216
+        },
+        "L3H7": {
+          "entropy": 0.13,
+          "mean_distance": 1.0447
+        },
+        "L4H0": {
+          "entropy": 2.0943,
+          "mean_distance": 12.1867
+        },
+        "L4H1": {
+          "entropy": 0.8726,
+          "mean_distance": 5.6042
+        },
+        "L4H2": {
+          "entropy": 1.7507,
+          "mean_distance": 9.5125
+        },
+        "L4H3": {
+          "entropy": 1.8615,
+          "mean_distance": 13.5204
+        },
+        "L4H4": {
+          "entropy": 1.7382,
+          "mean_distance": 13.4275
+        },
+        "L4H5": {
+          "entropy": 1.4187,
+          "mean_distance": 4.8422
+        },
+        "L4H6": {
+          "entropy": 0.5479,
+          "mean_distance": 15.0013
+        },
+        "L4H7": {
+          "entropy": 1.5384,
+          "mean_distance": 13.7726
+        },
+        "L5H0": {
+          "entropy": 1.6439,
+          "mean_distance": 13.8964
+        },
+        "L5H1": {
+          "entropy": 1.0209,
+          "mean_distance": 14.0503
+        },
+        "L5H2": {
+          "entropy": 1.3741,
+          "mean_distance": 12.4842
+        },
+        "L5H3": {
+          "entropy": 1.3579,
+          "mean_distance": 13.2659
+        },
+        "L5H4": {
+          "entropy": 1.7096,
+          "mean_distance": 12.93
+        },
+        "L5H5": {
+          "entropy": 1.6072,
+          "mean_distance": 14.1432
+        },
+        "L5H6": {
+          "entropy": 0.9599,
+          "mean_distance": 13.6339
+        },
+        "L5H7": {
+          "entropy": 1.7165,
+          "mean_distance": 12.5638
+        }
+      },
+      "layers_plotted": [
+        0,
+        5
+      ]
+    }
+  },
+  "figures": [
+    "nepali_pretrained_reasoning_layer0.png",
+    "nepali_pretrained_reasoning_layer5.png",
+    "nepali_finetuned_reasoning_layer0.png",
+    "nepali_finetuned_reasoning_layer5.png",
+    "nepali_attention_pretrained_vs_finetuned.png"
+  ],
+  "per_head_delta": {
+    "L0H0": {
+      "entropy_delta": -0.0102,
+      "distance_delta": 0.0437
+    },
+    "L0H1": {
+      "entropy_delta": -0.0063,
+      "distance_delta": -0.0253
+    },
+    "L0H2": {
+      "entropy_delta": -0.0061,
+      "distance_delta": 0.0996
+    },
+    "L0H3": {
+      "entropy_delta": -0.017,
+      "distance_delta": 0.1042
+    },
+    "L0H4": {
+      "entropy_delta": -0.0138,
+      "distance_delta": 0.1215
+    },
+    "L0H5": {
+      "entropy_delta": 0.0558,
+      "distance_delta": -0.2016
+    },
+    "L0H6": {
+      "entropy_delta": 0.0248,
+      "distance_delta": 0.0517
+    },
+    "L0H7": {
+      "entropy_delta": 0.0189,
+      "distance_delta": -0.04
+    },
+    "L1H0": {
+      "entropy_delta": 0.0287,
+      "distance_delta": -0.1504
+    },
+    "L1H1": {
+      "entropy_delta": 0.1132,
+      "distance_delta": -0.0723
+    },
+    "L1H2": {
+      "entropy_delta": 0.1004,
+      "distance_delta": -0.0546
+    },
+    "L1H3": {
+      "entropy_delta": -0.1618,
+      "distance_delta": 1.1782
+    },
+    "L1H4": {
+      "entropy_delta": 0.0119,
+      "distance_delta": 0.3213
+    },
+    "L1H5": {
+      "entropy_delta": 0.0154,
+      "distance_delta": 0.2256
+    },
+    "L1H6": {
+      "entropy_delta": -0.0546,
+      "distance_delta": 0.5579
+    },
+    "L1H7": {
+      "entropy_delta": 0.0487,
+      "distance_delta": 0.362
+    },
+    "L2H0": {
+      "entropy_delta": -0.1225,
+      "distance_delta": 1.1829
+    },
+    "L2H1": {
+      "entropy_delta": -0.037,
+      "distance_delta": -0.1075
+    },
+    "L2H2": {
+      "entropy_delta": -0.1272,
+      "distance_delta": 1.6242
+    },
+    "L2H3": {
+      "entropy_delta": -0.0151,
+      "distance_delta": -0.2693
+    },
+    "L2H4": {
+      "entropy_delta": 0.0776,
+      "distance_delta": -1.2828
+    },
+    "L2H5": {
+      "entropy_delta": -0.2373,
+      "distance_delta": 1.2972
+    },
+    "L2H6": {
+      "entropy_delta": -0.5126,
+      "distance_delta": 3.3627
+    },
+    "L2H7": {
+      "entropy_delta": -0.0746,
+      "distance_delta": -0.0994
+    },
+    "L3H0": {
+      "entropy_delta": -0.0569,
+      "distance_delta": 0.7408
+    },
+    "L3H1": {
+      "entropy_delta": -0.026,
+      "distance_delta": 1.3482
+    },
+    "L3H2": {
+      "entropy_delta": -0.0845,
+      "distance_delta": 0.6723
+    },
+    "L3H3": {
+      "entropy_delta": -0.1961,
+      "distance_delta": 3.445
+    },
+    "L3H4": {
+      "entropy_delta": -0.2276,
+      "distance_delta": 3.2734
+    },
+    "L3H5": {
+      "entropy_delta": 0.1615,
+      "distance_delta": 0.4958
+    },
+    "L3H6": {
+      "entropy_delta": 0.137,
+      "distance_delta": 0.6309
+    },
+    "L3H7": {
+      "entropy_delta": 0.028,
+      "distance_delta": 0.0243
+    },
+    "L4H0": {
+      "entropy_delta": 0.0546,
+      "distance_delta": 1.11
+    },
+    "L4H1": {
+      "entropy_delta": 0.1674,
+      "distance_delta": 1.5085
+    },
+    "L4H2": {
+      "entropy_delta": 0.0889,
+      "distance_delta": 2.1191
+    },
+    "L4H3": {
+      "entropy_delta": -0.14,
+      "distance_delta": 1.697
+    },
+    "L4H4": {
+      "entropy_delta": -0.1055,
+      "distance_delta": 1.5963
+    },
+    "L4H5": {
+      "entropy_delta": 0.1214,
+      "distance_delta": 1.1236
+    },
+    "L4H6": {
+      "entropy_delta": -0.0654,
+      "distance_delta": 1.2108
+    },
+    "L4H7": {
+      "entropy_delta": -0.2863,
+      "distance_delta": 2.6628
+    },
+    "L5H0": {
+      "entropy_delta": -0.2122,
+      "distance_delta": 2.974
+    },
+    "L5H1": {
+      "entropy_delta": 0.082,
+      "distance_delta": 0.2825
+    },
+    "L5H2": {
+      "entropy_delta": 0.207,
+      "distance_delta": -0.9005
+    },
+    "L5H3": {
+      "entropy_delta": -0.058,
+      "distance_delta": 0.2321
+    },
+    "L5H4": {
+      "entropy_delta": -0.1178,
+      "distance_delta": 1.6132
+    },
+    "L5H5": {
+      "entropy_delta": -0.1674,
+      "distance_delta": 1.5324
+    },
+    "L5H6": {
+      "entropy_delta": 0.233,
+      "distance_delta": -1.212
+    },
+    "L5H7": {
+      "entropy_delta": 0.03,
+      "distance_delta": 1.445
+    }
+  },
+  "largest_entropy_shifts": [
+    [
+      "L2H6",
+      {
+        "entropy_delta": -0.5126,
+        "distance_delta": 3.3627
+      }
+    ],
+    [
+      "L4H7",
+      {
+        "entropy_delta": -0.2863,
+        "distance_delta": 2.6628
+      }
+    ],
+    [
+      "L2H5",
+      {
+        "entropy_delta": -0.2373,
+        "distance_delta": 1.2972
+      }
+    ],
+    [
+      "L5H6",
+      {
+        "entropy_delta": 0.233,
+        "distance_delta": -1.212
+      }
+    ],
+    [
+      "L3H4",
+      {
+        "entropy_delta": -0.2276,
+        "distance_delta": 3.2734
+      }
+    ],
+    [
+      "L5H0",
+      {
+        "entropy_delta": -0.2122,
+        "distance_delta": 2.974
+      }
+    ],
+    [
+      "L5H2",
+      {
+        "entropy_delta": 0.207,
+        "distance_delta": -0.9005
+      }
+    ],
+    [
+      "L3H3",
+      {
+        "entropy_delta": -0.1961,
+        "distance_delta": 3.445
+      }
+    ]
+  ],
+  "largest_distance_shifts": [
+    [
+      "L3H3",
+      {
+        "entropy_delta": -0.1961,
+        "distance_delta": 3.445
+      }
+    ],
+    [
+      "L2H6",
+      {
+        "entropy_delta": -0.5126,
+        "distance_delta": 3.3627
+      }
+    ],
+    [
+      "L3H4",
+      {
+        "entropy_delta": -0.2276,
+        "distance_delta": 3.2734
+      }
+    ],
+    [
+      "L5H0",
+      {
+        "entropy_delta": -0.2122,
+        "distance_delta": 2.974
+      }
+    ],
+    [
+      "L4H7",
+      {
+        "entropy_delta": -0.2863,
+        "distance_delta": 2.6628
+      }
+    ],
+    [
+      "L4H2",
+      {
+        "entropy_delta": 0.0889,
+        "distance_delta": 2.1191
+      }
+    ],
+    [
+      "L4H3",
+      {
+        "entropy_delta": -0.14,
+        "distance_delta": 1.697
+      }
+    ],
+    [
+      "L2H2",
+      {
+        "entropy_delta": -0.1272,
+        "distance_delta": 1.6242
+      }
+    ]
+  ]
+}
