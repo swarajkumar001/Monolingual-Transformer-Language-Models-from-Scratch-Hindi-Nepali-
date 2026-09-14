@@ -30,6 +30,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = REPO_ROOT / "notebooks/kaggle_pretrain.ipynb"
 EVAL_NOTEBOOK = REPO_ROOT / "notebooks/kaggle_evaluate.ipynb"
+FINETUNE_NOTEBOOK = REPO_ROOT / "notebooks/kaggle_finetune.ipynb"
 
 # Valid values include NvidiaTeslaT4, NvidiaTeslaP100 and Tpu1VmV38.
 ACCELERATOR = "NvidiaTeslaT4"
@@ -42,12 +43,16 @@ LANGUAGES = {
               "title": "LMA Phase 2 Model H Hindi",
               "dataset": "lma-hindi-packed",
               "eval_slug": "lma-phase-2-eval-model-h-hindi",
-              "eval_title": "LMA Phase 2 Eval Model H Hindi"},
+              "eval_title": "LMA Phase 2 Eval Model H Hindi",
+              "ft_slug": "lma-phase-3-finetune-model-h-hindi",
+              "ft_title": "LMA Phase 3 Finetune Model H Hindi"},
     "nepali": {"slug": "lma-phase-2-model-l-nepali",
                "title": "LMA Phase 2 Model L Nepali",
                "dataset": "lma-nepali-packed",
                "eval_slug": "lma-phase-2-eval-model-l-nepali",
-               "eval_title": "LMA Phase 2 Eval Model L Nepali"},
+               "eval_title": "LMA Phase 2 Eval Model L Nepali",
+               "ft_slug": "lma-phase-3-finetune-model-l-nepali",
+               "ft_title": "LMA Phase 3 Finetune Model L Nepali"},
 }
 
 
@@ -63,7 +68,29 @@ def slugify(title: str) -> str:
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", title.lower())).strip("-")
 
 
+# Which notebook, which kernel name, and what has to be attached, per mode.
+# Phase 3 needs the pretraining kernel's output for the checkpoint, and needs
+# only lma-code for data: the reasoning corpus ships with the code, so the
+# multi-hundred-megabyte pretraining corpus is not mounted at all.
+MODES = {
+    "pretrain": {"slug": "slug", "title": "title",
+                 "notebook": NOTEBOOK, "code_file": "kaggle_pretrain.ipynb",
+                 "needs_corpus": True, "needs_pretrained_kernel": False},
+    "eval": {"slug": "eval_slug", "title": "eval_title",
+             "notebook": EVAL_NOTEBOOK, "code_file": "kaggle_evaluate.ipynb",
+             "needs_corpus": True, "needs_pretrained_kernel": True},
+    "finetune": {"slug": "ft_slug", "title": "ft_title",
+                 "notebook": FINETUNE_NOTEBOOK,
+                 "code_file": "kaggle_finetune.ipynb",
+                 "needs_corpus": False, "needs_pretrained_kernel": True},
+}
+
+
 for _lang, _spec in LANGUAGES.items():
+    assert slugify(_spec["ft_title"]) == _spec["ft_slug"], (
+        f"{_lang}: finetune title {_spec['ft_title']!r} slugifies to "
+        f"{slugify(_spec['ft_title'])!r}, not {_spec['ft_slug']!r}"
+    )
     assert slugify(_spec["eval_title"]) == _spec["eval_slug"], (
         f"{_lang}: eval title {_spec['eval_title']!r} slugifies to "
         f"{slugify(_spec['eval_title'])!r}, not {_spec['eval_slug']!r}"
@@ -162,27 +189,29 @@ def validate_notebook(nb: dict) -> None:
             ) from exc
 
 
-def push(lang: str, dry_run: bool = False, evaluate: bool = False) -> str:
+def push(lang: str, dry_run: bool = False, mode: str = "pretrain") -> str:
     """Push the kernel for one language and start it running.
 
     Args:
         lang: Target language.
         dry_run: Stage the kernel directory but do not upload.
+        mode: One of ``"pretrain"``, ``"eval"`` or ``"finetune"``.
 
     Returns:
         The kernel's full ``username/slug`` id.
     """
     spec = LANGUAGES[lang]
+    mspec = MODES[mode]
     user = kaggle_username()
-    slug = spec["eval_slug"] if evaluate else spec["slug"]
-    title = spec["eval_title"] if evaluate else spec["title"]
-    notebook = EVAL_NOTEBOOK if evaluate else NOTEBOOK
+    slug = spec[mspec["slug"]]
+    title = spec[mspec["title"]]
+    notebook = mspec["notebook"]
     kernel_id = f"{user}/{slug}"
 
     with tempfile.TemporaryDirectory(prefix=f"kernel_{lang}_") as tmp:
         stage = Path(tmp)
         nb = build_notebook(lang, notebook)
-        code_file = "kaggle_evaluate.ipynb" if evaluate else "kaggle_pretrain.ipynb"
+        code_file = mspec["code_file"]
         (stage / code_file).write_text(
             json.dumps(nb, indent=1), encoding="utf-8"
         )
@@ -202,15 +231,24 @@ def push(lang: str, dry_run: bool = False, evaluate: bool = False) -> str:
             # training is faster on it than on the P100 regardless.
             "machine_shape": ACCELERATOR,
             "enable_internet": True,
-            # Only this language's corpus is attached. The notebook additionally
-            # raises if it ever sees the other one mounted.
-            "dataset_sources": [f"{user}/lma-code", f"{user}/{spec['dataset']}"],
+            # Only this language's corpus is ever attached, so a notebook
+            # training Model H is physically unable to read Model L's data.
+            # Phase 3 skips the corpus entirely: the reasoning JSONL travels
+            # inside lma-code, so mounting ~900 MB of pretraining tokens the run
+            # never reads would only slow the kernel down.
+            "dataset_sources": (
+                [f"{user}/lma-code", f"{user}/{spec['dataset']}"]
+                if mspec["needs_corpus"] else [f"{user}/lma-code"]
+            ),
             "competition_sources": [],
-            # Evaluation reads the trained weights from the pretraining kernel's
-            # saved output, so that run is attached as a kernel source. Training
-            # is the expensive part; evaluation can be redone against the same
-            # checkpoint as often as needed.
-            "kernel_sources": [f"{user}/{spec['slug']}"] if evaluate else [],
+            # Evaluation and finetuning both read the trained weights from the
+            # pretraining kernel's saved output, so that run is attached as a
+            # kernel source. Pretraining is the expensive part and is never
+            # repeated; everything downstream reruns against the same weights.
+            "kernel_sources": (
+                [f"{user}/{spec['slug']}"]
+                if mspec["needs_pretrained_kernel"] else []
+            ),
         }
         (stage / "kernel-metadata.json").write_text(
             json.dumps(metadata, indent=2), encoding="utf-8"
@@ -240,18 +278,18 @@ def push(lang: str, dry_run: bool = False, evaluate: bool = False) -> str:
     return kernel_id
 
 
-def status(lang: str, evaluate: bool = False) -> str:
+def status(lang: str, mode: str = "pretrain") -> str:
     """Report the current status of one language's kernel.
 
     Args:
         lang: Target language.
+        mode: One of ``"pretrain"``, ``"eval"`` or ``"finetune"``.
 
     Returns:
         The raw status string reported by Kaggle.
     """
     user = kaggle_username()
-    key = "eval_slug" if evaluate else "slug"
-    kernel_id = f"{user}/{LANGUAGES[lang][key]}"
+    kernel_id = f"{user}/{LANGUAGES[lang][MODES[mode]['slug']]}"
     result = subprocess.run(
         kaggle_cli() + ["kernels", "status", kernel_id],
         capture_output=True, text=True,
@@ -261,17 +299,18 @@ def status(lang: str, evaluate: bool = False) -> str:
     return text
 
 
-def fetch(lang: str, out_dir: Path | None = None, evaluate: bool = False) -> None:
+def fetch(lang: str, out_dir: Path | None = None,
+          mode: str = "pretrain") -> None:
     """Download a finished kernel's output files.
 
     Args:
         lang: Target language.
         out_dir: Destination directory; defaults to ``kaggle_output/<lang>/``.
+        mode: One of ``"pretrain"``, ``"eval"`` or ``"finetune"``.
     """
     user = kaggle_username()
-    key = "eval_slug" if evaluate else "slug"
-    kernel_id = f"{user}/{LANGUAGES[lang][key]}"
-    dest = out_dir or (REPO_ROOT / "kaggle_output" / lang)
+    kernel_id = f"{user}/{LANGUAGES[lang][MODES[mode]['slug']]}"
+    dest = out_dir or (REPO_ROOT / "kaggle_output" / mode / lang)
     dest.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
         kaggle_cli() + ["kernels", "output", kernel_id, "-p", str(dest)],
@@ -289,20 +328,28 @@ def main() -> None:
     parser.add_argument("--fetch", action="store_true", help="Download output only.")
     parser.add_argument("--dry-run", action="store_true", help="Stage but do not push.")
     parser.add_argument(
+        "--mode",
+        default="pretrain",
+        choices=sorted(MODES),
+        help="pretrain (Phase 2), eval (Phase 2 scoring), or finetune "
+        "(Phase 3 reasoning finetuning, evaluation and attention).",
+    )
+    parser.add_argument(
         "--eval",
         dest="evaluate",
         action="store_true",
-        help="Push the evaluation-only kernel, which scores the checkpoint "
-        "produced by that language's pretraining run.",
+        help="Deprecated alias for --mode eval.",
     )
     args = parser.parse_args()
 
+    mode = "eval" if args.evaluate else args.mode
+
     if args.status:
-        status(args.lang, evaluate=args.evaluate)
+        status(args.lang, mode=mode)
     elif args.fetch:
-        fetch(args.lang, evaluate=args.evaluate)
+        fetch(args.lang, mode=mode)
     else:
-        push(args.lang, dry_run=args.dry_run, evaluate=args.evaluate)
+        push(args.lang, dry_run=args.dry_run, mode=mode)
 
 
 if __name__ == "__main__":

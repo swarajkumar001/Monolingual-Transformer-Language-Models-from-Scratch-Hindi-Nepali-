@@ -319,6 +319,69 @@ def qualitative(records: list[dict], limit: int = 8) -> dict:
     }
 
 
+def build_report(
+    ev: ReasoningEvaluator,
+    data: ReasoningDataset,
+    tag: str,
+    split: str,
+    batch_size: int = 64,
+) -> dict:
+    """Score a checkpoint on one split and assemble the full JSON report.
+
+    Factored out of :func:`main` so the Kaggle notebook and the command line
+    produce byte-identical reports. Two code paths computing "the same" metrics
+    is how a side-by-side table stops being comparable.
+
+    Args:
+        ev: An evaluator with the checkpoint already loaded.
+        data: The tokenized split to score.
+        tag: Label for this run, e.g. ``"pretrained"`` or ``"finetuned"``.
+        split: Name of the split, recorded in the report.
+        batch_size: Batch size for generation and loss.
+
+    Returns:
+        The report dict.
+    """
+    generated = ev.greedy_answers(data, batch_size=batch_size)
+    chosen = ev.forced_choice(data)
+    losses = ev.answer_loss(data, batch_size=batch_size)
+
+    gen_accuracy = sum(r["correct"] for r in generated) / len(generated)
+    fc_accuracy = sum(r["correct"] for r in chosen) / len(chosen)
+    # Chance depends on how many entities each question names, which varies by
+    # task, so it is computed rather than assumed to be one half.
+    chance = sum(1 / r["n_candidates"] for r in chosen) / len(chosen)
+
+    return {
+        "language": LANGUAGE,
+        "tag": tag,
+        "stage": ev.stage,
+        "checkpoint": ev.checkpoint_path,
+        "checkpoint_step": ev.step,
+        "split": split,
+        "examples": len(data),
+        "sequence_stats": data.sequence_stats(),
+        "exact_match": {
+            "accuracy": round(gen_accuracy, 4),
+            "correct": sum(r["correct"] for r in generated),
+            "by_task": breakdown(generated, "task"),
+            "by_hops": breakdown(generated, "hops"),
+            "by_attribute": breakdown(generated, "attribute"),
+        },
+        "forced_choice": {
+            "accuracy": round(fc_accuracy, 4),
+            "correct": sum(r["correct"] for r in chosen),
+            "chance_accuracy": round(chance, 4),
+            "by_task": breakdown(chosen, "task"),
+            "by_hops": breakdown(chosen, "hops"),
+            "by_attribute": breakdown(chosen, "attribute"),
+        },
+        "answer_token_loss": losses,
+        "qualitative_generation": qualitative(generated),
+        "qualitative_forced_choice": qualitative(chosen),
+    }
+
+
 def main() -> None:
     """Command-line entry point: score one checkpoint and write a JSON report."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -342,44 +405,7 @@ def main() -> None:
     print(f"  {LANGUAGE} | {tag} | {len(data):,} {args.split} examples "
           f"on {ev.device}")
 
-    generated = ev.greedy_answers(data, batch_size=args.batch_size)
-    chosen = ev.forced_choice(data)
-    losses = ev.answer_loss(data, batch_size=args.batch_size)
-
-    gen_accuracy = sum(r["correct"] for r in generated) / len(generated)
-    fc_accuracy = sum(r["correct"] for r in chosen) / len(chosen)
-    # Chance depends on how many entities each question names, which varies by
-    # task, so it is computed rather than assumed to be one half.
-    chance = sum(1 / r["n_candidates"] for r in chosen) / len(chosen)
-
-    report = {
-        "language": LANGUAGE,
-        "tag": tag,
-        "stage": ev.stage,
-        "checkpoint": ev.checkpoint_path,
-        "checkpoint_step": ev.step,
-        "split": args.split,
-        "examples": len(data),
-        "sequence_stats": data.sequence_stats(),
-        "exact_match": {
-            "accuracy": round(gen_accuracy, 4),
-            "correct": sum(r["correct"] for r in generated),
-            "by_task": breakdown(generated, "task"),
-            "by_hops": breakdown(generated, "hops"),
-            "by_attribute": breakdown(generated, "attribute"),
-        },
-        "forced_choice": {
-            "accuracy": round(fc_accuracy, 4),
-            "correct": sum(r["correct"] for r in chosen),
-            "chance_accuracy": round(chance, 4),
-            "by_task": breakdown(chosen, "task"),
-            "by_hops": breakdown(chosen, "hops"),
-            "by_attribute": breakdown(chosen, "attribute"),
-        },
-        "answer_token_loss": losses,
-        "qualitative_generation": qualitative(generated),
-        "qualitative_forced_choice": qualitative(chosen),
-    }
+    report = build_report(ev, data, tag, args.split, args.batch_size)
 
     out = Path(args.out) if args.out else (
         REPO_ROOT / f"report/phase3/{LANGUAGE}_reasoning_{tag}.json"
@@ -388,9 +414,11 @@ def main() -> None:
     out.write_text(json.dumps(report, indent=2, ensure_ascii=False),
                    encoding="utf-8")
 
-    print(f"    exact match   {gen_accuracy:6.2%}")
-    print(f"    forced choice {fc_accuracy:6.2%}  (chance {chance:.2%})")
-    print(f"    answer loss   {losses['answer_token_loss']:.4f}")
+    print(f"    exact match   {report['exact_match']['accuracy']:6.2%}")
+    print(f"    forced choice {report['forced_choice']['accuracy']:6.2%}  "
+          f"(chance {report['forced_choice']['chance_accuracy']:.2%})")
+    print(f"    answer loss   "
+          f"{report['answer_token_loss']['answer_token_loss']:.4f}")
     print(f"  wrote {out}")
 
 

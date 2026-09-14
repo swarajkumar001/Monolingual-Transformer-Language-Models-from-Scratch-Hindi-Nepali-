@@ -100,6 +100,17 @@ DATASETS: dict[str, dict] = {
             "nepali/*.py", "nepali/model/*.py", "nepali/train/*.py",
             "nepali/eval/*.py", "nepali/tests/*.py", "nepali/data/*.py",
             "hindi/configs/*.yaml", "nepali/configs/*.yaml",
+            # Phase 3. The reasoning corpora are small enough (a few MB of
+            # JSONL) to travel with the code, which is what lets a finetuning
+            # kernel run without mounting the multi-hundred-megabyte pretraining
+            # corpus it does not need.
+            "hindi/reasoning/*.py", "nepali/reasoning/*.py",
+            "hindi/reasoning/data/*.jsonl", "nepali/reasoning/data/*.jsonl",
+            "hindi/reasoning/data/*.json", "nepali/reasoning/data/*.json",
+            # Finetuning must reuse each language's Phase 1 tokenizer, and the
+            # only other copy lives in that language's packed-corpus dataset.
+            # Shipping the models here (~500 KB each) keeps that mount optional.
+            "hindi/tokenizer/*.model", "nepali/tokenizer/*.model",
         ],
         "archive_files": ["requirements.txt"],
     },
