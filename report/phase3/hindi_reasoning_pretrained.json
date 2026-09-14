@@ -151,6 +151,64 @@
     "answer_token_perplexity": 189.399,
     "answer_tokens_scored": 5998
   },
+  "error_analysis": {
+    "compare2": {
+      "examples": 500,
+      "model_answer_position": [
+        0.0,
+        0.0
+      ],
+      "gold_answer_position": [
+        0.48,
+        0.52
+      ],
+      "answered_off_prompt": 1.0,
+      "candidates": 2
+    },
+    "numeric2": {
+      "examples": 500,
+      "model_answer_position": [
+        0.0,
+        0.0
+      ],
+      "gold_answer_position": [
+        0.5,
+        0.5
+      ],
+      "answered_off_prompt": 1.0,
+      "candidates": 2
+    },
+    "numeric3": {
+      "examples": 500,
+      "model_answer_position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "gold_answer_position": [
+        0.368,
+        0.322,
+        0.31
+      ],
+      "answered_off_prompt": 1.0,
+      "candidates": 3
+    },
+    "transitive3": {
+      "examples": 500,
+      "model_answer_position": [
+        0.0,
+        0.004,
+        0.0
+      ],
+      "gold_answer_position": [
+        0.474,
+        0.0,
+        0.526
+      ],
+      "answered_off_prompt": 0.996,
+      "candidates": 3
+    }
+  },
   "qualitative_generation": {
     "correct": [],
     "incorrect": [

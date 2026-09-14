@@ -167,11 +167,22 @@ class ReasoningEvaluator:
                 if self.eos_id in ids:
                     ids = ids[: ids.index(self.eos_id)]
                 text = normalise(self.tokenizer.decode(ids))
+                entities = [normalise(e) for e in row["entities"]]
+                # Which of the entities the question named did the model
+                # produce, by position in the prompt? -1 means it produced
+                # something that is not in the prompt at all -- typically a
+                # training name, which is the signature of having memorised the
+                # answer prior instead of reading the question.
+                model_index = entities.index(text) if text in entities else -1
                 results.append({
                     "task": row["task"], "hops": row["hops"],
                     "attribute": row["attribute"], "prompt": row["prompt"],
                     "gold": row["answer"], "generated": text,
                     "correct": text == normalise(row["answer"]),
+                    "entities": row["entities"],
+                    "n_candidates": len(entities),
+                    "gold_index": entities.index(normalise(row["answer"])),
+                    "model_index": model_index,
                 })
         return results
 
@@ -296,6 +307,53 @@ def breakdown(records: list[dict], key: str) -> dict:
     }
 
 
+def position_analysis(records: list[dict]) -> dict:
+    """Explain *where* a model's answers come from, not just whether they match.
+
+    Accuracy alone cannot distinguish a model guessing uniformly among the
+    entities in the question from one that has latched onto a positional habit
+    -- "always answer with the last name mentioned" -- or from one ignoring the
+    question and emitting a memorised training name. Those have very different
+    implications and this separates them.
+
+    For each task family it reports how often the model produced the entity at
+    each prompt position, how often the gold answer sits at each position, and
+    how often the model produced a name the question never mentioned.
+
+    Args:
+        records: Greedy-generation records carrying ``model_index``,
+            ``gold_index`` and ``n_candidates``.
+
+    Returns:
+        Per-task distributions over answer position, plus the off-prompt rate.
+    """
+    groups: dict[str, list[dict]] = defaultdict(list)
+    for record in records:
+        groups[record["task"]].append(record)
+
+    out = {}
+    for task, rows in sorted(groups.items()):
+        width = max(r["n_candidates"] for r in rows)
+        model = [0] * width
+        gold = [0] * width
+        off_prompt = 0
+        for row in rows:
+            gold[row["gold_index"]] += 1
+            if row["model_index"] < 0:
+                off_prompt += 1
+            else:
+                model[row["model_index"]] += 1
+        total = len(rows)
+        out[task] = {
+            "examples": total,
+            "model_answer_position": [round(c / total, 4) for c in model],
+            "gold_answer_position": [round(c / total, 4) for c in gold],
+            "answered_off_prompt": round(off_prompt / total, 4),
+            "candidates": width,
+        }
+    return out
+
+
 def qualitative(records: list[dict], limit: int = 8) -> dict:
     """Collect example successes and failures for the report.
 
@@ -377,6 +435,7 @@ def build_report(
             "by_attribute": breakdown(chosen, "attribute"),
         },
         "answer_token_loss": losses,
+        "error_analysis": position_analysis(generated),
         "qualitative_generation": qualitative(generated),
         "qualitative_forced_choice": qualitative(chosen),
     }
