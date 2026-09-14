@@ -30,15 +30,27 @@ tokenizer_model: nepali/tokenizer/nepali_bpe.model
 
 out_dir: checkpoints/nepali_reasoning
 
-# 3 epochs over 20,000 examples at batch 32 = 1,875 optimiser steps, matching
-# Model H exactly.
-epochs: 3
+# Run B. Run A evaluated every 100 steps and found its best validation loss at
+# the very first eval point, step 100, with loss rising monotonically after --
+# so the checkpoint that got reported was selected from a grid too coarse to
+# locate the actual optimum. With 40 training names and 14 templates the model
+# memorises the answer prior within a few hundred examples, so the useful part
+# of this run is its first few dozen steps.
+#
+# Only the checkpoint-selection granularity and the epoch count change here.
+# The learning rate, batch size, dataset and test split are identical to run A,
+# so the two runs differ in one variable and remain directly comparable.
+epochs: 2
 batch_size: 32
 
 # Peak LR is 6e-5, one tenth of the 6e-4 pretraining peak. See Model H's config
 # for the reasoning; the value is shared so the comparison stays controlled.
 learning_rate: 6.0e-5
 min_lr: 6.0e-6
+# Run A's best validation loss landed at step 100, which is exactly where
+# warmup ends and the learning rate first reaches its peak. Before that the
+# model is barely moving; after it, memorisation of the 40 training names
+# accelerates. Evaluating every 20 steps now samples that window properly.
 warmup_steps: 100
 
 weight_decay: 0.1
@@ -46,7 +58,7 @@ beta1: 0.9
 beta2: 0.95
 grad_clip: 1.0
 
-eval_interval: 100
+eval_interval: 20
 log_interval: 25
 
 # Differs from Model H's seed only so the two runs are not accidentally

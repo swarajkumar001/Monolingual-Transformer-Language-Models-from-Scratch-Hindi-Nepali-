@@ -3,7 +3,7 @@
   "tag": "finetuned",
   "stage": "reasoning_finetune",
   "checkpoint": "/kaggle/working/repo/checkpoints/nepali_reasoning/ckpt_best.pt",
-  "checkpoint_step": 100,
+  "checkpoint_step": 60,
   "split": "test",
   "examples": 2000,
   "sequence_stats": {
@@ -16,188 +16,188 @@
     "total_tokens": 55207
   },
   "exact_match": {
-    "accuracy": 0.149,
-    "correct": 298,
+    "accuracy": 0.2945,
+    "correct": 589,
     "by_task": {
       "compare2": {
-        "accuracy": 0.148,
-        "correct": 74,
+        "accuracy": 0.402,
+        "correct": 201,
         "total": 500
       },
       "numeric2": {
-        "accuracy": 0.308,
-        "correct": 154,
+        "accuracy": 0.38,
+        "correct": 190,
         "total": 500
       },
       "numeric3": {
-        "accuracy": 0.126,
-        "correct": 63,
+        "accuracy": 0.262,
+        "correct": 131,
         "total": 500
       },
       "transitive3": {
-        "accuracy": 0.014,
-        "correct": 7,
+        "accuracy": 0.134,
+        "correct": 67,
         "total": 500
       }
     },
     "by_hops": {
       "1": {
-        "accuracy": 0.194,
-        "correct": 291,
+        "accuracy": 0.348,
+        "correct": 522,
         "total": 1500
       },
       "2": {
-        "accuracy": 0.014,
-        "correct": 7,
+        "accuracy": 0.134,
+        "correct": 67,
         "total": 500
       }
     },
     "by_attribute": {
       "age": {
-        "accuracy": 0.1578,
-        "correct": 83,
+        "accuracy": 0.2985,
+        "correct": 157,
         "total": 526
       },
       "height": {
-        "accuracy": 0.166,
-        "correct": 87,
+        "accuracy": 0.2901,
+        "correct": 152,
         "total": 524
       },
       "speed": {
-        "accuracy": 0.0822,
-        "correct": 18,
+        "accuracy": 0.3014,
+        "correct": 66,
         "total": 219
       },
       "wealth": {
-        "accuracy": 0.0845,
-        "correct": 18,
+        "accuracy": 0.2864,
+        "correct": 61,
         "total": 213
       },
       "weight": {
-        "accuracy": 0.1776,
-        "correct": 92,
+        "accuracy": 0.2954,
+        "correct": 153,
         "total": 518
       }
     }
   },
   "forced_choice": {
-    "accuracy": 0.4095,
-    "correct": 819,
+    "accuracy": 0.393,
+    "correct": 786,
     "chance_accuracy": 0.4167,
     "by_task": {
       "compare2": {
-        "accuracy": 0.476,
-        "correct": 238,
+        "accuracy": 0.494,
+        "correct": 247,
         "total": 500
       },
       "numeric2": {
-        "accuracy": 0.524,
-        "correct": 262,
+        "accuracy": 0.518,
+        "correct": 259,
         "total": 500
       },
       "numeric3": {
-        "accuracy": 0.312,
-        "correct": 156,
+        "accuracy": 0.324,
+        "correct": 162,
         "total": 500
       },
       "transitive3": {
-        "accuracy": 0.326,
-        "correct": 163,
+        "accuracy": 0.236,
+        "correct": 118,
         "total": 500
       }
     },
     "by_hops": {
       "1": {
-        "accuracy": 0.4373,
-        "correct": 656,
+        "accuracy": 0.4453,
+        "correct": 668,
         "total": 1500
       },
       "2": {
-        "accuracy": 0.326,
-        "correct": 163,
+        "accuracy": 0.236,
+        "correct": 118,
         "total": 500
       }
     },
     "by_attribute": {
       "age": {
-        "accuracy": 0.4087,
-        "correct": 215,
+        "accuracy": 0.3935,
+        "correct": 207,
         "total": 526
       },
       "height": {
-        "accuracy": 0.4122,
-        "correct": 216,
+        "accuracy": 0.4027,
+        "correct": 211,
         "total": 524
       },
       "speed": {
-        "accuracy": 0.4384,
-        "correct": 96,
+        "accuracy": 0.3973,
+        "correct": 87,
         "total": 219
       },
       "wealth": {
-        "accuracy": 0.4225,
-        "correct": 90,
+        "accuracy": 0.3803,
+        "correct": 81,
         "total": 213
       },
       "weight": {
-        "accuracy": 0.39,
-        "correct": 202,
+        "accuracy": 0.3861,
+        "correct": 200,
         "total": 518
       }
     }
   },
   "answer_token_loss": {
-    "answer_token_loss": 1.6166,
-    "answer_token_perplexity": 5.036,
+    "answer_token_loss": 1.4351,
+    "answer_token_perplexity": 4.2,
     "answer_tokens_scored": 5614
   },
   "qualitative_generation": {
     "correct": [
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: निरु पुष्पाभन्दा गरिब छ। गरिब को हो?",
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा धनी छ। धनी को हो?",
         "gold": "निरु",
         "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: पुष्पा निरुभन्दा धनी छ। गरिब को हो?",
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा ढिलो छ। ढिलो को हो?",
         "gold": "निरु",
         "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: निरु पुष्पाभन्दा छिटो छ। छिटो को हो?",
+        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा ढिलो छ। छिटो को हो?",
         "gold": "निरु",
         "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: निरु उर्मिलाभन्दा छिटो छ। छिटो को हो?",
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा छिटो छ। छिटो को हो?",
         "gold": "निरु",
         "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: निरु उर्मिलाभन्दा धनी छ। धनी को हो?",
+        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा धनी छ। गरिब को हो?",
         "gold": "निरु",
         "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: कुमार दीपेशभन्दा छिटो छ। ढिलो को हो?",
-        "gold": "दीपेश",
-        "model": "दीपेश"
+        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा छिटो छ। ढिलो को हो?",
+        "gold": "निरु",
+        "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: सुबास कुमारभन्दा गरिब छ। गरिब को हो?",
-        "gold": "सुबास",
-        "model": "सुबास"
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा गरिब छ। गरिब को हो?",
+        "gold": "निरु",
+        "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: निरु पुष्पाभन्दा धनी छ। धनी को हो?",
+        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा गरिब छ। धनी को हो?",
         "gold": "निरु",
         "model": "निरु"
       }
@@ -207,49 +207,49 @@
         "task": "compare2",
         "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा गरिब छ। धनी को हो?",
         "gold": "कल्पना",
-        "model": "सिर्जना"
+        "model": "निरु"
       },
       {
         "task": "compare2",
         "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा छिटो छ। छिटो को हो?",
         "gold": "कल्पना",
-        "model": "सिर्जना"
+        "model": "निरु"
       },
       {
         "task": "compare2",
         "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा ढिलो छ। छिटो को हो?",
         "gold": "कल्पना",
-        "model": "सिर्जना"
-      },
-      {
-        "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा धनी छ। धनी को हो?",
-        "gold": "निरु",
-        "model": "सिर्जना"
-      },
-      {
-        "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा ढिलो छ। ढिलो को हो?",
-        "gold": "निरु",
-        "model": "सिर्जना"
+        "model": "निरु"
       },
       {
         "task": "compare2",
         "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा धनी छ। धनी को हो?",
         "gold": "कल्पना",
-        "model": "सिर्जना"
+        "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा ढिलो छ। छिटो को हो?",
-        "gold": "निरु",
-        "model": "सिर्जना"
+        "prompt": "ध्यान दिनुहोस्: कल्पना निरुभन्दा ढिलो छ। ढिलो को हो?",
+        "gold": "कल्पना",
+        "model": "निरु"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा छिटो छ। छिटो को हो?",
-        "gold": "निरु",
-        "model": "सिर्जना"
+        "prompt": "ध्यान दिनुहोस्: निरु कल्पनाभन्दा छिटो छ। ढिलो को हो?",
+        "gold": "कल्पना",
+        "model": "निरु"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कल्पना उर्मिलाभन्दा छिटो छ। छिटो को हो?",
+        "gold": "कल्पना",
+        "model": "उर्मिला"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: कल्पना पुष्पाभन्दा छिटो छ। छिटो को हो?",
+        "gold": "कल्पना",
+        "model": "पुष्पा"
       }
     ]
   },
@@ -286,12 +286,6 @@
         "model": "निरु"
       },
       {
-        "task": "numeric2",
-        "prompt": "दिइएको छ कि कुमारको उचाइ 166 सेन्टिमिटर र रबिनको उचाइ 175 सेन्टिमिटर छ। अग्लो को हो?",
-        "gold": "रबिन",
-        "model": "रबिन"
-      },
-      {
         "task": "numeric3",
         "prompt": "यहाँ कल्पनाको तौल 37 किलो, उर्मिलाको तौल 59 किलो, तथा पुष्पाको तौल 62 किलो छ। सबैभन्दा गह्रौं को हो?",
         "gold": "पुष्पा",
@@ -302,6 +296,12 @@
         "prompt": "यहाँ पुष्पाको उचाइ 158 सेन्टिमिटर, निरुको उचाइ 180 सेन्टिमिटर, तथा उर्मिलाको उचाइ 164 सेन्टिमिटर छ। सबैभन्दा अग्ली को हो?",
         "gold": "निरु",
         "model": "निरु"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दिनुहोस्: सुबास रबिनभन्दा गरिब छ। गरिब को हो?",
+        "gold": "सुबास",
+        "model": "सुबास"
       }
     ],
     "incorrect": [

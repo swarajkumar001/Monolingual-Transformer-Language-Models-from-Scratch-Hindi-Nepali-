@@ -323,10 +323,17 @@ can masquerade as a finetuning effect.
 
 ATTENTION = '''
 import subprocess
-subprocess.run("apt-get -qq install -y fonts-noto-devanagari > /dev/null 2>&1",
-               shell=True)
+# "fonts-noto-devanagari" is not a real Debian package, so the Phase 2 install
+# silently did nothing and the heatmaps fell back to numeric tick labels. The
+# packages below do exist and between them provide Noto Sans Devanagari and
+# Lohit Devanagari, two of the families find_devanagari_font() looks for.
+subprocess.run("apt-get -qq update > /dev/null 2>&1 && "
+               "apt-get -qq install -y fonts-lohit-deva fonts-noto-core "
+               "> /dev/null 2>&1", shell=True)
 import matplotlib.font_manager as fm
 fm._load_fontmanager(try_read_cache=False)
+viz_mod = importlib.import_module(LANGUAGE + ".eval.viz")
+print("Devanagari font:", viz_mod.find_devanagari_font())
 
 ac_mod = importlib.import_module(LANGUAGE + ".reasoning.attention_compare")
 comparison = ac_mod.compare(

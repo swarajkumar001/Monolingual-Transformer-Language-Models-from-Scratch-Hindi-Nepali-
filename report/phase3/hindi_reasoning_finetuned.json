@@ -3,7 +3,7 @@
   "tag": "finetuned",
   "stage": "reasoning_finetune",
   "checkpoint": "/kaggle/working/repo/checkpoints/hindi_reasoning/ckpt_best.pt",
-  "checkpoint_step": 100,
+  "checkpoint_step": 60,
   "split": "test",
   "examples": 2000,
   "sequence_stats": {
@@ -16,139 +16,139 @@
     "total_tokens": 59257
   },
   "exact_match": {
-    "accuracy": 0.327,
-    "correct": 654,
+    "accuracy": 0.3515,
+    "correct": 703,
     "by_task": {
       "compare2": {
-        "accuracy": 0.38,
-        "correct": 190,
+        "accuracy": 0.474,
+        "correct": 237,
         "total": 500
       },
       "numeric2": {
-        "accuracy": 0.466,
-        "correct": 233,
+        "accuracy": 0.474,
+        "correct": 237,
         "total": 500
       },
       "numeric3": {
-        "accuracy": 0.248,
-        "correct": 124,
+        "accuracy": 0.334,
+        "correct": 167,
         "total": 500
       },
       "transitive3": {
-        "accuracy": 0.214,
-        "correct": 107,
+        "accuracy": 0.124,
+        "correct": 62,
         "total": 500
       }
     },
     "by_hops": {
       "1": {
-        "accuracy": 0.3647,
-        "correct": 547,
+        "accuracy": 0.4273,
+        "correct": 641,
         "total": 1500
       },
       "2": {
-        "accuracy": 0.214,
-        "correct": 107,
+        "accuracy": 0.124,
+        "correct": 62,
         "total": 500
       }
     },
     "by_attribute": {
       "age": {
-        "accuracy": 0.3226,
-        "correct": 170,
+        "accuracy": 0.3416,
+        "correct": 180,
         "total": 527
       },
       "height": {
-        "accuracy": 0.3409,
-        "correct": 181,
+        "accuracy": 0.3936,
+        "correct": 209,
         "total": 531
       },
       "speed": {
-        "accuracy": 0.2574,
-        "correct": 52,
+        "accuracy": 0.2772,
+        "correct": 56,
         "total": 202
       },
       "wealth": {
-        "accuracy": 0.3582,
-        "correct": 72,
+        "accuracy": 0.2985,
+        "correct": 60,
         "total": 201
       },
       "weight": {
-        "accuracy": 0.3321,
-        "correct": 179,
+        "accuracy": 0.3673,
+        "correct": 198,
         "total": 539
       }
     }
   },
   "forced_choice": {
-    "accuracy": 0.4235,
-    "correct": 847,
+    "accuracy": 0.3635,
+    "correct": 727,
     "chance_accuracy": 0.4167,
     "by_task": {
       "compare2": {
-        "accuracy": 0.502,
-        "correct": 251,
+        "accuracy": 0.504,
+        "correct": 252,
         "total": 500
       },
       "numeric2": {
-        "accuracy": 0.512,
-        "correct": 256,
+        "accuracy": 0.47,
+        "correct": 235,
         "total": 500
       },
       "numeric3": {
-        "accuracy": 0.314,
-        "correct": 157,
+        "accuracy": 0.332,
+        "correct": 166,
         "total": 500
       },
       "transitive3": {
-        "accuracy": 0.366,
-        "correct": 183,
+        "accuracy": 0.148,
+        "correct": 74,
         "total": 500
       }
     },
     "by_hops": {
       "1": {
-        "accuracy": 0.4427,
-        "correct": 664,
+        "accuracy": 0.4353,
+        "correct": 653,
         "total": 1500
       },
       "2": {
-        "accuracy": 0.366,
-        "correct": 183,
+        "accuracy": 0.148,
+        "correct": 74,
         "total": 500
       }
     },
     "by_attribute": {
       "age": {
-        "accuracy": 0.4099,
-        "correct": 216,
+        "accuracy": 0.3491,
+        "correct": 184,
         "total": 527
       },
       "height": {
-        "accuracy": 0.4237,
-        "correct": 225,
+        "accuracy": 0.4068,
+        "correct": 216,
         "total": 531
       },
       "speed": {
-        "accuracy": 0.4406,
-        "correct": 89,
+        "accuracy": 0.2921,
+        "correct": 59,
         "total": 202
       },
       "wealth": {
-        "accuracy": 0.4478,
-        "correct": 90,
+        "accuracy": 0.3333,
+        "correct": 67,
         "total": 201
       },
       "weight": {
-        "accuracy": 0.4212,
-        "correct": 227,
+        "accuracy": 0.3729,
+        "correct": 201,
         "total": 539
       }
     }
   },
   "answer_token_loss": {
-    "answer_token_loss": 1.0072,
-    "answer_token_perplexity": 2.738,
+    "answer_token_loss": 0.9408,
+    "answer_token_perplexity": 2.562,
     "answer_tokens_scored": 5998
   },
   "qualitative_generation": {
@@ -161,9 +161,9 @@
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दीजिए: वरुण नवीन से अमीर है। अमीर कौन है?",
-        "gold": "वरुण",
-        "model": "वरुण"
+        "prompt": "ध्यान दीजिए: वरुण प्रवीण से गरीब है। अमीर कौन है?",
+        "gold": "प्रवीण",
+        "model": "प्रवीण"
       },
       {
         "task": "compare2",
@@ -191,24 +191,18 @@
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दीजिए: वरुण प्रवीण से अमीर है। अमीर कौन है?",
-        "gold": "वरुण",
-        "model": "वरुण"
+        "prompt": "ध्यान दीजिए: प्रवीण अरुण से गरीब है। अमीर कौन है?",
+        "gold": "अरुण",
+        "model": "अरुण"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दीजिए: अरुण नवीन से छोटा है। छोटा कौन है?",
+        "prompt": "ध्यान दीजिए: वरुण अरुण से भारी है। हल्का कौन है?",
         "gold": "अरुण",
         "model": "अरुण"
       }
     ],
     "incorrect": [
-      {
-        "task": "compare2",
-        "prompt": "ध्यान दीजिए: वरुण प्रवीण से गरीब है। अमीर कौन है?",
-        "gold": "प्रवीण",
-        "model": "महेश"
-      },
       {
         "task": "compare2",
         "prompt": "ध्यान दीजिए: नवीन वरुण से अमीर है। अमीर कौन है?",
@@ -241,15 +235,21 @@
       },
       {
         "task": "compare2",
+        "prompt": "ध्यान दीजिए: वरुण नवीन से अमीर है। अमीर कौन है?",
+        "gold": "वरुण",
+        "model": "नवीन"
+      },
+      {
+        "task": "compare2",
         "prompt": "ध्यान दीजिए: नवीन प्रवीण से हल्का है। हल्का कौन है?",
         "gold": "नवीन",
         "model": "प्रवीण"
       },
       {
         "task": "compare2",
-        "prompt": "ध्यान दीजिए: प्रवीण अरुण से गरीब है। अमीर कौन है?",
-        "gold": "अरुण",
-        "model": "महेश"
+        "prompt": "ध्यान दीजिए: वरुण प्रवीण से अमीर है। अमीर कौन है?",
+        "gold": "वरुण",
+        "model": "प्रवीण"
       }
     ]
   },
@@ -268,6 +268,18 @@
         "model": "अरुण"
       },
       {
+        "task": "compare2",
+        "prompt": "ध्यान दीजिए: वरुण प्रवीण से गरीब है। अमीर कौन है?",
+        "gold": "प्रवीण",
+        "model": "प्रवीण"
+      },
+      {
+        "task": "numeric2",
+        "prompt": "दिया गया है कि चंदा का वज़न ६६ किलो है और शारदा का वज़न ७४ किलो है। हल्की कौन है?",
+        "gold": "चंदा",
+        "model": "चंदा"
+      },
+      {
         "task": "numeric2",
         "prompt": "दिया गया है कि मालती की उम्र ३९ साल है और शारदा की उम्र ५० साल है। बड़ी कौन है?",
         "gold": "शारदा",
@@ -281,27 +293,15 @@
       },
       {
         "task": "numeric2",
+        "prompt": "दिया गया है कि वरुण की लंबाई १६४ सेंटीमीटर है और प्रवीण की लंबाई १४० सेंटीमीटर है। छोटा कौन है?",
+        "gold": "प्रवीण",
+        "model": "प्रवीण"
+      },
+      {
+        "task": "numeric2",
         "prompt": "दिया गया है कि सविता की लंबाई १७९ सेंटीमीटर है और मालती की लंबाई १६४ सेंटीमीटर है। छोटी कौन है?",
         "gold": "मालती",
         "model": "मालती"
-      },
-      {
-        "task": "compare2",
-        "prompt": "ध्यान दीजिए: तरुण अरुण से धीमा है। तेज़ कौन है?",
-        "gold": "अरुण",
-        "model": "अरुण"
-      },
-      {
-        "task": "numeric3",
-        "prompt": "यहाँ शारदा की उम्र २३ साल, सविता की उम्र १८ साल, तथा बबीता की उम्र ३९ साल है। सबसे बड़ी कौन है?",
-        "gold": "बबीता",
-        "model": "बबीता"
-      },
-      {
-        "task": "numeric3",
-        "prompt": "यहाँ प्रवीण की लंबाई १५२ सेंटीमीटर, अरुण की लंबाई १५४ सेंटीमीटर, तथा वरुण की लंबाई १६५ सेंटीमीटर है। सबसे लंबा कौन है?",
-        "gold": "वरुण",
-        "model": "वरुण"
       }
     ],
     "incorrect": [
@@ -330,12 +330,6 @@
         "model": "प्रवीण"
       },
       {
-        "task": "compare2",
-        "prompt": "ध्यान दीजिए: वरुण प्रवीण से गरीब है। अमीर कौन है?",
-        "gold": "प्रवीण",
-        "model": "वरुण"
-      },
-      {
         "task": "numeric3",
         "prompt": "यहाँ अरुण का वज़न ३७ किलो, नवीन का वज़न ६५ किलो, तथा प्रवीण का वज़न ४३ किलो है। सबसे भारी कौन है?",
         "gold": "नवीन",
@@ -345,13 +339,19 @@
         "task": "numeric3",
         "prompt": "यहाँ प्रवीण की उम्र ४८ साल, नवीन की उम्र १७ साल, तथा तरुण की उम्र ३८ साल है। सबसे बड़ा कौन है?",
         "gold": "प्रवीण",
-        "model": "तरुण"
+        "model": "नवीन"
       },
       {
         "task": "numeric2",
         "prompt": "दिया गया है कि चंदा की लंबाई १७२ सेंटीमीटर है और बबीता की लंबाई १४१ सेंटीमीटर है। छोटी कौन है?",
         "gold": "बबीता",
         "model": "चंदा"
+      },
+      {
+        "task": "compare2",
+        "prompt": "ध्यान दीजिए: शारदा सविता से गरीब है। अमीर कौन है?",
+        "gold": "सविता",
+        "model": "शारदा"
       }
     ]
   }

@@ -266,201 +266,201 @@
     "finetuned": {
       "checkpoint": "/kaggle/working/repo/checkpoints/hindi_reasoning/ckpt_best.pt",
       "stage": "reasoning_finetune",
-      "step": 100,
-      "mean_entropy": 1.887032275243352,
-      "mean_distance": 10.211259692907333,
+      "step": 60,
+      "mean_entropy": 1.8691367936941485,
+      "mean_distance": 10.36019016802311,
       "per_head": {
         "L0H0": {
-          "entropy": 2.6124,
-          "mean_distance": 13.9971
+          "entropy": 2.6251,
+          "mean_distance": 14.0254
         },
         "L0H1": {
-          "entropy": 2.8372,
-          "mean_distance": 11.9165
+          "entropy": 2.837,
+          "mean_distance": 11.9103
         },
         "L0H2": {
-          "entropy": 2.7537,
-          "mean_distance": 11.4612
+          "entropy": 2.7544,
+          "mean_distance": 11.4553
         },
         "L0H3": {
-          "entropy": 2.8285,
-          "mean_distance": 12.733
+          "entropy": 2.8293,
+          "mean_distance": 12.7149
         },
         "L0H4": {
-          "entropy": 2.8218,
-          "mean_distance": 11.7738
+          "entropy": 2.8211,
+          "mean_distance": 11.7666
         },
         "L0H5": {
-          "entropy": 2.6017,
-          "mean_distance": 11.031
+          "entropy": 2.6063,
+          "mean_distance": 11.0379
         },
         "L0H6": {
-          "entropy": 2.7551,
-          "mean_distance": 12.1881
+          "entropy": 2.7677,
+          "mean_distance": 12.1985
         },
         "L0H7": {
-          "entropy": 2.6979,
-          "mean_distance": 11.2433
+          "entropy": 2.6982,
+          "mean_distance": 11.2332
         },
         "L1H0": {
-          "entropy": 2.2191,
-          "mean_distance": 4.6269
+          "entropy": 2.2076,
+          "mean_distance": 5.0852
         },
         "L1H1": {
-          "entropy": 2.3074,
-          "mean_distance": 6.607
+          "entropy": 2.2155,
+          "mean_distance": 7.1383
         },
         "L1H2": {
-          "entropy": 2.765,
-          "mean_distance": 11.5277
+          "entropy": 2.7052,
+          "mean_distance": 11.4068
         },
         "L1H3": {
-          "entropy": 2.5738,
-          "mean_distance": 9.2289
+          "entropy": 2.5896,
+          "mean_distance": 9.5114
         },
         "L1H4": {
-          "entropy": 1.9769,
-          "mean_distance": 17.5333
+          "entropy": 2.0014,
+          "mean_distance": 16.9987
         },
         "L1H5": {
-          "entropy": 1.7377,
-          "mean_distance": 15.7497
+          "entropy": 1.6335,
+          "mean_distance": 16.1331
         },
         "L1H6": {
-          "entropy": 2.331,
-          "mean_distance": 14.2604
+          "entropy": 2.1407,
+          "mean_distance": 14.8739
         },
         "L1H7": {
-          "entropy": 2.4503,
-          "mean_distance": 13.0448
+          "entropy": 2.393,
+          "mean_distance": 13.8809
         },
         "L2H0": {
-          "entropy": 1.2601,
-          "mean_distance": 3.2108
+          "entropy": 1.2581,
+          "mean_distance": 3.875
         },
         "L2H1": {
-          "entropy": 2.2021,
-          "mean_distance": 4.6007
+          "entropy": 2.1648,
+          "mean_distance": 5.2337
         },
         "L2H2": {
-          "entropy": 1.8316,
-          "mean_distance": 2.5894
+          "entropy": 1.8082,
+          "mean_distance": 2.6662
         },
         "L2H3": {
-          "entropy": 1.7897,
-          "mean_distance": 13.98
+          "entropy": 1.7195,
+          "mean_distance": 14.2605
         },
         "L2H4": {
-          "entropy": 1.8495,
-          "mean_distance": 3.5174
+          "entropy": 1.8419,
+          "mean_distance": 3.6851
         },
         "L2H5": {
-          "entropy": 2.2757,
-          "mean_distance": 10.8246
+          "entropy": 2.1807,
+          "mean_distance": 11.1768
         },
         "L2H6": {
-          "entropy": 1.4159,
-          "mean_distance": 2.067
+          "entropy": 1.4055,
+          "mean_distance": 2.1685
         },
         "L2H7": {
-          "entropy": 1.9317,
-          "mean_distance": 5.3199
+          "entropy": 1.8612,
+          "mean_distance": 5.908
         },
         "L3H0": {
-          "entropy": 1.2739,
-          "mean_distance": 3.8932
+          "entropy": 1.2699,
+          "mean_distance": 3.9778
         },
         "L3H1": {
-          "entropy": 1.7512,
-          "mean_distance": 16.1475
+          "entropy": 1.738,
+          "mean_distance": 16.0927
         },
         "L3H2": {
-          "entropy": 1.4363,
-          "mean_distance": 4.6007
+          "entropy": 1.4334,
+          "mean_distance": 4.5348
         },
         "L3H3": {
-          "entropy": 0.0602,
-          "mean_distance": 1.0307
+          "entropy": 0.0753,
+          "mean_distance": 1.0222
         },
         "L3H4": {
-          "entropy": 1.496,
-          "mean_distance": 2.7992
+          "entropy": 1.4701,
+          "mean_distance": 2.6901
         },
         "L3H5": {
-          "entropy": 2.2702,
-          "mean_distance": 5.7461
+          "entropy": 2.2506,
+          "mean_distance": 5.6948
         },
         "L3H6": {
-          "entropy": 2.0294,
-          "mean_distance": 13.261
+          "entropy": 2.1384,
+          "mean_distance": 12.9866
         },
         "L3H7": {
-          "entropy": 1.635,
-          "mean_distance": 3.5705
+          "entropy": 1.6641,
+          "mean_distance": 3.68
         },
         "L4H0": {
-          "entropy": 1.8354,
-          "mean_distance": 13.1801
+          "entropy": 2.0376,
+          "mean_distance": 11.5474
         },
         "L4H1": {
-          "entropy": 1.3041,
-          "mean_distance": 5.3596
+          "entropy": 1.3201,
+          "mean_distance": 5.4229
         },
         "L4H2": {
-          "entropy": 0.5983,
-          "mean_distance": 17.0956
+          "entropy": 0.5417,
+          "mean_distance": 17.5698
         },
         "L4H3": {
-          "entropy": 1.4914,
-          "mean_distance": 14.1218
+          "entropy": 1.4537,
+          "mean_distance": 14.7442
         },
         "L4H4": {
-          "entropy": 1.2777,
-          "mean_distance": 4.7297
+          "entropy": 1.2859,
+          "mean_distance": 4.4996
         },
         "L4H5": {
-          "entropy": 1.6062,
-          "mean_distance": 9.7958
+          "entropy": 1.688,
+          "mean_distance": 9.6566
         },
         "L4H6": {
-          "entropy": 1.5068,
-          "mean_distance": 14.3639
+          "entropy": 1.4561,
+          "mean_distance": 14.6367
         },
         "L4H7": {
-          "entropy": 2.0594,
-          "mean_distance": 5.7829
+          "entropy": 2.0262,
+          "mean_distance": 5.9017
         },
         "L5H0": {
-          "entropy": 1.7157,
-          "mean_distance": 12.2496
+          "entropy": 1.8235,
+          "mean_distance": 11.8161
         },
         "L5H1": {
-          "entropy": 1.5428,
-          "mean_distance": 16.9161
+          "entropy": 1.6258,
+          "mean_distance": 16.3427
         },
         "L5H2": {
-          "entropy": 0.9461,
-          "mean_distance": 17.248
+          "entropy": 0.8779,
+          "mean_distance": 17.6517
         },
         "L5H3": {
-          "entropy": 1.3005,
-          "mean_distance": 16.6828
+          "entropy": 1.2271,
+          "mean_distance": 17.1436
         },
         "L5H4": {
-          "entropy": 1.1313,
-          "mean_distance": 15.9325
+          "entropy": 1.1046,
+          "mean_distance": 16.1588
         },
         "L5H5": {
-          "entropy": 1.4082,
-          "mean_distance": 14.6215
+          "entropy": 1.0911,
+          "mean_distance": 17.164
         },
         "L5H6": {
-          "entropy": 1.8958,
-          "mean_distance": 14.9648
+          "entropy": 1.8068,
+          "mean_distance": 15.1616
         },
         "L5H7": {
-          "entropy": 2.18,
-          "mean_distance": 11.0141
+          "entropy": 2.2472,
+          "mean_distance": 10.8485
         }
       },
       "layers_plotted": [
@@ -478,311 +478,311 @@
   ],
   "per_head_delta": {
     "L0H0": {
-      "entropy_delta": 0.0108,
-      "distance_delta": -0.278
+      "entropy_delta": 0.0235,
+      "distance_delta": -0.2497
     },
     "L0H1": {
-      "entropy_delta": -0.0063,
-      "distance_delta": 0.0191
+      "entropy_delta": -0.0065,
+      "distance_delta": 0.0129
     },
     "L0H2": {
-      "entropy_delta": -0.0047,
-      "distance_delta": 0.023
+      "entropy_delta": -0.004,
+      "distance_delta": 0.0171
     },
     "L0H3": {
-      "entropy_delta": 0.001,
-      "distance_delta": -0.0392
+      "entropy_delta": 0.0018,
+      "distance_delta": -0.0573
     },
     "L0H4": {
-      "entropy_delta": -0.0023,
-      "distance_delta": -0.0062
+      "entropy_delta": -0.003,
+      "distance_delta": -0.0134
     },
     "L0H5": {
-      "entropy_delta": -0.0213,
-      "distance_delta": 0.0302
+      "entropy_delta": -0.0167,
+      "distance_delta": 0.0371
     },
     "L0H6": {
-      "entropy_delta": -0.0055,
-      "distance_delta": -0.0272
+      "entropy_delta": 0.0071,
+      "distance_delta": -0.0168
     },
     "L0H7": {
-      "entropy_delta": -0.006,
-      "distance_delta": 0.0468
+      "entropy_delta": -0.0057,
+      "distance_delta": 0.0367
     },
     "L1H0": {
-      "entropy_delta": -0.0675,
-      "distance_delta": -1.0658
+      "entropy_delta": -0.079,
+      "distance_delta": -0.6075
     },
     "L1H1": {
-      "entropy_delta": -0.0456,
-      "distance_delta": -1.0654
+      "entropy_delta": -0.1375,
+      "distance_delta": -0.5341
     },
     "L1H2": {
-      "entropy_delta": 0.0183,
-      "distance_delta": 0.3917
+      "entropy_delta": -0.0415,
+      "distance_delta": 0.2708
     },
     "L1H3": {
-      "entropy_delta": -0.0105,
-      "distance_delta": -0.7449
+      "entropy_delta": 0.0053,
+      "distance_delta": -0.4624
     },
     "L1H4": {
-      "entropy_delta": -0.2032,
-      "distance_delta": 1.4892
+      "entropy_delta": -0.1787,
+      "distance_delta": 0.9546
     },
     "L1H5": {
-      "entropy_delta": -0.1692,
-      "distance_delta": 0.8734
+      "entropy_delta": -0.2734,
+      "distance_delta": 1.2568
     },
     "L1H6": {
-      "entropy_delta": -0.0202,
-      "distance_delta": 0.9947
+      "entropy_delta": -0.2105,
+      "distance_delta": 1.6082
     },
     "L1H7": {
-      "entropy_delta": 0.1447,
-      "distance_delta": -1.3789
+      "entropy_delta": 0.0874,
+      "distance_delta": -0.5428
     },
     "L2H0": {
-      "entropy_delta": -0.0749,
-      "distance_delta": -0.0672
+      "entropy_delta": -0.0769,
+      "distance_delta": 0.597
     },
     "L2H1": {
-      "entropy_delta": -0.0618,
-      "distance_delta": -0.3592
+      "entropy_delta": -0.0991,
+      "distance_delta": 0.2738
     },
     "L2H2": {
-      "entropy_delta": -0.0345,
-      "distance_delta": -0.2689
+      "entropy_delta": -0.0579,
+      "distance_delta": -0.1921
     },
     "L2H3": {
-      "entropy_delta": -0.0605,
-      "distance_delta": 0.7951
+      "entropy_delta": -0.1307,
+      "distance_delta": 1.0756
     },
     "L2H4": {
-      "entropy_delta": -0.0742,
-      "distance_delta": -0.4281
+      "entropy_delta": -0.0818,
+      "distance_delta": -0.2604
     },
     "L2H5": {
-      "entropy_delta": 0.154,
-      "distance_delta": -1.1985
+      "entropy_delta": 0.059,
+      "distance_delta": -0.8463
     },
     "L2H6": {
-      "entropy_delta": 0.0286,
-      "distance_delta": -0.2164
+      "entropy_delta": 0.0182,
+      "distance_delta": -0.1149
     },
     "L2H7": {
-      "entropy_delta": 0.0719,
-      "distance_delta": -1.232
+      "entropy_delta": 0.0014,
+      "distance_delta": -0.6439
     },
     "L3H0": {
-      "entropy_delta": 0.0293,
-      "distance_delta": -0.7299
+      "entropy_delta": 0.0253,
+      "distance_delta": -0.6453
     },
     "L3H1": {
-      "entropy_delta": -0.2174,
-      "distance_delta": 2.64
+      "entropy_delta": -0.2306,
+      "distance_delta": 2.5852
     },
     "L3H2": {
-      "entropy_delta": -0.1276,
-      "distance_delta": -0.3371
+      "entropy_delta": -0.1305,
+      "distance_delta": -0.403
     },
     "L3H3": {
-      "entropy_delta": -0.0025,
-      "distance_delta": -0.0213
+      "entropy_delta": 0.0126,
+      "distance_delta": -0.0298
     },
     "L3H4": {
-      "entropy_delta": -0.0355,
-      "distance_delta": -0.2499
+      "entropy_delta": -0.0614,
+      "distance_delta": -0.359
     },
     "L3H5": {
-      "entropy_delta": -0.0296,
-      "distance_delta": -1.0074
+      "entropy_delta": -0.0492,
+      "distance_delta": -1.0587
     },
     "L3H6": {
-      "entropy_delta": -0.1662,
-      "distance_delta": 0.3912
+      "entropy_delta": -0.0572,
+      "distance_delta": 0.1168
     },
     "L3H7": {
-      "entropy_delta": 0.0113,
-      "distance_delta": -0.521
+      "entropy_delta": 0.0404,
+      "distance_delta": -0.4115
     },
     "L4H0": {
-      "entropy_delta": -0.2743,
-      "distance_delta": 2.8932
+      "entropy_delta": -0.0721,
+      "distance_delta": 1.2605
     },
     "L4H1": {
-      "entropy_delta": -0.0449,
-      "distance_delta": -1.4302
+      "entropy_delta": -0.0289,
+      "distance_delta": -1.3669
     },
     "L4H2": {
-      "entropy_delta": 0.0257,
-      "distance_delta": -0.2206
+      "entropy_delta": -0.0309,
+      "distance_delta": 0.2536
     },
     "L4H3": {
-      "entropy_delta": -0.1908,
-      "distance_delta": 0.2466
+      "entropy_delta": -0.2285,
+      "distance_delta": 0.869
     },
     "L4H4": {
-      "entropy_delta": 0.0088,
-      "distance_delta": 0.5865
+      "entropy_delta": 0.017,
+      "distance_delta": 0.3564
     },
     "L4H5": {
-      "entropy_delta": -0.1102,
-      "distance_delta": 0.9102
+      "entropy_delta": -0.0284,
+      "distance_delta": 0.771
     },
     "L4H6": {
-      "entropy_delta": 0.0639,
-      "distance_delta": -0.8061
+      "entropy_delta": 0.0132,
+      "distance_delta": -0.5333
     },
     "L4H7": {
-      "entropy_delta": 0.0793,
-      "distance_delta": -1.1323
+      "entropy_delta": 0.0461,
+      "distance_delta": -1.0135
     },
     "L5H0": {
-      "entropy_delta": 0.0263,
-      "distance_delta": 0.1152
+      "entropy_delta": 0.1341,
+      "distance_delta": -0.3183
     },
     "L5H1": {
-      "entropy_delta": -0.1184,
-      "distance_delta": 0.8079
+      "entropy_delta": -0.0354,
+      "distance_delta": 0.2345
     },
     "L5H2": {
-      "entropy_delta": 0.1524,
-      "distance_delta": -0.9008
+      "entropy_delta": 0.0842,
+      "distance_delta": -0.4971
     },
     "L5H3": {
-      "entropy_delta": 0.1431,
-      "distance_delta": -0.666
+      "entropy_delta": 0.0697,
+      "distance_delta": -0.2052
     },
     "L5H4": {
-      "entropy_delta": -0.0059,
-      "distance_delta": -0.2202
+      "entropy_delta": -0.0326,
+      "distance_delta": 0.0061
     },
     "L5H5": {
-      "entropy_delta": 0.214,
-      "distance_delta": -1.6611
+      "entropy_delta": -0.1031,
+      "distance_delta": 0.8814
     },
     "L5H6": {
-      "entropy_delta": -0.1232,
-      "distance_delta": 0.8765
+      "entropy_delta": -0.2122,
+      "distance_delta": 1.0733
     },
     "L5H7": {
-      "entropy_delta": 0.0178,
-      "distance_delta": -0.2771
+      "entropy_delta": 0.085,
+      "distance_delta": -0.4427
     }
   },
   "largest_entropy_shifts": [
     [
-      "L4H0",
+      "L1H5",
       {
-        "entropy_delta": -0.2743,
-        "distance_delta": 2.8932
+        "entropy_delta": -0.2734,
+        "distance_delta": 1.2568
       }
     ],
     [
       "L3H1",
       {
-        "entropy_delta": -0.2174,
-        "distance_delta": 2.64
-      }
-    ],
-    [
-      "L5H5",
-      {
-        "entropy_delta": 0.214,
-        "distance_delta": -1.6611
-      }
-    ],
-    [
-      "L1H4",
-      {
-        "entropy_delta": -0.2032,
-        "distance_delta": 1.4892
+        "entropy_delta": -0.2306,
+        "distance_delta": 2.5852
       }
     ],
     [
       "L4H3",
       {
-        "entropy_delta": -0.1908,
-        "distance_delta": 0.2466
+        "entropy_delta": -0.2285,
+        "distance_delta": 0.869
       }
     ],
     [
-      "L1H5",
+      "L5H6",
       {
-        "entropy_delta": -0.1692,
-        "distance_delta": 0.8734
+        "entropy_delta": -0.2122,
+        "distance_delta": 1.0733
       }
     ],
     [
-      "L3H6",
+      "L1H6",
       {
-        "entropy_delta": -0.1662,
-        "distance_delta": 0.3912
-      }
-    ],
-    [
-      "L2H5",
-      {
-        "entropy_delta": 0.154,
-        "distance_delta": -1.1985
-      }
-    ]
-  ],
-  "largest_distance_shifts": [
-    [
-      "L4H0",
-      {
-        "entropy_delta": -0.2743,
-        "distance_delta": 2.8932
-      }
-    ],
-    [
-      "L3H1",
-      {
-        "entropy_delta": -0.2174,
-        "distance_delta": 2.64
-      }
-    ],
-    [
-      "L5H5",
-      {
-        "entropy_delta": 0.214,
-        "distance_delta": -1.6611
+        "entropy_delta": -0.2105,
+        "distance_delta": 1.6082
       }
     ],
     [
       "L1H4",
       {
-        "entropy_delta": -0.2032,
-        "distance_delta": 1.4892
+        "entropy_delta": -0.1787,
+        "distance_delta": 0.9546
+      }
+    ],
+    [
+      "L1H1",
+      {
+        "entropy_delta": -0.1375,
+        "distance_delta": -0.5341
+      }
+    ],
+    [
+      "L5H0",
+      {
+        "entropy_delta": 0.1341,
+        "distance_delta": -0.3183
+      }
+    ]
+  ],
+  "largest_distance_shifts": [
+    [
+      "L3H1",
+      {
+        "entropy_delta": -0.2306,
+        "distance_delta": 2.5852
+      }
+    ],
+    [
+      "L1H6",
+      {
+        "entropy_delta": -0.2105,
+        "distance_delta": 1.6082
       }
     ],
     [
       "L4H1",
       {
-        "entropy_delta": -0.0449,
-        "distance_delta": -1.4302
+        "entropy_delta": -0.0289,
+        "distance_delta": -1.3669
       }
     ],
     [
-      "L1H7",
+      "L4H0",
       {
-        "entropy_delta": 0.1447,
-        "distance_delta": -1.3789
+        "entropy_delta": -0.0721,
+        "distance_delta": 1.2605
       }
     ],
     [
-      "L2H7",
+      "L1H5",
       {
-        "entropy_delta": 0.0719,
-        "distance_delta": -1.232
+        "entropy_delta": -0.2734,
+        "distance_delta": 1.2568
       }
     ],
     [
-      "L2H5",
+      "L2H3",
       {
-        "entropy_delta": 0.154,
-        "distance_delta": -1.1985
+        "entropy_delta": -0.1307,
+        "distance_delta": 1.0756
+      }
+    ],
+    [
+      "L5H6",
+      {
+        "entropy_delta": -0.2122,
+        "distance_delta": 1.0733
+      }
+    ],
+    [
+      "L3H5",
+      {
+        "entropy_delta": -0.0492,
+        "distance_delta": -1.0587
       }
     ]
   ]

@@ -3,7 +3,7 @@ pretrained_checkpoint: /kaggle/input/notebooks/swaraj001/lma-phase-2-model-h-hin
 data_dir: hindi/reasoning/data
 tokenizer_model: /kaggle/working/repo/hindi/tokenizer/hindi_unigram_8000.model
 out_dir: checkpoints/hindi_reasoning
-epochs: 3
+epochs: 2
 batch_size: 32
 learning_rate: 6.0e-05
 min_lr: 6.0e-06
@@ -12,7 +12,7 @@ weight_decay: 0.1
 beta1: 0.9
 beta2: 0.95
 grad_clip: 1.0
-eval_interval: 100
+eval_interval: 20
 log_interval: 25
 seed: 20260914
 device: cuda
