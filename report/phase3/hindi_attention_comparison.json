@@ -59,11 +59,11 @@
   ],
   "models": {
     "pretrained": {
-      "checkpoint": "/kaggle/input/notebooks/swaraj001/lma-phase-2-model-h-hindi/checkpoints/hindi/ckpt_best.pt",
+      "checkpoint": "C:\\Users\\swara\\AppData\\Local\\Temp\\claude\\c--Users-swara-Desktop-lma-individual-project\\9d257717-9c92-493e-b009-ffa2c540beba\\scratchpad\\pre\\hindi\\checkpoints\\hindi\\ckpt_best.pt",
       "stage": "pretrained",
       "step": 14500,
-      "mean_entropy": 1.9102407071428995,
-      "mean_distance": 10.303472007314364,
+      "mean_entropy": 1.910240670510878,
+      "mean_distance": 10.30347203463316,
       "per_head": {
         "L0H0": {
           "entropy": 2.6016,
@@ -151,7 +151,7 @@
         },
         "L2H5": {
           "entropy": 2.1217,
-          "mean_distance": 12.0231
+          "mean_distance": 12.0232
         },
         "L2H6": {
           "entropy": 1.3873,
@@ -264,11 +264,11 @@
       ]
     },
     "finetuned": {
-      "checkpoint": "/kaggle/working/repo/checkpoints/hindi_reasoning/ckpt_best.pt",
+      "checkpoint": "C:\\Users\\swara\\AppData\\Local\\Temp\\claude\\c--Users-swara-Desktop-lma-individual-project\\9d257717-9c92-493e-b009-ffa2c540beba\\scratchpad\\ft\\hindi\\ckpt_best.pt",
       "stage": "reasoning_finetune",
       "step": 60,
-      "mean_entropy": 1.8691367936941485,
-      "mean_distance": 10.36019016802311,
+      "mean_entropy": 1.8691368084400892,
+      "mean_distance": 10.360190401474634,
       "per_head": {
         "L0H0": {
           "entropy": 2.6251,
@@ -563,7 +563,7 @@
     },
     "L2H5": {
       "entropy_delta": 0.059,
-      "distance_delta": -0.8463
+      "distance_delta": -0.8464
     },
     "L2H6": {
       "entropy_delta": 0.0182,
