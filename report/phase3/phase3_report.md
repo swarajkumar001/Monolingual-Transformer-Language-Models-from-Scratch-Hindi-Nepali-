@@ -468,6 +468,26 @@ L nominally on forced choice — but since both forced-choice figures are below
 chance, that ordering carries no signal. The difference that does carry signal
 is §4.3: **Model H attends to the prompt and Model L frequently does not.**
 
+### 6.1 Key Phase 1–2 figures, consolidated
+
+The four questions in §7 are answered from evidence gathered across all three
+phases. The figures that evidence rests on are collected here so this report can
+be read on its own.
+
+| Phase | Figure | What it establishes |
+|---|---|---|
+| 1 | [Corpus size](../phase1/figures/01_corpus_size.png) | The resource gap in raw terms — the premise of the whole comparison |
+| 1 | [Cleaning funnel](../phase1/figures/03_cleaning_funnel.png) · [drop reasons](../phase1/figures/04_drop_reasons.png) | What each filter removed, and why retention differs by language |
+| 1 | [Split sizes](../phase1/figures/05_split_sizes.png) | Document-level train/val/test partition for both languages |
+| 1 | [Vocabulary fertility](../phase1/figures/07_vocab_fertility.png) · [chars per token](../phase1/figures/06_vocab_chars_per_token.png) | The bytes/token difference that makes perplexity and BPB disagree (§7.3) |
+| 1 | [Byte fallback](../phase1/figures/08_vocab_byte_fallback.png) | The coverage gap behind the Nepali numeral defect (§1.4) |
+| 2 | [Pretraining loss curves](../phase2/figures/loss_curves_both.png) | Both models trained to convergence on equal token budgets |
+| 2 | [Generation metrics](../phase2/figures/generation_metrics_both.png) | BLEU / chrF++ / ROUGE-L and the greedy-decoding degeneration |
+| 2 | [Attention summary](../phase2/figures/attention_summary_both.png) | The pretrained entropy/distance baseline that §5 measures the shift against |
+
+The Phase 1 and Phase 2 reports remain the authoritative write-ups for those
+phases: [`report/phase1/`](../phase1/) · [`report/phase2/phase2_report.md`](../phase2/phase2_report.md).
+
 ---
 
 ## 7. The four required questions

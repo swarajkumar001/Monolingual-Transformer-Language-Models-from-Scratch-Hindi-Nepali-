@@ -499,6 +499,26 @@ python report/phase1/make_plots.py           # regenerate all figures
 
 </details>
 
+## Final submission checklist
+
+The ten items the specification requires in the final submission, and where each
+one is in this repository.
+
+| # | Required | Where | ✅ |
+|---|---|---|:-:|
+| 1 | Dataset and preprocessing code (both) | [`hindi/data/pipeline/`](hindi/data/pipeline/) · [`nepali/scripts/`](nepali/scripts/) · [`scripts/clean_lib.py`](scripts/clean_lib.py) | ✅ |
+| 2 | Separate tokenizers and vocabularies | [`hindi/tokenizer/`](hindi/tokenizer/) — Unigram, 8,000 · [`nepali/tokenizer/`](nepali/tokenizer/) — BPE, 10,000 | ✅ |
+| 3 | Transformer implementation | [`hindi/model/transformer.py`](hindi/model/transformer.py) · [`nepali/model/transformer.py`](nepali/model/transformer.py) | ✅ |
+| 4 | Drive links — **pretrained** checkpoints (H and L) | [Checkpoints table](#checkpoints-google-drive), rows "2 — pretrained" | ✅ |
+| 5 | Drive links — **finetuned** checkpoints (H and L) | [Checkpoints table](#checkpoints-google-drive), rows "3 — finetuned" | ✅ |
+| 6 | Training and finetuning logs | [`report/phase2/*_training_log.jsonl`](report/phase2/) · [`report/phase3/*_finetune_log.jsonl`](report/phase3/) | ✅ |
+| 7 | Evaluation scripts and results | [`hindi/eval/`](hindi/eval/) · [`nepali/eval/`](nepali/eval/) · [`*/reasoning/evaluate_reasoning.py`](hindi/reasoning/evaluate_reasoning.py) · [`report/phase2/*_eval.json`](report/phase2/) · [`report/phase3/*_reasoning_*.json`](report/phase3/) | ✅ |
+| 8 | Attention visualizations | [`report/phase2/figures/`](report/phase2/figures/) — pretrained · [`report/phase3/figures/`](report/phase3/figures/) — pretrained vs. finetuned, layers 0 and 5 | ✅ |
+| 9 | Final report | [`report/phase3/phase3_report.md`](report/phase3/phase3_report.md) — consolidates all three phases | ✅ |
+| 10 | README with reproduction steps and all Drive links | this file — [Phase 3](#reproduction) · [Phase 2](#reproduction-1) · [Phase 1](#phase-1--dataset-collection--tokenizer-construction-) · [Drive](#checkpoints-google-drive) | ✅ |
+
+---
+
 ## Hard constraints followed
 
 No pretrained models, no pretrained tokenizers, no HuggingFace Transformer model

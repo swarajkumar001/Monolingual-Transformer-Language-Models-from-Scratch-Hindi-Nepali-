@@ -102,9 +102,12 @@ langid:
 # -----------------------------------------------------------------------------
 # Splits
 # -----------------------------------------------------------------------------
-# Wider val/test than Hindi's 90/5/5. With a smaller corpus a 5% test split can
+# Wider val/test than Hindi's 96/2/2. With a smaller corpus a 2% test split can
 # be too small for the held-out perplexity and BPB numbers in Phase 2 to be
 # stable, and noisy eval on Model L would undermine the whole H/L comparison.
+# The wider split costs Model L nothing: neither model completes a full epoch,
+# so the train pool it never reaches is not an advantage forgone, and both
+# models are evaluated on an identical 1,999,872-token budget per split.
 splits:
   train: 0.85
   val: 0.075
