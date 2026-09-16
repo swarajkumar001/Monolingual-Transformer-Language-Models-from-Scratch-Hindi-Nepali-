@@ -542,11 +542,18 @@ than trusting the config.
 ## Project status
 
 All three phases are complete and pushed to their branches: `phase-1`, `phase-2`
-and `phase-3`. The `phase-3` branch is the full project snapshot.
+and `phase-3`. The `phase-3` branch is the full project snapshot and is the
+branch submitted for grading.
 
-Optional work not undertaken: the no-positional-embeddings bonus ablation. The
-model already supports it — set `pos_encoding: none` in a model config — but it
-was not run, and no results for it are claimed anywhere.
+**The optional bonus ablation was also run**, on a separate branch built on top
+of this one: **`bonus-no-pos`**. Model H was retrained from scratch with
+`pos_encoding: none` and put through the full Phase 2 evaluation suite. Removing
+positional embeddings cost 5.8% test perplexity (27.41 → 29.01) — much less than
+permutation invariance alone would predict, because causal masking leaks
+position — while mean attention entropy rose from 3.2047 to 3.6005 against a
+uniform baseline of 5.2565, and the previous-token head re-formed one layer
+later. Setup, results, figures and limitations are in `report/bonus/README.md`
+on that branch. No ablation results are claimed on this branch.
 
 ---
 
