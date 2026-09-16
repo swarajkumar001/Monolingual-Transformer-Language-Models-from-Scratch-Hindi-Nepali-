@@ -22,9 +22,9 @@ answers with a correctly-formatted name 35.15% of the time and Model L 29.45%.
 **What finetuning did not teach.** Neither model learned the comparison. On a
 forced choice between the entities the question actually names, Model H scores
 36.35% and Model L 39.30% against a chance rate of **41.67%** — both at or below
-chance. Per task the agreement with chance is close to exact: Model H scores
-47.40% on each of the two two-candidate families (chance 50%) and 33.40% on
-three-candidate `numeric3` (chance 33.3%).
+chance. Per task the agreement with chance is close to exact: Model H's
+forced-choice score is 50.40% and 47.00% on the two two-candidate families
+(chance 50%) and 33.20% on three-candidate `numeric3` (chance 33.3%).
 
 **Why the two-hop task scores below chance.** On transitive questions of the
 form *"A is taller than B. B is taller than C. Who is tallest?"*, Model H

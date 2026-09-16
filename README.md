@@ -112,8 +112,8 @@ Exact match rose from 0.00% to 35.15% (Model H) and 29.45% (Model L), which
 looks like success. It is not. On a forced choice between the entities the
 question actually names, both models sit **at or below the 41.67% chance rate**
 — 36.35% and 39.30%. Per task the agreement with chance is near-exact: Model H
-scores 47.40% on both two-candidate families (chance 50%) and 33.40% on
-three-candidate `numeric3` (chance 33.3%).
+scores 50.40% and 47.00% on the two two-candidate families (chance 50%) and
+33.20% on three-candidate `numeric3` (chance 33.3%).
 
 The two-hop transitive task is the one place the models depart from chance, and
 they depart *downward*: 12.40% and 13.40% against 33.3%. The reason is
