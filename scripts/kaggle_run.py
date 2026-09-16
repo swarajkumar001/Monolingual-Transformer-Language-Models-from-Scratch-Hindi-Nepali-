@@ -31,6 +31,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = REPO_ROOT / "notebooks/kaggle_pretrain.ipynb"
 EVAL_NOTEBOOK = REPO_ROOT / "notebooks/kaggle_evaluate.ipynb"
 FINETUNE_NOTEBOOK = REPO_ROOT / "notebooks/kaggle_finetune.ipynb"
+ABLATION_NOTEBOOK = REPO_ROOT / "notebooks/kaggle_ablation.ipynb"
 
 # Valid values include NvidiaTeslaT4, NvidiaTeslaP100 and Tpu1VmV38.
 ACCELERATOR = "NvidiaTeslaT4"
@@ -45,14 +46,18 @@ LANGUAGES = {
               "eval_slug": "lma-phase-2-eval-model-h-hindi",
               "eval_title": "LMA Phase 2 Eval Model H Hindi",
               "ft_slug": "lma-phase-3-finetune-model-h-hindi",
-              "ft_title": "LMA Phase 3 Finetune Model H Hindi"},
+              "ft_title": "LMA Phase 3 Finetune Model H Hindi",
+              "abl_slug": "lma-bonus-ablation-no-pos-model-h-hindi",
+              "abl_title": "LMA Bonus Ablation No Pos Model H Hindi"},
     "nepali": {"slug": "lma-phase-2-model-l-nepali",
                "title": "LMA Phase 2 Model L Nepali",
                "dataset": "lma-nepali-packed",
                "eval_slug": "lma-phase-2-eval-model-l-nepali",
                "eval_title": "LMA Phase 2 Eval Model L Nepali",
                "ft_slug": "lma-phase-3-finetune-model-l-nepali",
-               "ft_title": "LMA Phase 3 Finetune Model L Nepali"},
+               "ft_title": "LMA Phase 3 Finetune Model L Nepali",
+               "abl_slug": "lma-bonus-ablation-no-pos-model-l-nepali",
+               "abl_title": "LMA Bonus Ablation No Pos Model L Nepali"},
 }
 
 
@@ -83,10 +88,22 @@ MODES = {
                  "notebook": FINETUNE_NOTEBOOK,
                  "code_file": "kaggle_finetune.ipynb",
                  "needs_corpus": False, "needs_pretrained_kernel": True},
+    # Bonus ablation: retrain from scratch with pos_encoding "none". It needs
+    # the corpus like pretraining does, and explicitly does NOT attach the
+    # pretraining kernel -- initialising from the standard model's weights
+    # would defeat the entire point of the ablation.
+    "ablation": {"slug": "abl_slug", "title": "abl_title",
+                 "notebook": ABLATION_NOTEBOOK,
+                 "code_file": "kaggle_ablation.ipynb",
+                 "needs_corpus": True, "needs_pretrained_kernel": False},
 }
 
 
 for _lang, _spec in LANGUAGES.items():
+    assert slugify(_spec["abl_title"]) == _spec["abl_slug"], (
+        f"{_lang}: ablation title {_spec['abl_title']!r} slugifies to "
+        f"{slugify(_spec['abl_title'])!r}, not {_spec['abl_slug']!r}"
+    )
     assert slugify(_spec["ft_title"]) == _spec["ft_slug"], (
         f"{_lang}: finetune title {_spec['ft_title']!r} slugifies to "
         f"{slugify(_spec['ft_title'])!r}, not {_spec['ft_slug']!r}"
