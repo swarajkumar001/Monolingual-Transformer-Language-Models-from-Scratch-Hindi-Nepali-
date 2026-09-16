@@ -87,6 +87,23 @@ def val_at(run: dict, step: int) -> float:
     raise KeyError(step)
 
 
+def baseline_entropy(attention: dict) -> float:
+    """Uniform-attention entropy for this run's sequence length.
+
+    The Kaggle notebook does not write ``uniform_baseline_entropy`` into
+    ``*_attention.json``; the Phase 2 copy has it because the collector added it
+    afterwards. Rather than hardcode the constant, recompute it with the
+    project's own function so both runs are measured against the same
+    definition -- which skips query position 0, since it has no history.
+    """
+    if "uniform_baseline_entropy" in attention:
+        return attention["uniform_baseline_entropy"]
+    sys.path.insert(0, str(REPO_ROOT))
+    from hindi.eval.attention import uniform_baseline_entropy
+
+    return uniform_baseline_entropy(attention["sequence_length"])
+
+
 def pct(new: float, old: float) -> str:
     """Signed percentage change of ``new`` relative to ``old``."""
     return f"{(new - old) / old * 100:+.1f}%"
@@ -142,7 +159,7 @@ def main() -> None:
             entry["attention"] = {
                 "mean_entropy": at["mean_entropy"],
                 "mean_distance": at["mean_distance"],
-                "uniform_baseline_entropy": at["uniform_baseline_entropy"],
+                "uniform_baseline_entropy": baseline_entropy(at),
                 "local_head_fraction": at["local_head_fraction"],
             }
         summary["runs"][tag] = entry
@@ -157,8 +174,14 @@ def main() -> None:
                            ("Bits-per-byte", "bits_per_byte")):
             print(f"| {label} | {bi[key]:.4f} | {ai[key]:.4f} | "
                   f"{pct(ai[key], bi[key])} |")
-        print("\n*The ablated checkpoint is far less trained than the "
-              "baseline's, so read these alongside the matched-step row above.*")
+        bstep = base["eval"]["checkpoint_step"]
+        astep = abl["eval"]["checkpoint_step"]
+        print(f"\n*Evaluated checkpoints: standard at step {bstep:,}, ablated at "
+              f"step {astep:,}. The ablated run reached the full step budget "
+              "because it was allocated a much faster GPU, so if anything it is "
+              "the better-trained of the two -- the degradation below is not a "
+              "training-length artefact. The matched-step row above removes the "
+              "difference entirely.*")
 
         bg = base["eval"]["generation"]["settings"]
         ag = abl["eval"]["generation"]["settings"]

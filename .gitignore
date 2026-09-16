@@ -87,3 +87,8 @@ nepali/data/packed/*.bin
 # already-gitignored data in a single file - the spec is explicit that large
 # binary artifacts do not go in git.
 hindi/data.zip
+
+# Kaggle kernel downloads. These are transport, not deliverables: the small
+# artifacts are copied into report/ by hand and the checkpoint archives are
+# over a gigabyte and belong on Drive.
+kaggle_output/

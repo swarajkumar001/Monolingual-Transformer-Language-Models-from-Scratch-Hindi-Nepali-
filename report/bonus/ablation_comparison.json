@@ -1,0 +1,184 @@
+{
+  "matched_step": 14500,
+  "note": "Every figure below is taken at the same step in both runs. The ablation was wall-clock limited and did not train as long as the baseline, so its own final numbers are not comparable to the baseline's final numbers.",
+  "runs": {
+    "standard": {
+      "final_step": 14520,
+      "val_loss_at_matched_step": 3.3401546907424926,
+      "val_ppl_at_matched_step": 28.223492280719505,
+      "pos_encoding": "learned",
+      "parameter_count": {
+        "total": 23273472,
+        "trainable": 23273472,
+        "embedding": 4358144,
+        "non_embedding": 18915328
+      },
+      "intrinsic": {
+        "split": "test",
+        "cross_entropy_nats": 3.310878307466561,
+        "perplexity": 27.409188597942624,
+        "bits_per_token": 4.776587715168851,
+        "bits_per_byte": 0.5381787458713706,
+        "tokens_scored": 1999872,
+        "bytes_scored": 17749798
+      },
+      "generation": {
+        "greedy": {
+          "bleu": 1.9571610734025928,
+          "bleu_order": 4,
+          "bleu_signature": "nrefs:1|case:mixed|eff:no|tok:intl|smooth:exp|version:2.6.0",
+          "chrf": 14.150873341170852,
+          "chrf_pp": 12.49380314601763,
+          "chrf_pp_signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+          "rouge_l": 0.0928651233368919,
+          "repetition_rate": 0.5977056962025317,
+          "repetition_ngram_order": 4,
+          "distinct_1": 0.1724264705882353,
+          "distinct_2": 0.3128765060240964,
+          "distinct_unit": "whitespace word",
+          "generated_tokens": 2720
+        },
+        "temperature_0.5": {
+          "bleu": 1.7981853415768994,
+          "bleu_order": 4,
+          "bleu_signature": "nrefs:1|case:mixed|eff:no|tok:intl|smooth:exp|version:2.6.0",
+          "chrf": 16.043383937059584,
+          "chrf_pp": 14.33185096149816,
+          "chrf_pp_signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+          "rouge_l": 0.09623550634639702,
+          "repetition_rate": 0.21231766612641814,
+          "repetition_ngram_order": 4,
+          "distinct_1": 0.27501881113619264,
+          "distinct_2": 0.6017733230531996,
+          "distinct_unit": "whitespace word",
+          "generated_tokens": 2658
+        },
+        "temperature_1.0": {
+          "bleu": 1.0135398979253316,
+          "bleu_order": 4,
+          "bleu_signature": "nrefs:1|case:mixed|eff:no|tok:intl|smooth:exp|version:2.6.0",
+          "chrf": 18.585803423550015,
+          "chrf_pp": 16.28506981403991,
+          "chrf_pp_signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+          "rouge_l": 0.10014947986220729,
+          "repetition_rate": 0.0015414258188824663,
+          "repetition_ngram_order": 4,
+          "distinct_1": 0.5202726946537496,
+          "distinct_2": 0.9386705839147998,
+          "distinct_unit": "whitespace word",
+          "generated_tokens": 2787
+        },
+        "temperature_1.5": {
+          "bleu": 0.16056557349554584,
+          "bleu_order": 4,
+          "bleu_signature": "nrefs:1|case:mixed|eff:no|tok:intl|smooth:exp|version:2.6.0",
+          "chrf": 18.025514715219757,
+          "chrf_pp": 14.669993970378775,
+          "chrf_pp_signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+          "rouge_l": 0.0525959741134559,
+          "repetition_rate": 0.0,
+          "repetition_ngram_order": 4,
+          "distinct_1": 0.7023031969749055,
+          "distinct_2": 0.9915641476274165,
+          "distinct_unit": "whitespace word",
+          "generated_tokens": 2909
+        }
+      },
+      "attention": {
+        "mean_entropy": 3.2047149563053003,
+        "mean_distance": 62.36413242171208,
+        "uniform_baseline_entropy": 5.256478418055475,
+        "local_head_fraction": 0.0625
+      }
+    },
+    "ablated": {
+      "final_step": 15000,
+      "val_loss_at_matched_step": 3.4047438621521,
+      "val_ppl_at_matched_step": 30.106583300783914,
+      "pos_encoding": "none",
+      "parameter_count": {
+        "total": 23011328,
+        "trainable": 23011328,
+        "embedding": 4096000,
+        "non_embedding": 18915328
+      },
+      "intrinsic": {
+        "split": "test",
+        "cross_entropy_nats": 3.3677303240473795,
+        "perplexity": 29.01260306554655,
+        "bits_per_token": 4.858607837554537,
+        "bits_per_byte": 0.5474199635007603,
+        "tokens_scored": 1999872,
+        "bytes_scored": 17749798
+      },
+      "generation": {
+        "greedy": {
+          "bleu": 2.083485918702749,
+          "bleu_order": 4,
+          "bleu_signature": "nrefs:1|case:mixed|eff:no|tok:intl|smooth:exp|version:2.6.0",
+          "chrf": 14.340175969083305,
+          "chrf_pp": 12.733826339103386,
+          "chrf_pp_signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+          "rouge_l": 0.09573674671676947,
+          "repetition_rate": 0.5980433857932794,
+          "repetition_ngram_order": 4,
+          "distinct_1": 0.18188976377952756,
+          "distinct_2": 0.32754442649434573,
+          "distinct_unit": "whitespace word",
+          "generated_tokens": 2540
+        },
+        "temperature_0.5": {
+          "bleu": 2.133745911459495,
+          "bleu_order": 4,
+          "bleu_signature": "nrefs:1|case:mixed|eff:no|tok:intl|smooth:exp|version:2.6.0",
+          "chrf": 16.84164741813711,
+          "chrf_pp": 15.136000738635385,
+          "chrf_pp_signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+          "rouge_l": 0.11233545733408105,
+          "repetition_rate": 0.2689393939393939,
+          "repetition_ngram_order": 4,
+          "distinct_1": 0.2593639575971731,
+          "distinct_2": 0.5636297903109183,
+          "distinct_unit": "whitespace word",
+          "generated_tokens": 2830
+        },
+        "temperature_1.0": {
+          "bleu": 1.6434912658022947,
+          "bleu_order": 4,
+          "bleu_signature": "nrefs:1|case:mixed|eff:no|tok:intl|smooth:exp|version:2.6.0",
+          "chrf": 19.356349542404764,
+          "chrf_pp": 17.066777301561693,
+          "chrf_pp_signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+          "rouge_l": 0.1022846748243582,
+          "repetition_rate": 0.0022615906520919715,
+          "repetition_ngram_order": 4,
+          "distinct_1": 0.4964838255977497,
+          "distinct_2": 0.9248201438848921,
+          "distinct_unit": "whitespace word",
+          "generated_tokens": 2844
+        },
+        "temperature_1.5": {
+          "bleu": 0.24854854881676175,
+          "bleu_order": 4,
+          "bleu_signature": "nrefs:1|case:mixed|eff:no|tok:intl|smooth:exp|version:2.6.0",
+          "chrf": 18.1512679075852,
+          "chrf_pp": 14.959002895465117,
+          "chrf_pp_signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+          "rouge_l": 0.05690249732798484,
+          "repetition_rate": 0.0,
+          "repetition_ngram_order": 4,
+          "distinct_1": 0.7065637065637066,
+          "distinct_2": 0.992100538599641,
+          "distinct_unit": "whitespace word",
+          "generated_tokens": 2849
+        }
+      },
+      "attention": {
+        "mean_entropy": 3.60045125723506,
+        "mean_distance": 77.89658817400534,
+        "uniform_baseline_entropy": 5.256478418055475,
+        "local_head_fraction": 0.20833333333333334
+      }
+    }
+  }
+}
