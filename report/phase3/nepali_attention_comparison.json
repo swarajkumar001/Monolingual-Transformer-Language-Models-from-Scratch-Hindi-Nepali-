@@ -52,7 +52,7 @@
   ],
   "models": {
     "pretrained": {
-      "checkpoint": "C:\\Users\\swara\\AppData\\Local\\Temp\\claude\\c--Users-swara-Desktop-lma-individual-project\\9d257717-9c92-493e-b009-ffa2c540beba\\scratchpad\\pre\\nepali\\checkpoints\\nepali\\ckpt_best.pt",
+      "checkpoint": "checkpoints/nepali/ckpt_best.pt",
       "stage": "pretrained",
       "step": 14000,
       "mean_entropy": 1.8327098158188164,
@@ -257,7 +257,7 @@
       ]
     },
     "finetuned": {
-      "checkpoint": "C:\\Users\\swara\\AppData\\Local\\Temp\\claude\\c--Users-swara-Desktop-lma-individual-project\\9d257717-9c92-493e-b009-ffa2c540beba\\scratchpad\\ft\\nepali\\ckpt_best.pt",
+      "checkpoint": "checkpoints/nepali_reasoning/ckpt_best.pt",
       "stage": "reasoning_finetune",
       "step": 60,
       "mean_entropy": 1.7832635243733723,

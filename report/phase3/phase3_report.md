@@ -639,12 +639,27 @@ Stated so the results above are not over-read.
 1. **The models do not perform the task.** Forced choice is at or below chance
    for both. Everything in §5 describes a model that learned an output format.
 
-2. **40 training entity names is too few.** It makes memorising the answer prior
-   easier than learning to copy from the prompt, and both models took that path
-   — validation loss turns upward by step 60. The most promising single change
-   would be 200+ training names, which would make the prior much less
-   rewarding. This was not run for want of time, not because it was judged
-   unnecessary.
+2. **The training distribution is too narrow, in two separate ways.** 40 entity
+   names and 14 templates together make memorising the answer prior easier than
+   learning to copy from the prompt, and both models took that path —
+   validation loss turns upward by step 60 while training loss keeps falling to
+   0.44 and 0.60. Two independent widenings would attack this:
+
+   * **More entities.** 200+ training names would make the answer prior far
+     less rewarding to memorise. This is the single most promising change.
+   * **More linguistic variation per template.** Every example of a given
+     template is currently identical apart from its slot fillers, so the
+     surface form carries almost no entropy. Synonym substitution on the
+     comparative adjectives, alternating clause order, and optional
+     discourse particles would all force the model to attend to the
+     *content* of the prompt rather than to a memorised frame. The generator
+     has no such variation layer today.
+
+   Neither was run for want of time, not because either was judged
+   unnecessary. Note that the overfitting itself did not contaminate the
+   reported numbers: checkpoints are saved on best validation loss, so the
+   evaluated checkpoint is step 60 in both cases, not the badly overfit final
+   one.
 
 3. **The positional habits in §4.1–4.2 are diagnosed, not fixed.** Balancing
    the training distribution against answer position would test whether the

@@ -6,7 +6,7 @@ __pycache__/
 # macOS Finder metadata
 .DS_Store
 
-# Claude Code session state (not project content)
+# Local editor/session state (not project content)
 .claude/
 
 # Download logs (tqdm progress-bar noise, not useful history)
