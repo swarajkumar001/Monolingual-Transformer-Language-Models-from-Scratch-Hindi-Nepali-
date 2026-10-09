@@ -1,6 +1,11 @@
 % =====================================================================
-% LMA Individual Project -- consolidated final report (all three phases)
-% Compile:  xelatex final_report.tex   (twice)   or:  bash build.sh
+% LMA Individual Project -- consolidated final report (Phases 1-3).
+%
+% Compile with XeLaTeX, twice:   bash report/final/build.sh
+% Needs a Devanagari-capable font (Nirmala UI on Windows).
+% Figures: report/final/make_final_figures.py regenerates every PDF in
+% report/final/figures/ from the result artifacts.
+%
 % Hard limit: 10 pages.
 % =====================================================================
 \documentclass[10pt]{article}
@@ -15,694 +20,935 @@
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{subcaption}
-\captionsetup{font=small,labelfont=bf,skip=3pt}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds}
+
+\captionsetup{font=small, labelfont=bf, skip=2pt}
+\setlength{\textfloatsep}{6pt}
+\setlength{\intextsep}{6pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{0pt}
 \PassOptionsToPackage{hyphens}{url}
-\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,citecolor=blue!50!black]{hyperref}
+\usepackage[colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!50!black,
+            citecolor=blue!50!black]{hyperref}
 \emergencystretch=3em
 \sloppy
 
-% Devanagari. Nirmala UI ships with Windows; use "Noto Sans Devanagari" on Linux.
+% Devanagari. Nirmala UI ships with Windows; Noto Sans Devanagari elsewhere.
 \newfontfamily\devanagarifont{Nirmala UI}
 \newcommand{\dn}[1]{{\devanagarifont #1}}
 
-\graphicspath{{../phase1/figures/}{../phase2/figures/}{../phase3/figures/}{../bonus/figures/}}
+\graphicspath{{figures/}{../phase1/figures/}{../phase2/figures/}{../phase3/figures/}}
 
 \usepackage{titlesec}
-\titlespacing*{\section}{0pt}{5pt}{2pt}
-\titlespacing*{\subsection}{0pt}{4pt}{1pt}
+\titlespacing*{\section}{0pt}{4pt}{1.5pt}
+\titlespacing*{\subsection}{0pt}{3pt}{0.5pt}
 \titleformat*{\subsection}{\normalsize\bfseries}
-\setlength{\parskip}{1.5pt}
+\setlength{\parskip}{1.1pt}
 \setlength{\tabcolsep}{4.5pt}
-\renewcommand{\arraystretch}{0.97}
+\renewcommand{\arraystretch}{0.93}
+\setlist[itemize]{topsep=1pt, itemsep=0.5pt, parsep=0pt, leftmargin=12pt}
+
+% Shared TikZ vocabulary for the three pipeline diagrams.
+\tikzset{
+  stage/.style  = {draw=black!55, rounded corners=1.6pt, fill=black!4,
+                   inner sep=2.6pt, align=center, font=\scriptsize, minimum height=12pt},
+  hstage/.style = {stage, fill=blue!8,   draw=blue!45},
+  lstage/.style = {stage, fill=orange!10, draw=orange!55},
+  flow/.style   = {-{Stealth[length=3.4pt]}, draw=black!60, line width=0.42pt},
+}
 
 \begin{document}
 
-% ---------------- Title block (compact, to protect the page budget) ----------
+% ------------------------------- Title -------------------------------
 \begin{center}
-{\LARGE\bfseries Two Monolingual Transformer Language Models \\[2pt]
-Hindi (Model H) and Nepali (Model L)}\\[6pt]
-{\large Swaraj Kumar}\\[3pt]
-{\small Language Models and Agents (Monsoon 2026) --- Individual Project, Phases 1--3}\\[2pt]
-{\small Code: \url{https://github.com/CL3-410/individual-project-swarajkumar001}
-\quad Branches: \texttt{phase-1}, \texttt{phase-2}, \texttt{phase-3} (submission), \texttt{bonus-no-pos}}\\[2pt]
-{\small Checkpoints and corpora: Google Drive links in the repository \texttt{README.md}. September 2026}
+{\large\bfseries Same Script, Same Architecture, Different Resources:\\[1pt]
+Two From-Scratch Monolingual Transformers for Hindi and Nepali}\\[5pt]
+{\normalsize Swaraj Kumar}\\[2pt]
+{\small Language Models and Agents (Monsoon 2026) --- Individual Project, consolidated report for Phases 1--3}\\[1pt]
+{\footnotesize Code: \url{https://github.com/CL3-410/individual-project-swarajkumar001} \quad
+Branches: \texttt{phase-1}, \texttt{phase-2}, \texttt{phase-3} (submission), \texttt{bonus-no-pos}}\\[1pt]
+{\footnotesize Checkpoint and corpus links: repository \texttt{README.md}}
 \end{center}
-\vspace{-6pt}
+\vspace{-5pt}
 
 \begin{abstract}
 \noindent\small
-I built two independent decoder-only Transformers from scratch, one for Hindi
-(higher-resource, ``Model H'') and one for Nepali (lower-resource, ``Model L'').
-Nothing is shared between them except source code: separate corpora of
-505,852,028 and 635,204,333 tokens, separate SentencePiece tokenizers
-(Unigram 8{,}000 and BPE 10{,}000), and separate weights. Both use the same
-architecture, so their non-embedding parameter count is identical at
-18{,}915{,}328 and any difference in results comes from data and tokenizer
-rather than capacity. Each was pretrained on roughly 475M tokens on a Kaggle
-T4. Model H reaches test perplexity 27.41 against Model L's 46.68, but on
-bits-per-byte the order reverses (0.5382 against 0.4846), because Nepali's BPE
-packs 11.44 bytes into a token where Hindi's Unigram packs 8.88. In Phase 3 I
-finetuned each model on a synthetic comparative-reasoning corpus generated in
-its own language. Exact match rose from 0.00\% to 35.15\% (H) and 29.45\% (L),
-but a forced choice between the entities the question names stays at or below
-the 41.67\% chance rate, so what finetuning taught is the answer format, not the
-comparison. The same mistake --- trusting one headline number --- was available
-twice in this project, in opposite directions.
+I built two independent decoder-only Transformers from scratch in PyTorch: Model~H
+for Hindi (higher-resource) and Model~L for Nepali (lower-resource), sharing source
+code and nothing else --- separate corpora of 505{,}852{,}028 and 635{,}204{,}333
+tokens, separate SentencePiece tokenizers (Unigram 8{,}000 and BPE 10{,}000), separate
+weights. Both languages use Devanagari and both models use an identical architecture,
+so the non-embedding parameter count is identical at 18{,}915{,}328 and neither script
+nor capacity can explain a gap between them. Each was pretrained for roughly 475M
+tokens on a Kaggle T4. Model~H reaches test perplexity 27.41 against Model~L's 46.68,
+but bits-per-byte reverses the ordering (0.5382 against 0.4846) because Model~L's BPE
+packs 11.44 bytes per token where Model~H's packs 8.88 --- most of the apparent gap is
+tokenizer granularity, not model quality. Each model was then finetuned on a synthetic
+comparative-reasoning corpus in its own language. Exact match rose from 0.00\% to
+35.15\% (H) and 29.45\% (L), but a forced choice restricted to the entities each
+question names stays at or below the 41.67\% chance rate, so what finetuning
+demonstrably taught is the answer format, not the comparison. Two Phase~1 decisions
+--- a missing byte fallback and exact-match-only deduplication --- are traced forward
+to the measurements they affected.
 \end{abstract}
-\vspace{-4pt}
+\vspace{-3pt}
 
-\section{Introduction}
+% =====================================================================
+\section{Project Overview}
 
-\textbf{Problem.} Build two completely separate monolingual language models of
-about 25M parameters each, with no pretrained weights, no pretrained tokenizers
-and no HuggingFace Transformer classes: collect a corpus per language, train a
-tokenizer per language, implement a decoder-only Transformer, pretrain both,
-finetune both on reasoning data, and analyse what the attention heads learned.
+\textbf{Objective.} Build two completely independent monolingual language models of
+roughly 25M parameters, using no pretrained weights, no pretrained tokenizers and no
+pre-built Transformer or attention modules: collect and clean a corpus per language,
+train a tokenizer per language, implement a decoder-only Transformer, pretrain both,
+finetune both on synthetic reasoning data, and analyse the attention they learned.
 
-\textbf{Why this pair.} Model H is Hindi, which has plenty of public text.
-Model L is Nepali, from the allowed lower-resource list. Both use Devanagari,
-which I chose deliberately: since the script is the same, script differences
-cannot explain any gap between the two models, and the comparison comes down to
-corpus size, corpus quality and tokenizer. Bhojpuri was my first Model L and was
-fully built and validated, but its corpus stopped at 84,217,032 tokens (16.8\%
-of the 500M target). When the Nepali pipeline cleared its token targets I
-switched, and kept Bhojpuri's measured numbers in the Phase 1 report as history
-rather than deleting them.
+\textbf{Why this language pair.} Model~H is Hindi, which has abundant public text.
+Model~L is Nepali, from the permitted lower-resource list. Both are written in
+Devanagari, which I chose deliberately: with script held constant and the
+architecture held identical, a difference between the two models has to come from
+corpus size, corpus quality or tokenizer rather than from orthography or capacity.
+This turns the project from two parallel builds into one controlled comparison, and
+Section~\ref{sec:cross} is where that design pays off. Bhojpuri was my first Model~L
+and was fully built and validated, but its public text ran out at 84{,}217{,}032
+tokens (16.8\% of the 500M target); once the Nepali pipeline cleared its targets I
+switched, keeping Bhojpuri's measured numbers in the Phase~1 report as a record.
 
-\textbf{Objective.} Train both models on a comparable token budget and then find
-out what actually separates them --- and, where a metric flatters one model, say
-why it does.
+\begin{figure}[!htb]
+\centering
+\begin{tikzpicture}[node distance=3.2mm]
+\node[hstage] (c1) {collect\\(scrape, OCR, dumps)};
+\node[hstage, right=of c1] (c2) {normalise\\(NFC, ZW strip)};
+\node[hstage, right=of c2] (c3) {filter\\(length, script, LID)};
+\node[hstage, right=of c3] (c4) {deduplicate};
+\node[hstage, right=of c4] (c5) {split\\train/val/test};
+\node[hstage, right=of c5] (c6) {train\\tokenizer};
+\node[lstage, below=5.0mm of c1.south west, anchor=north west] (p1) {pack to\\token stream};
+\node[lstage, right=of p1] (p2) {decoder-only\\Transformer};
+\node[lstage, right=of p2] (p3) {pretrain\\(AdamW, cosine)};
+\node[lstage, right=of p3] (p4) {intrinsic eval\\(PPL, BPB)};
+\node[lstage, right=of p4] (p5) {generation eval\\(BLEU, chrF++, ROUGE-L)};
+\node[lstage, right=of p5] (p6) {attention\\analysis};
+\node[stage, below=5.0mm of p1.south west, anchor=north west, fill=green!7, draw=green!45] (r1) {generate synthetic\\reasoning data};
+\node[stage, right=of r1, fill=green!7, draw=green!45] (r2) {disjoint names\\+ templates};
+\node[stage, right=of r2, fill=green!7, draw=green!45] (r3) {finetune from own\\checkpoint};
+\node[stage, right=of r3, fill=green!7, draw=green!45] (r4) {exact match +\\forced choice};
+\node[stage, right=of r4, fill=green!7, draw=green!45] (r5) {error\\analysis};
+\node[stage, right=of r5, fill=green!7, draw=green!45] (r6) {pre vs post\\attention};
+\foreach \a/\b in {c1/c2, c2/c3, c3/c4, c4/c5, c5/c6, p1/p2, p2/p3, p3/p4, p4/p5, p5/p6,
+                   r1/r2, r2/r3, r3/r4, r4/r5, r5/r6}
+  \draw[flow] (\a) -- (\b);
+\draw[flow] (c6.south) -- ++(0,-1.6mm) -| (p1.north);
+\draw[flow] (p6.south) -- ++(0,-1.6mm) -| (r1.north);
+\node[font=\scriptsize\bfseries, left=1.0mm of c1, rotate=90, anchor=south] {Phase 1};
+\node[font=\scriptsize\bfseries, left=1.0mm of p1, rotate=90, anchor=south] {Phase 2};
+\node[font=\scriptsize\bfseries, left=1.0mm of r1, rotate=90, anchor=south] {Phase 3};
+\end{tikzpicture}
+\caption{The evidence chain, run twice and independently --- once per language. Only
+source code is shared. The two vertical arrows carry Phase~1 decisions into later
+measurements; Section~\ref{sec:cross} shows that both of them did.}
+\label{fig:pipeline}
+\end{figure}
 
+\textbf{Contributions.} (i) Two corpora built to the 500M-token target with manual
+collection well above the 20\% floor; (ii) a from-scratch Transformer whose causal
+mask is verified empirically rather than assumed; (iii) an evaluation that reports
+perplexity and bits-per-byte together and shows they disagree; (iv) a reasoning
+evaluation with a second metric that contradicts the headline number, reported as
+such; (v) two Phase~1 defects traced forward to the measurements they distorted.
+
+\begin{table}[!htb]
+\centering\small
+\caption{Project setup. The architecture is deliberately identical, so the
+non-embedding parameter count matches exactly and model capacity is excluded as an
+explanation for any difference in results.}
+\label{tab:setup}
+\begin{tabular}{lcc}
+\toprule
+& \textbf{Model H} & \textbf{Model L} \\
+\midrule
+Language (tier) & Hindi (higher-resource) & Nepali (lower-resource) \\
+Script & Devanagari & Devanagari \\
+Corpus tokens (train+val+test) & 505{,}852{,}028 & 635{,}204{,}333 \\
+Documents & 704{,}101 & 1{,}918{,}265 \\
+Manually collected share & 30.66\% & 26.41\% \\
+Tokenizer / vocabulary & SentencePiece Unigram / 8{,}000 & SentencePiece BPE / 10{,}000 \\
+Total parameters & 23{,}273{,}472 & 24{,}297{,}472 \\
+Non-embedding parameters & \textbf{18{,}915{,}328} & \textbf{18{,}915{,}328} \\
+Pretraining tokens consumed & 475{,}791{,}360 & 473{,}169{,}920 \\
+Evaluated checkpoint & step 14{,}500 & step 14{,}000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
 \section{Phase 1: Corpora and Tokenizers}
 
-\textbf{Objective.} Two independent corpora of roughly 500M tokens each, at
-least 20\% of training tokens from manual collection, cleaned, deduplicated,
-split, and tokenized by two separately trained tokenizers.
+\subsection{Sources and manual collection}
 
-\subsection{Sources}
-Hindi manual collection: a Hindi Wikipedia XML dump I extracted myself with
-WikiExtractor (the largest single manual source, 160,591 documents), Gadya Kosh
-(prose), Kavita Kosh (poetry), the \texttt{patrika.com} archive, and 67
-\texttt{archive.org} items (Rajya Sabha / Lok Sabha transcripts, books).
-Downloaded: FineWeb-2 \texttt{hin\_Deva} and AI4Bharat Sangraha (verified and
-unverified). I quarantined the HuggingFace-mirrored Hindi Wikipedia because it
-duplicates the dump I had already extracted.
-\texttt{scripts/manual\_sites.json} records a robots.txt check per site;
-\texttt{bhaskar.com} and \texttt{amarujala.com} were ruled out because their
-robots.txt disallows automated agents.
+Both corpora had to reach roughly 500M tokens with at least 20\% manually collected.
+Model~H's manual lane is a Hindi Wikipedia XML dump I downloaded and extracted myself
+with WikiExtractor (66.7M tokens), Gadya Kosh prose (59.9M), the patrika.com archive
+(19.5M), Kavita Kosh poetry (8.1M) and 15 archive.org items surviving cleaning of 67
+collected (0.85M); its downloaded lane is FineWeb-2 \texttt{hin\_Deva} and four
+AI4Bharat Sangraha partitions. A HuggingFace mirror of Hindi Wikipedia was quarantined
+rather than used, since it duplicates the dump already extracted. Model~L's manual lane
+is dominated by an \texttt{onlinekhabar} scrape (91.6\% of its manual tokens), with a
+self-parsed Wikipedia dump, BBC Nepali, Wikibooks, Wiktionary, Ekantipur, Ratopati,
+Nagarik and OCR of archive.org books; its downloaded lane is AI4Bharat Sangraha and
+IndicCorpV2. For Nepali I set absolute targets (100M manual, 400M downloaded) rather
+than a percentage and met both at 167.8M and 467.4M. Each site's \texttt{robots.txt}
+was checked before scraping and the verdict recorded in
+\texttt{scripts/manual\_sites.json}; bhaskar.com and amarujala.com disallow automated
+access and were not scraped.
 
-Nepali manual: an \texttt{onlinekhabar} news scrape (91.6\% of manual tokens),
-a self-parsed Wikipedia dump, BBC Nepali, Wikibooks, Wiktionary, Ekantipur,
-Ratopati, Nagarik, and OCR of archive.org books. Downloaded: AI4Bharat Sangraha
-and IndicCorpV2. Nepali gates on two \emph{absolute} targets instead of a
-percentage --- manual $\geq$ 100M tokens, downloaded $\geq$ 400M --- and both
-cleared (167,787,251 and 467,417,082).
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{fig_corpus_composition.pdf}
+\caption{Both corpora clear the 500M-token target and the 20\% manual floor. Right:
+Model~H's per-source contribution, manual lane in blue --- no single source dominates,
+and the manual lane spans five distinct source types.}
+\label{fig:composition}
+\end{figure}
 
-\subsection{Cleaning and normalisation}
-Normalisation is four operations, in \texttt{scripts/clean\_lib.py:75}: NFC
-normalise, strip zero-width and control characters, collapse whitespace runs,
-collapse blank-line runs. The stripping regex removes U+200E, U+200F, U+FEFF and
-C0/C1 controls but \textbf{deliberately keeps ZWNJ and ZWJ}, because in
-Devanagari those change what is rendered --- they are text, not formatting
-noise. NFC matters for deduplication too: the same visible Devanagari string can
-be stored precomposed or as a base plus a combining mark, and without
-normalisation those two forms compare as different strings and both survive.
+\subsection{Cleaning, normalisation and deduplication}
 
-Filters, all threshold-based: minimum 200 characters, Devanagari character ratio
-$\geq 0.5$, malformed-Unicode ratio (U+FFFD) $\leq 0.01$, and a langdetect check
-at \texttt{min\_prob} 0.85. The language check is three-valued on purpose ---
-true, false, or \emph{None} when the text is too short or ambiguous --- so
-``undetermined'' is not silently treated as ``wrong language''. Hindi also runs
-a Bhojpuri reject filter, which is needed because Bhojpuri shares the script and
-much of the vocabulary. Nepali scores every document, manual sources included,
-with fastText \texttt{lid.176} at stage S04.
+Normalisation (\texttt{scripts/clean\_lib.py}) is exactly four operations: NFC
+normalise, strip zero-width and C0/C1 control characters, collapse inline whitespace
+runs, collapse blank-line runs. ZWNJ and ZWJ are deliberately preserved, because in
+Devanagari they change the rendered glyph and are part of the text rather than noise.
+NFC matters for a second, less obvious reason: the same Devanagari string has more
+than one byte representation, and without normalising first those forms hash
+differently and both survive deduplication. A document is then dropped if it is under
+200 characters, if fewer than half its characters are Devanagari, if more than 1\% of
+it is U+FFFD, or if language identification rejects it. The language verdict is
+three-valued --- yes, no, or undetermined --- so a document is not discarded merely
+because the detector was unsure. Hindi additionally runs a Bhojpuri lexical reject
+filter, needed because Bhojpuri shares both script and much vocabulary with Hindi.
 
-\begin{table}[htbp]\centering\small
-\caption{Hindi cleaning. 95.9\% of raw characters survive; the dominant drop is
-short documents, not language or encoding problems.}
-\begin{tabular}{lrr@{\hskip 16pt}lr}
-\toprule
-Stage & Documents & Characters & Drop reason & Documents \\
-\midrule
-Manual (raw)     & 229,011 & 540,367,035   & too short ($<$200 chars) & 63,132 \\
-Downloaded (raw) & 544,595 & 1,299,990,112 & exact/near duplicate     & 2,983 \\
-Raw total        & 773,606 & 1,840,357,147 & langdetect mismatch      & 1,778 \\
-Cleaned          & 704,103 & 1,764,598,107 & likely Bhojpuri          & 1,365 \\
-Retention        & ---     & 95.9\% of chars & low Devanagari ratio   & 228 \\
-                 &         &                 & malformed Unicode      & 17 \\
-\bottomrule
-\end{tabular}
-\end{table}
+The two pipelines deduplicate differently, and this asymmetry matters later
+(Section~\ref{sec:cross}). Model~H uses a SHA-1 hash over punctuation-stripped,
+case-folded, whitespace-collapsed text: it removes exact copies and formatting
+variants, but by construction cannot detect paraphrase or partial overlap. Model~L
+uses exact \texttt{doc\_id} matching followed by MinHash with LSH (100 permutations,
+20 bands of 5 rows, 5-character shingles, Jaccard threshold 0.55), and adds a
+decontamination stage that removes training documents matching validation or test.
 
-\subsection{Deduplication --- the two pipelines differ}
-I want to state this plainly rather than smooth it over. \textbf{Hindi does not
-use MinHash.} Its \texttt{dedup\_key()} (\texttt{scripts/clean\_lib.py:153})
-collapses whitespace, strips punctuation, lowercases and takes a SHA-1 hash, so
-it catches exact duplicates and whitespace or formatting variants of the same
-document, but not paraphrase-level similarity. \textbf{Nepali does}: stage S08
-matches document ids exactly first, then runs MinHash with LSH --- 100
-permutations, 20 bands of 5 rows, 5-character shingles, Jaccard threshold 0.55,
-seed 20260817 --- and removed 2,350 exact and 49,734 near duplicates. Where a
-duplicate pair straddled the manual and downloaded lanes (21,273 pairs) the
-manual copy was kept, which protects the manual token share. Nepali also has a
-decontamination stage (S09) that MinHashes train against the held-out sets and
-removes matches \emph{from train only}; it removed 17,111 documents and a rescan
-found 0 remaining matches. Hindi has no equivalent stage. This asymmetry is a
-real limitation of the Hindi pipeline and the first thing I would fix.
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{fig_corpus_funnel.pdf}
+\caption{Left: Model~H's drop reasons --- length dominates, and SHA-1 removes only
+2{,}983 documents (0.4\%). Right: Model~L's survivor count by stage. S09 is not a
+separate point because it records a removal count, not a total: its 17{,}111
+decontaminated documents plus S10's 589{,}223 lane-balancing drops account exactly for
+the fall from 2.13M to 1.52M.}
+\label{fig:funnel}
+\end{figure}
 
-\subsection{Splits}
-Both are document-level, never chunk-level: if chunks of one article land on
-both sides of a split, the test score partly measures memorisation of text the
-model has already seen. Hindi is 96/2/2 with seed 42, shuffle then slice. Nepali
-is 85/7.5/7.5 with seed 20260817 by a deterministic hash of the document id, and
-it holds the evaluation sets out at S07 --- \emph{before} the quality filters
-run --- so the heuristic and perplexity filters curate only the training pool
-and cannot quietly make the test set easier. \texttt{split\_stats.json} records
-\texttt{zero\_doc\_id\_overlap: true} and per-split manual ratios of 0.2742 /
-0.2371 / 0.2311. The ratios differ between languages because Nepali has far more
-documents, so 7.5\% still leaves over 519M training tokens.
-
-\subsection{Tokenizers and vocabulary choice}
-Two tokenizers trained separately, no vocabulary shared. I picked the vocabulary
-size by sweeping and measuring on held-out text rather than by rule of thumb.
-Fertility here is tokens per whitespace word: lower means the tokenizer needs
-fewer tokens to write the same text, so the model sees more text per step.
-
-\begin{table}[htbp]\centering\small
-\caption{Measured tokenizer sweep. Nepali's byte-fallback column is zero at
-\emph{every} size --- that is the defect, not a good score, and it is exactly
-why its unknown rate is non-zero.}
-\begin{tabular}{llrrrr}
-\toprule
-Language & Vocabulary & chars/token & fertility (tok/word) & unk rate & byte fallback \\
-\midrule
-Hindi  & 5{,}000  & 3.3230 & 1.4961 & 0.000000 & 0.018301 \\
-Hindi  & \textbf{8{,}000}  & \textbf{3.5622} & \textbf{1.3956} & \textbf{0.000000} & \textbf{0.019613} \\
-Hindi  & 10{,}000 & 3.6601 & 1.3583 & 0.000000 & 0.020213 \\
-Nepali & 5{,}000  & 3.7882 & 1.6988 & 0.002956 & 0.000000 \\
-Nepali & 6{,}000  & 3.9410 & 1.6329 & 0.003075 & 0.000000 \\
-Nepali & 8{,}000  & 4.1725 & 1.5424 & 0.003256 & 0.000000 \\
-Nepali & \textbf{10{,}000} & \textbf{4.3410} & \textbf{1.4825} & \textbf{0.003387} & \textbf{0.000000} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Hindi uses SentencePiece \textbf{Unigram at 8,000}. Fertility still improves at
-10,000, but the gain from 8,000 to 10,000 is smaller than from 5,000 to 8,000,
-and 2,000 extra vocabulary rows cost about 1M embedding parameters out of a 25M
-budget. Nepali uses \textbf{BPE at 10,000}, the best fertility in its sweep at
-1.4825.
-
-The mistake is in the last column. Hindi's Unigram model has byte fallback, so a
-character it has never seen is still encoded as bytes and its unknown rate is
-exactly 0. Nepali's BPE was trained without byte fallback, so anything outside
-the vocabulary becomes \texttt{<unk>} and is unrecoverable --- 0.003387 on
-held-out text. I only learned what this really costs in Phase 3 (\S4.1).
-
-\subsection{Phase 1 results and observations}
-Hindi: 505,852,028 tokens over 704,101 documents, manual share 30.66\%
-(155,104,651 tokens), clearing the 20\% floor. Nepali: 635,204,333 tokens over
-1,918,265 documents, manual share 26.41\%. Every count is exact --- each
-document in each split was actually tokenized and counted, not sampled and
-extrapolated. Nepali's funnel runs 2,655,504 documents in to 2,126,334 after
-dedup, with language ID removing only 0.22\%, which is what I would expect from
-sources that were already Nepali-labelled.
-
-One bookkeeping detail, because two different numbers appear for the same split:
-Phase 1 reports 485,280,741 tokens for Hindi train, Phase 2 reports 485,956,678.
-The difference is 675,937, exactly the number of training documents --- packing
-appends one end-of-document token per document. The same holds for Nepali
-(1,520,000). Nothing is inconsistent; the counts are taken at different stages.
-
-\section{Phase 2: Architecture, Pretraining and Evaluation}
-
-\textbf{Objective.} Implement a decoder-only Transformer from primitive PyTorch
-layers, pretrain both models independently with resume-capable checkpointing,
-and evaluate them as language models.
-
-\subsection{What the forward pass does}
-Token ids go through an embedding table of shape (vocabulary $\times$ 512), a
-learned absolute positional embedding of shape ($512 \times 512$) is added, and
-embedding dropout is applied. Each of the 6 blocks is pre-norm: LayerNorm, then
-multi-head causal self-attention, added back to the residual stream; LayerNorm,
-then a feed-forward network of $512 \rightarrow 2048 \rightarrow 512$ with GELU,
-added back again. A final LayerNorm precedes the output projection to vocabulary
-logits, which is tied to the input embedding. The loss is cross-entropy between
-the logits at position $t$ and the token at $t+1$.
-
-Inside attention (\texttt{hindi/model/transformer.py:69}) I keep $W_q$, $W_k$,
-$W_v$ as three separate \texttt{nn.Linear} layers rather than one fused matrix,
-because it makes the three roles visible in the code. Each projection maps
-$(B,T,512)$ to $(B,T,512)$; a \texttt{view} to $(B,T,8,64)$ and a
-\texttt{transpose} to $(B,8,T,64)$ turn that into 8 independent 64-dimensional
-heads. Scores are $QK^\top/\sqrt{d_k}$ with $d_k=64$, so the divisor is 8. The
-scaling is needed because the dot product of two $d_k$-dimensional vectors grows
-with $d_k$; without it the softmax input variance grows, the softmax saturates,
-and gradients through it get very small. The causal mask is a
-\texttt{torch.triu(..., diagonal=1)} boolean buffer registered with
-\texttt{persistent=False} (it is fully determined by \texttt{block\_size}, so it
-does not belong in a checkpoint) and is applied with
-\texttt{masked\_fill(-inf)} \emph{before} the softmax. After the softmax,
-attention dropout; then $(B,8,T,T) \times (B,8,T,64)$ gives the per-head output,
-which is transposed back, made contiguous (transpose only permutes strides,
-while \texttt{view} needs a contiguous buffer), reshaped to $(B,T,512)$ and
-passed through $W_o$ with residual dropout.
-
-\textbf{Causal masking, verified rather than assumed.}
-\texttt{hindi/tests/test\_model.py:51} perturbs every token after position $t$,
-for every $t$, and checks the logits at positions $\leq t$. Maximum observed
-change: \textbf{0.000e+00}. It is exactly zero, not merely small, because
-$\mathrm{softmax}(-\infty)$ is exactly 0 and $0 \times v$ is exactly 0 in
-floating point. The same test asserts the converse --- the logits \emph{at} the
-perturbed positions must move --- otherwise a model that ignored its input
-entirely would pass. Both test suites pass 9/9 independently.
-
-\begin{table}[htbp]\centering\small
-\caption{Both models. Architecture is identical, so the non-embedding parameter
-count is identical and differences trace to data and tokenizer.}
+\begin{table}[!htb]
+\centering\small
+\caption{Preprocessing outcomes. The deduplication rows are not comparable
+like-for-like: they are the outputs of two different algorithms, which is itself the
+finding. Model~H's figure is an exact-duplicate count and says nothing about near
+duplicates, which were never measured for Hindi.}
+\label{tab:cleaning}
 \begin{tabular}{lrr}
 \toprule
- & Model H (Hindi) & Model L (Nepali) \\
+& \textbf{Model H (Hindi)} & \textbf{Model L (Nepali)} \\
 \midrule
-Vocabulary / tokenizer     & 8{,}000 Unigram & 10{,}000 BPE \\
-Layers / heads / $d$ / $d_{ff}$ / context & \multicolumn{2}{c}{6 / 8 / 512 / 2048 / 512, dropout 0.1} \\
-Embedding parameters       & 4{,}358{,}144 & 5{,}382{,}144 \\
-Non-embedding parameters   & \textbf{18{,}915{,}328} & \textbf{18{,}915{,}328} \\
-Total parameters           & 23{,}273{,}472 & 24{,}297{,}472 \\
-Steps completed (of 15{,}000) & 14{,}520 & 14{,}440 \\
-Training tokens            & 475{,}791{,}360 & 473{,}169{,}920 \\
-Evaluated checkpoint       & step 14{,}500 & step 14{,}000 \\
-\midrule
-Test cross-entropy (nats)  & 3.3109 & 3.8433 \\
-Test perplexity            & \textbf{27.41} & 46.68 \\
-Test bits-per-byte         & 0.5382 & \textbf{0.4846} \\
-Bytes per token            & 8.875 & 11.441 \\
+Raw documents & 773{,}606 & 2{,}655{,}504 \\
+Documents after cleaning & 704{,}103 & 2{,}126{,}334 (post-dedup) \\
+Character retention & 95.9\% & --- \\
+Dropped: too short ($<$200 chars) & 63{,}132 & --- \\
+Dropped: language / script filters & 3{,}371 & 5{,}861 (S04 LID) \\
+Deduplication method & SHA-1 exact + formatting & MinHash + LSH (0.55 Jaccard) \\
+Duplicates removed & 2{,}983 (exact only) & 2{,}350 exact $+$ 49{,}734 near \\
+Train/test decontamination & \textbf{not performed} & 17{,}111 removed, rescan clean \\
+Cross-lane duplicates resolved manual-first & --- & 21{,}273 pairs \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Design choices I had to justify}
-\textbf{Depth over width.} At $d=512$ each block costs about 3.15M parameters,
-so 6 blocks plus the embedding table lands at 23.3M; 7 blocks would overshoot to
-26.4M. I spent the budget on 6 blocks rather than a wider 4-block model because
-attention needs several rounds of composition to build multi-hop dependencies.
-\textbf{Learned absolute positions} over sinusoidal, because the model is
-trained and evaluated at one fixed context length where sinusoidal
-extrapolation buys nothing. The consequence I accepted: \texttt{block\_size} 512
-is a hard ceiling --- there is no embedding row for position 512, so longer
-sequences need retraining that table. \textbf{Weight tying} saves
-$8000 \times 512 = 4{,}096{,}000$ parameters for Hindi, about 15\% of the model.
-\textbf{Pre-norm}, because normalising the input to each sublayer keeps the
-residual path clean and the gradient better behaved than post-norm at this
-depth.
+\subsection{Splits and tokenizers}
 
-\subsection{Training setup}
-AdamW ($\beta = 0.9, 0.95$), weight decay 0.1 applied only to parameters with
-\texttt{dim} $\geq 2$ --- decaying LayerNorm gains and biases shrinks them
-towards zero for no benefit. Learning rate 6e-4 peak with 500 warmup steps then
-cosine decay to 6e-5. Gradient clipping at 1.0, applied after
-\texttt{scaler.unscale\_()} so the clip sees true gradient magnitudes rather
-than scaled ones. Effective batch is $32 \times 2 \times 512 = 32{,}768$ tokens
-per step (micro-batch 32, gradient accumulation 2); 15,000 steps would be about
-491.5M tokens, roughly one epoch. Seeds 20260902 (H) and 20260903 (L).
+Both corpora are split by document, never by chunk, so two halves of one article
+cannot land on opposite sides of the split and turn memorisation into test accuracy.
+Model~H is 96/2/2 (seed 42, shuffle-then-slice), giving 485{,}280{,}741 /
+10{,}484{,}640 / 10{,}086{,}647 tokens. Model~L is 85/7.5/7.5 (seed 20260817,
+deterministic hash of document id), giving 519{,}906{,}359 / 57{,}839{,}396 /
+57{,}458{,}578, and holds validation and test out at stage S07 \emph{before} the
+quality filters run, so those filters shape only the training pool and cannot make the
+evaluation sets easier. Its \texttt{split\_stats.json} records zero document-id
+overlap between splits, and a separate cross-language check found 0 documents shared
+between the two corpora.
 
-Precision: the config requests bfloat16 and the trainer resolves it against the
-device, falling back to float16 with a \texttt{GradScaler} where bfloat16 is
-unsupported. The recorded Kaggle run logs \texttt{device=cuda
-dtype=torch.bfloat16} on the Tesla T4, so \textbf{pretraining actually ran in
-bfloat16}; the float16 path is what Phase 3 used (\S4.2). I mention it because
-my own earlier notes had this the wrong way round, and the kernel log is the
-authority.
+Both tokenizers were trained from scratch, with vocabulary size chosen by measurement
+on held-out text rather than convention. Fertility keeps improving with size for both,
+so the choice trades it against the embedding parameters a larger vocabulary costs:
+for Model~H, 8{,}000 to 10{,}000 buys less fertility than 5{,}000 to 8{,}000 did and
+would spend roughly 1M parameters of a 25M budget, so 8{,}000 was adopted. Model~L
+took 10{,}000, the best fertility in its sweep.
 
-Checkpoints carry model weights, optimizer state, scheduler state, current step,
-best validation loss, tokens consumed, both RNG states and the full run config,
-so an interrupted session resumes exactly rather than approximately. I verified
-resume across three consecutive sessions before starting the real runs.
-
-\textbf{Both runs stopped short of the plan.} An 11-hour wall-clock guard fired
-at step 14,520 (H) and 14,440 (L) out of 15,000, at roughly 12.0k tokens/s.
-Because checkpoints are saved on best validation loss, the evaluated checkpoints
-are steps 14,500 and 14,000 --- so the models are 3\% short of their intended
-token budget, not broken by it. Final evaluation ran on CPU for both models
-deliberately, so that temperature sampling drew from the same RNG in both cases.
-
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.85\textwidth]{loss_curves_both.png}
-\caption{Training and validation loss against tokens consumed. Both curves are
-still descending when the wall-clock guard fires, which is why I describe the
-runs as budget-limited rather than converged.}
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{fig_tokenizer_sweep.pdf}
+\caption{The measured sweep; circled points are the adopted sizes. Model~H holds an
+unknown rate of exactly zero at every size because its Unigram model has byte
+fallback; Model~L's is non-zero everywhere and \emph{rises} with vocabulary size. I
+read its byte-fallback column of zeros as a good score. It records that the feature is
+absent, and Section~\ref{sec:cross} gives the failure it caused two phases later.}
+\label{fig:tokenizer}
 \end{figure}
 
-\subsection{Perplexity and bits-per-byte disagree}
-This is the Phase 2 result I care most about. Scored over 1,999,872 tokens per
-model, Model H's test perplexity is 27.41 and Model L's is 46.68 --- a 41\% gap
-that reads as ``the lower-resource model is much worse''. But perplexity is per
-\emph{token}, and a token is not the same unit in the two models. Converting to
-bits and dividing by bytes:
-\[
-\mathrm{BPB}_H = \frac{4.7766}{8.875} = 0.5382,
-\qquad
-\mathrm{BPB}_L = \frac{5.5447}{11.441} = 0.4846 .
-\]
-On bits per byte of UTF-8 text, Model L is marginally \emph{ahead}. Both numbers
-are correct; they measure different things. Nepali's BPE packs more text into
-each token, so its tokens are individually harder to predict but each one buys
-more characters. Most of the apparent perplexity gap is tokenizer granularity,
-not model quality. The caveat I should state: BPB is deflated for both models
-because Devanagari costs three UTF-8 bytes per character, so these values are
-not comparable to BPB figures for Latin-script corpora.
 
-\subsection{Generation and attention}
-\begin{table}[htbp]\centering\small
-\caption{Generation against held-out references, four decoding settings.
-Repetition is the fraction of repeated 4-grams.}
-\begin{tabular}{lrrrrrrrr}
+% =====================================================================
+\section{Phase 2: Architecture, Pretraining and Evaluation}
+
+\subsection{Implementation}
+
+The model is a decoder-only pre-norm Transformer written with
+\texttt{nn.Linear}, \texttt{nn.Embedding}, \texttt{nn.LayerNorm},
+\texttt{nn.Dropout} and ordinary tensor operations only. No
+\texttt{nn.Transformer*}, no \texttt{nn.MultiheadAttention}, no
+\texttt{F.scaled\_dot\_product\_attention} and no HuggingFace model class is used;
+a unit test walks the module tree and fails if any of them ever appears, so the
+constraint cannot be broken by a later edit.
+
+Inside attention, $W_Q$, $W_K$ and $W_V$ are kept as three separate
+\texttt{nn.Linear} layers rather than one fused projection. That is marginally
+slower but keeps the three roles visible in the code. Each projection maps
+$(B,T,512)$; a \texttt{view} reshapes to $(B,T,8,64)$ and a \texttt{transpose} to
+$(B,8,T,64)$, giving eight independent 64-dimensional heads. Scores are
+$QK^{\top}/\sqrt{64}$; the scaling is required because dot products of longer vectors
+grow in magnitude, and without it the softmax saturates and gradients through it
+vanish. The causal mask is built with \texttt{torch.triu(..., diagonal=1)},
+registered non-persistently, and applied by \texttt{masked\_fill} with $-\infty$
+before the softmax.
+
+\textbf{Causal masking, verified rather than assumed.} The test in
+\texttt{tests/test\_model.py} perturbs every token after position $t$ and measures
+the largest change in the logits at positions $\le t$. It is exactly
+$0.000\mathrm{e}{+}00$ --- not merely small, because $\mathrm{softmax}(-\infty)$ is
+exactly zero and contributes exactly nothing. The same test asserts the converse,
+that outputs at the perturbed positions \emph{do} change; without that check a model
+that ignored its input entirely would also pass. Both language suites pass 9/9.
+
+\begin{figure}[!htb]
+\centering
+\begin{minipage}[c]{0.40\textwidth}
+\centering
+\begin{tikzpicture}[node distance=2.3mm, every node/.style={font=\scriptsize}]
+\node[stage, minimum width=30mm] (ids) {token ids $(B,T)$, $T\!\le\!512$};
+\node[stage, below=of ids, minimum width=30mm] (emb) {token embedding $(V,512)$\\$+$ learned positions $(512,512)$};
+\node[stage, below=of emb, minimum width=30mm] (drop) {embedding dropout $0.1$};
+\node[hstage, below=of drop, minimum width=30mm] (blk) {$6\times$ Transformer block};
+\node[stage, below=of blk, minimum width=30mm] (ln) {final LayerNorm};
+\node[stage, below=of ln, minimum width=30mm] (head) {LM head $(512,V)$, \emph{tied}};
+\node[stage, below=of head, minimum width=30mm] (log) {logits $(B,T,V)$};
+\foreach \a/\b in {ids/emb, emb/drop, drop/blk, blk/ln, ln/head, head/log}
+  \draw[flow] (\a) -- (\b);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.27\textwidth}
+\centering
+\begin{tikzpicture}[node distance=2.3mm, every node/.style={font=\scriptsize}]
+\node[stage, minimum width=26mm] (x) {$x$};
+\node[stage, below=of x, minimum width=26mm] (n1) {LayerNorm};
+\node[hstage, below=of n1, minimum width=26mm] (at) {multi-head causal\\self-attention\\$h{=}8$, $d_k{=}64$};
+\node[stage, below=of at, minimum width=26mm] (a1) {$+$ residual};
+\node[stage, below=of a1, minimum width=26mm] (n2) {LayerNorm};
+\node[hstage, below=of n2, minimum width=26mm] (ff) {FFN $512\!\to\!2048\!\to\!512$\\GELU};
+\node[stage, below=of ff, minimum width=26mm] (a2) {$+$ residual};
+\foreach \a/\b in {x/n1, n1/at, at/a1, a1/n2, n2/ff, ff/a2}
+  \draw[flow] (\a) -- (\b);
+\draw[flow, draw=black!35] (x.west) -- ++(-3.5mm,0) |- (a1.west);
+\draw[flow, draw=black!35] (a1.east) -- ++(3.5mm,0) |- (a2.east);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.30\textwidth}
+\centering\scriptsize
+\captionsetup{type=table}
+\captionof{table}{Parameter breakdown, derived from the configuration and asserted
+against the loaded model.}
+\label{tab:params}
+\begin{tabular}{lrr}
 \toprule
-& \multicolumn{2}{c}{chrF++} & \multicolumn{2}{c}{BLEU-4} & \multicolumn{2}{c}{repetition} & \multicolumn{2}{c}{Distinct-1} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
-Decoding & H & L & H & L & H & L & H & L \\
+& \textbf{H} & \textbf{L} \\
 \midrule
-greedy            & 12.49 & 14.48 & 1.96 & 2.37 & 0.598 & 0.577 & 0.172 & 0.179 \\
-temperature 0.5   & 14.33 & 16.54 & 1.80 & 1.88 & 0.212 & 0.190 & 0.275 & 0.345 \\
-temperature 1.0   & \textbf{16.29} & \textbf{18.05} & 1.01 & 1.69 & 0.002 & 0.001 & 0.520 & 0.634 \\
-temperature 1.5   & 14.67 & 16.13 & 0.16 & 0.78 & 0.000 & 0.000 & 0.702 & 0.793 \\
+Token emb.\ $V{\times}512$ & 4.10M & 5.12M \\
+Positions $512{\times}512$ & 0.26M & 0.26M \\
+Attention $4{\times}6$ proj. & 6.30M & 6.30M \\
+Feed-forward $6{\times}$ & 12.60M & 12.60M \\
+LayerNorms & 0.01M & 0.01M \\
+LM head (tied) & 0 & 0 \\
+\midrule
+Non-embedding & 18.92M & 18.92M \\
+\textbf{Total} & \textbf{23.27M} & \textbf{24.30M} \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{Forward pass, one pre-norm block expanded, and where the parameters sit, at
+the configuration actually trained. Weight tying removes a second $V\!\times\!512$
+matrix, saving 4{,}096{,}000 parameters for Model~H ($\approx$15\%). Six blocks of
+3{,}152{,}384 plus a final LayerNorm give 18{,}915{,}328 non-embedding parameters; a
+seventh would overshoot 25M.}
+\label{fig:arch}
+\end{figure}
+
+\textbf{Design choices.} Depth was preferred over width: each block costs
+3.15M parameters, so six blocks plus embeddings land at 23.27M where seven would
+reach 26.4M, and attention needs several rounds of composition to build multi-step
+dependencies. Positions are learned and absolute, chosen because the model is trained
+and evaluated at one fixed length where the extrapolation advantage of sinusoidal
+encodings does not apply; the price is that 512 is a hard ceiling, since no embedding
+row exists for position 512. Pre-norm was used for gradient stability through the
+stack. Dropout at 0.1 is applied in four places: attention probabilities, attention
+output, feed-forward output and the embedding sum.
+
+\subsection{Pretraining}
+
+\begin{table}[!htb]
+\centering\small
+\caption{Training configuration, identical for both models apart from vocabulary
+size. Both runs were stopped by an 11-hour wall-clock guard placed in the trainer so
+that a dying Kaggle session could never leave an unusable state.}
+\label{tab:train}
+\begin{tabular}{llll}
+\toprule
+Optimiser & AdamW, $\beta=(0.9,\,0.95)$ & Effective batch & $32\times2\times512 = 32{,}768$ tokens \\
+Weight decay & 0.1, matrices only ($\dim\ge2$) & Precision & bfloat16 \\
+Peak / min LR & $6{\times}10^{-4}$ / $6{\times}10^{-5}$ & Hardware & Kaggle Tesla T4 \\
+Schedule & 500 warmup, then cosine & Throughput & 12{,}024 / 11{,}958 tok\,s$^{-1}$ \\
+Gradient clipping & 1.0, after \texttt{unscale\_} & Wall clock & 10.99 h each \\
+Seed & 20260902 & Steps reached & 14{,}520 / 14{,}440 of 15{,}000 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Greedy decoding degenerates in both models: about 58--60\% of generated 4-grams
-are repeats and the samples visibly loop. That follows from what greedy decoding
-is --- the argmax is deterministic, so once the model enters a state it has seen
-before it must produce the same continuation and cannot leave the loop.
-Temperature 1.0 removes the repetition and simultaneously peaks chrF++, so on
-these models diversity costs no fidelity up to that point. BLEU is near the
-floor everywhere and I would not trust it here: open-ended continuations have no
-reason to share 4-grams with one reference continuation. chrF++ is the more
-informative of the three because it works on character n-grams, which suits a
-morphologically rich Devanagari language where a single suffix change breaks a
-whole word match.
+Every checkpoint carries model weights, optimizer state, scheduler state, training
+step, best validation loss, tokens consumed, both RNG states and the full
+configuration, so an interrupted session resumes exactly rather than approximately.
+I verified resume across three deliberately killed sessions before starting the real
+runs. Checkpoints are written on best validation loss, so the evaluated checkpoints
+are step 14{,}500 (H) and 14{,}000 (L).
 
-Attention was measured with my own toolkit. Mean entropy is 3.2047 (H) and
-3.0898 (L) against a uniform-attention baseline of 5.2565, so both models are
-about 2 nats sharper than attending everywhere equally --- the baseline is what
-makes the raw number mean anything. Mean attention distance is 62.36 and 54.51
-tokens. The layer structure is the interesting part: in both models the sharpest
-head per layer gets steadily sharper and more local from layer 0 to layer 3,
-where it becomes a previous-token head (entropy 0.06 at distance 1.3 for H, 0.14
-at 1.1 for L), then spreads out again at layer 5 (distance 151.4 and 81.3).
-Two models with different languages, tokenizers and seeds independently arrived
-at the same organisation, which I did not expect at 23M parameters.
+Neither run finished its planned 15{,}000 steps. The wall-clock guard fired first,
+costing about 3\% of the token budget, and both validation curves
+(Figure~\ref{fig:curves}) are still descending at the last checkpoint. Neither model
+is converged, and the absolute perplexities below should be read with that in mind;
+the comparison between them is unaffected because both stopped under the same rule
+with near-identical token budgets.
 
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.85\textwidth]{attention_summary_both.png}
-\caption{Per-head attention entropy and mean attention distance by layer. The
-layer-3 dip is the previous-token head in both models.}
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{fig_pretrain_curves.pdf}
+\caption{Both validation curves are still falling when the wall-clock guard stops the
+run, so neither model is converged. The gap between them is stable from roughly 150M
+tokens onward, which is what keeps the comparison meaningful anyway.}
+\label{fig:curves}
 \end{figure}
 
-\section{Phase 3: Reasoning Finetuning and Attention Comparison}
+\subsection{Intrinsic evaluation: two metrics that disagree}
 
-\textbf{Objective.} Finetune each pretrained model on synthetic
-comparative-reasoning data written in its own language, measure what changed,
-and compare attention before and after.
+\begin{table}[!htb]
+\centering\small
+\caption{Intrinsic metrics on each model's own test split, scored over an identical
+budget of 1{,}999{,}872 tokens per model.}
+\label{tab:intrinsic}
+\begin{tabular}{lrr@{\hskip 20pt}lrr}
+\toprule
+& \textbf{Model H} & \textbf{Model L} & & \textbf{Model H} & \textbf{Model L} \\
+\midrule
+Cross-entropy (nats) & 3.3109 & 3.8433 & Bytes per token & 8.875 & 11.441 \\
+Test perplexity & \textbf{27.41} & 46.68 & Bytes scored & 17{,}749{,}798 & 22{,}880{,}653 \\
+Bits per token & 4.7766 & 5.5447 & \textbf{Test bits-per-byte} & 0.5382 & \textbf{0.4846} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{The synthetic dataset}
-Both corpora are generated programmatically by
-\texttt{\{hindi,nepali\}/reasoning/generate.py}, so every ground-truth label is
-known by construction and nothing is downloaded. Four task families, 5,000
-training examples each: \texttt{compare2} (one comparison, then a question about
-the pair), \texttt{transitive3} (two chained comparisons --- the answer needs
-the chain), \texttt{numeric2} and \texttt{numeric3} (compare two or three
-measured quantities). Splits are 20,000 / 2,000 / 2,000 per language. A Hindi
-test example the finetuned model gets right: \dn{ध्यान दीजिए: प्रवीण वरुण से
-हल्का है। भारी कौन है?} --- gold \dn{वरुण}, model \dn{वरुण}.
+Perplexity says Model~H is 41\% better. Bits-per-byte says Model~L is slightly
+better. Both are correct, because they measure per different units. Perplexity is per
+token, and a token is not the same quantity of text in the two models: Model~L's BPE
+holds 11.44 bytes where Model~H's Unigram holds 8.88. Model~L's tokens are
+individually harder to predict, but each one carries about 29\% more text. Dividing
+by bytes removes the tokenizer from the comparison, and when it is removed the
+ordering reverses.
 
-Leakage control uses both defences the brief suggests, together: 40/10/10
-disjoint entity names and 14/4/4 disjoint sentence templates, so a test question
-is about unseen people phrased in an unseen way. This is \emph{asserted} in
-\texttt{main()} rather than assumed, and recorded in \texttt{dataset\_stats.json}
-as \texttt{entity\_names\_disjoint\_across\_splits: true} and
-\texttt{templates\_disjoint\_across\_splits: true}. The two languages share no
-sentence, entity name or template.
+\textbf{Interpretation and its limit.} The right reading is that most of the apparent
+perplexity gap is tokenizer granularity rather than model quality. It does
+\emph{not} follow that Model~L is the better language model: bits-per-byte is a
+tokenizer-neutral measure but not a corpus-neutral one, and the two models are scored
+on different text of different intrinsic difficulty. Model~L's corpus is nominally
+larger but 91.6\% of its manual lane is a single news source, so it may simply be
+more predictable text. Separating those two explanations would need a parallel or
+translated evaluation set, which this project does not have.
 
-\textbf{Two defects I found while building this, both of which would have
-invalidated the results.} First, a gender-agreement leak: Hindi adjectives
-inflect, so \dn{सबसे छोटी कौन है?} asked about one woman and two men has only
-one grammatically possible answer --- 181 of 400 examples were solvable without
-comparing anything. Fixed by drawing all entities in an example from one gender.
-Second, Model L's vocabulary contains \emph{no Devanagari digit at all}, and its
-BPE has no byte fallback (\S2.5), so every numeral encoded to \texttt{<unk>} at
-a 4.8\% corpus rate. Nepali numerals are now written with Arabic digits, which
-the vocabulary covers and which modern Nepali prose uses anyway. Both corpora
-now tokenize at a 0.000000 unknown rate. The second defect is the clearest
-example in this project of a Phase 1 decision only becoming visible two phases
-later.
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{fig_ppl_bpb.pdf}
+\caption{The reversal. The middle panel is the mechanism --- not a quality measure but
+a property of the tokenizers, large enough to flip the ordering between the outer two.
+Reporting only the left panel would have supported a conclusion the right panel does
+not support.}
+\label{fig:pplbpb}
+\end{figure}
 
-\subsection{Protocol}
-Each model starts from its own Phase 2 checkpoint with its own Phase 1 tokenizer
-held fixed --- the finetuner \emph{asserts} that the tokenizer's vocabulary size
-matches the checkpoint rather than trusting the config. Loss is computed on
-answer tokens only, using \texttt{ignore\_index=-1} on the prompt positions, so
-the model is not rewarded for memorising question text. Batches are built by
-length bucketing rather than padding, which is not cosmetic: with learned
-absolute positions, padding at the front would shift every real token's position
-index and change what the model sees.
+\subsection{Generation}
 
-Hyperparameters: 2 epochs, batch 32, peak learning rate 6e-5 (one tenth of
-pretraining) with 100 warmup steps, min 6e-6, weight decay 0.1, grad clip 1.0,
-seed 20260914, float16 with a \texttt{GradScaler} because the Kaggle T4 is
-compute capability 7.5. The reduced learning rate is the important one: a
-pretraining-sized step overwrites the language model before the task is learned.
+Continuations were generated from 64 held-out prefixes of 64 tokens each, continued
+for 64 tokens, under greedy decoding and temperatures 0.5, 1.0 and 1.5, and scored
+against the true continuations.
 
-\textbf{Run A versus run B.} My first run evaluated every 100 steps and picked
-its best checkpoint at step 100, which is exactly where warmup ends --- the grid
-was too coarse to locate the real optimum. Moving to a 20-step grid, with
-nothing else changed, raised Model L from 14.90\% to 29.45\% exact match and
-Model H from 32.70\% to 35.15\%. Run A is kept in
-\texttt{report/phase3/run\_a\_40names/}.
+\begin{table}[!htb]
+\centering\small
+\caption{Generation metrics across all four decoding settings. BLEU is corpus-level
+BLEU-4 (sacreBLEU); chrF++ uses character 6-grams plus word 2-grams; repetition is
+the fraction of repeated 4-grams.}
+\label{tab:generation}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{\textbf{Overlap with reference}} & \multicolumn{3}{c}{\textbf{Fluency / diversity}} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+Model & Decoding & BLEU-4 & chrF++ & ROUGE-L & Repetition & Distinct-1 & Distinct-2 \\
+\midrule
+H & greedy  & 1.96 & 12.49 & 0.093 & 0.598 & 0.172 & 0.313 \\
+H & $T=0.5$ & 1.80 & 14.33 & 0.096 & 0.212 & 0.275 & 0.602 \\
+H & $T=1.0$ & 1.01 & \textbf{16.29} & \textbf{0.100} & 0.002 & 0.520 & 0.939 \\
+H & $T=1.5$ & 0.16 & 14.67 & 0.053 & 0.000 & 0.702 & 0.992 \\
+\midrule
+L & greedy  & 2.37 & 14.48 & 0.081 & 0.577 & 0.179 & 0.263 \\
+L & $T=0.5$ & 1.88 & 16.54 & \textbf{0.092} & 0.190 & 0.345 & 0.611 \\
+L & $T=1.0$ & 1.69 & \textbf{18.05} & 0.079 & 0.001 & 0.634 & 0.948 \\
+L & $T=1.5$ & 0.78 & 16.13 & 0.035 & 0.000 & 0.793 & 0.995 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Two metrics, and why both are needed}
-Exact match after greedy decoding is the honest end-to-end number, but it floors
-at zero on a model that has never seen the prompt format, so it cannot separate
-``learned nothing'' from ``learned the task but not the format''. So I also
-score a \textbf{forced choice} among the entities the question actually names,
-using the length-normalised mean log-probability per answer token (without
-normalising, shorter names win for being shorter). Chance is computed per
-example as the mean of $1/n_{\text{candidates}}$, which comes to 41.67\% across
-the test set --- two-candidate families give 50\%, \texttt{numeric3} and
-\texttt{transitive3} give 33.3\%.
+Greedy decoding degenerates in both models: roughly 58--60\% of its 4-grams are
+repeats and the text visibly loops. That is not a defect in the models but a property
+of the decoding rule --- greedy always takes the argmax, so once the model re-enters
+a state it has visited it reproduces the same continuation with no escape. Temperature
+1.0 removes the repetition and simultaneously gives the best chrF++ for both models,
+so on these models additional diversity cost nothing in overlap quality.
 
-\begin{table}[htbp]\centering\small
-\caption{Reasoning results on 2,000 held-out test questions per model. Chance
-for forced choice is 41.67\%.}
+BLEU sits near the floor everywhere and is not informative here: an open-ended
+continuation has no particular reason to share 4-grams with a single reference, and
+the estimate is correspondingly noisy. chrF++ is the metric I would defend for this
+pair, because character $n$-grams survive the morphology --- in Devanagari a single
+changed suffix destroys a whole-word match but leaves most character $n$-grams intact.
+ROUGE-L is computed over whitespace tokens, which under-segment Devanagari, making it
+the least reliable of the three. All three are reported because the specification
+requires them, not because all three are equally meaningful.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{fig_decoding_sweep.pdf}
+\caption{Quality peaks at $T=1.0$ while repetition has already collapsed to near zero,
+so the usual quality--diversity trade-off does not bind in this range. Model~L is
+consistently higher on both, consistent with its coarser tokens covering more text per
+generated step.}
+\label{fig:decoding}
+\end{figure}
+
+\subsection{Attention analysis}
+
+Mean attention entropy is 3.2047 nats for Model~H and 3.0898 for Model~L against a
+uniform baseline of 5.2565 for the same sequence length; the baseline is computed
+rather than assumed, because an entropy of 3.2 means nothing without it. Mean
+attention distance is 62.36 and 54.51 token positions.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{fig_attention_grid.pdf}
+\caption{Every head of every layer; the asterisk marks each layer's sharpest head.
+Both models independently develop a near-deterministic previous-token head at layer~3
+(entropy 0.06 at distance 1.3 for H; 0.14 at 1.1 for L) despite different languages,
+tokenizers and seeds, with attention diffuse at layer~0, sharpening to layer~3 and
+broadening by layer~5. This is a consistent pattern, not evidence of a functional
+role.}
+\label{fig:attngrid}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\begin{subfigure}{0.49\textwidth}
+\includegraphics[width=\textwidth]{crop_hindi_attention_layer0.png}
+\caption{Model~H, layer 0}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\textwidth}
+\includegraphics[width=\textwidth]{crop_hindi_attention_layer5.png}
+\caption{Model~H, layer 5}
+\end{subfigure}
+\caption{Causal self-attention on a held-out Hindi sentence, showing the first two
+heads of an early and a late layer. Layer~0 is broad and position-driven; layer~5
+shows narrow vertical stripes --- many queries concentrating on the same few keys
+regardless of position, which is content-driven rather than positional. All four
+heads per layer, and the Nepali equivalents, are in \texttt{report/phase2/figures/}.}
+\label{fig:heatmaps}
+\end{figure}
+
+% =====================================================================
+\section{Phase 3: Reasoning Finetuning}
+
+\subsection{Synthetic dataset}
+
+Rather than download a benchmark, I wrote a generator per language so that the
+ground-truth answer is known by construction and the train/test relationship is fully
+controlled. Four task families are produced in equal proportion: \texttt{compare2}
+(one-step comparison between two entities), \texttt{numeric2} and \texttt{numeric3}
+(comparison over explicit quantities for two or three entities), and
+\texttt{transitive3} (a two-hop chain, $A \mathbin{R} B$ and $B \mathbin{R} C$, asking
+for an extreme). Each language gets 20{,}000 training, 2{,}000 validation and 2{,}000
+test examples. The Hindi and Nepali sets share no sentence, no entity name and no
+template.
+
+\begin{figure}[!htb]
+\centering
+\begin{minipage}[c]{0.63\textwidth}
+\centering
+\begin{tikzpicture}[node distance=3.0mm, every node/.style={font=\scriptsize}]
+\node[stage] (t) {templates\\14 / 4 / 4};
+\node[stage, below=2.4mm of t] (n) {entity names\\40 / 10 / 10};
+\node[stage, right=of t] (g) {seeded\\generator};
+\node[stage, right=of g] (a) {assert disjoint\\names + templates};
+\node[stage, right=of a] (s) {train / val / test\\20k / 2k / 2k};
+\node[hstage, below=6.5mm of a] (ck) {own pretrained\\checkpoint};
+\node[hstage, right=of ck] (ft) {finetune\\answer tokens only};
+\node[stage, left=of ck] (sc) {score pretrained\\baseline first};
+\node[stage, below=6.5mm of ft, xshift=-9mm] (ev) {exact match $+$ forced choice\\$+$ answer-position analysis};
+\draw[flow] (t) -- (g); \draw[flow] (n.east) -- ++(2.2mm,0) |- (g.west);
+\draw[flow] (g) -- (a); \draw[flow] (a) -- (s);
+\draw[flow] (s.south) |- (ft.east);
+\draw[flow] (sc) -- (ck); \draw[flow] (ck) -- (ft);
+\draw[flow] (ft.south) -- ++(0,-2.2mm) -| (ev.north);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.35\textwidth}
+\centering\scriptsize
+\captionsetup{type=table}
+\captionof{table}{Reasoning dataset, per language.}
+\label{tab:reasondata}
+\begin{tabular}{lr}
+\toprule
+Train / val / test & 20{,}000 / 2{,}000 / 2{,}000 \\
+Task families & 4, 5{,}000 train each \\
+Templates (tr/va/te) & 14 / 4 / 4 \\
+Entity names & 40 / 10 / 10 \\
+Names disjoint & asserted true \\
+Templates disjoint & asserted true \\
+Distinct train prompts & 20{,}000 \\
+Mean prompt length & 71.1 chars (H) \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{Generation and finetuning pipeline. Leakage is controlled on two axes at once:
+a test question concerns people the model has never seen, phrased in a way it has never
+seen. Both properties are asserted inside the generator, not assumed. Scoring the
+pretrained baseline \emph{before} finetuning is a sequencing constraint --- once the
+weights change, that number is unrecoverable without retraining.}
+\label{fig:reasonpipe}
+\end{figure}
+
+\textbf{Two defects found during construction.} Both would have invalidated the
+results had they survived.
+\begin{itemize}
+\item \emph{Gender-agreement leak.} Hindi adjectives inflect for gender, so a question
+such as ``who is smallest?'' asked about one woman and two men has only one
+grammatically well-formed answer --- solvable without comparing anything. 181 of 400
+sampled examples were answerable that way. Detected by inspecting generated examples
+for a shortcut; fixed by drawing all entities in an example from one gender.
+\item \emph{Nepali numerals.} The Nepali BPE vocabulary
+contains no Devanagari digit at all --- not one of \dn{०--९} --- and, having no byte
+fallback, mapped every number in the generated data to \texttt{<unk>}: 4.8\% of the
+corpus. Detected by tokenizing the generated set and checking its unknown rate before
+training. Fixed by switching Nepali numerals to Arabic digits, which the vocabulary
+covers completely and which modern Nepali writing uses anyway. Both sets now tokenize
+at exactly zero unknowns.
+\end{itemize}
+
+\subsection{Protocol and metrics}
+
+Each model is finetuned from its own pretrained checkpoint with its own tokenizer
+held fixed; the finetuning script asserts that the tokenizer vocabulary size matches
+the checkpoint rather than trusting the configuration file. Loss is computed on answer
+tokens only (\texttt{ignore\_index=-1} over the prompt), so the model earns no credit
+for reproducing question text. Batches are grouped by length instead of padded ---
+necessary rather than cosmetic, because with learned absolute positions any left
+padding would shift the position index of every real token. Settings: 2 epochs,
+batch 32, peak LR $6{\times}10^{-5}$ (one tenth of pretraining, because a
+pretraining-sized step overwrites the language model before the task is learned),
+100 warmup steps, evaluation every 20 steps, seed 20260914, float16 with a
+\texttt{GradScaler} (the T4 is compute capability 7.5 and has no bfloat16).
+
+Two accuracy metrics are reported because neither suffices alone. \emph{Exact match}
+after greedy decoding is the honest end-to-end result, but it is pinned at zero for a
+model that has never seen this prompt format, so it cannot distinguish ``learned
+nothing'' from ``knows the answer but not how to say it''. \emph{Forced choice}
+restricts the model to the entity names the question actually contains and picks the
+one with the highest length-normalised mean log-probability; its chance rate is
+computed per example from the number of candidates and averages 41.67\%.
+
+\subsection{Results}
+
+\begin{table}[!htb]
+\centering\small
+\caption{Pretrained versus finetuned on 2{,}000 held-out test questions per model,
+with unseen names and unseen templates. The exact-match column rises sharply; the
+forced-choice column does not move away from chance in either model.}
+\label{tab:reasoning}
+\begin{tabular}{lrrr@{\hskip 20pt}rrr}
+\toprule
+& \multicolumn{3}{c}{\textbf{Model H}} & \multicolumn{3}{c}{\textbf{Model L}} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+& pretrained & finetuned & $\Delta$ & pretrained & finetuned & $\Delta$ \\
+\midrule
+Exact match & 0.00\% & 35.15\% & $+35.15$ & 0.00\% & 29.45\% & $+29.45$ \\
+Forced choice (chance 41.67\%) & 39.80\% & 36.35\% & $-3.45$ & 38.80\% & 39.30\% & $+0.50$ \\
+Answer-token loss (nats) & 5.2439 & 0.9408 & $-4.3031$ & 5.5367 & 1.4351 & $-4.1016$ \\
+Answer-token perplexity & 189.40 & 2.56 & --- & 253.84 & 4.20 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Exact match rises from zero to 35.15\% and 29.45\%, and
+answer-token loss falls by more than four nats in both models.
+\textbf{Interpretation.} Finetuning taught the models to emit a candidate name in the
+expected position and format; the loss collapse is consistent with that and with
+nothing stronger. \textbf{What it does not show.} Under forced choice both models sit
+at or below the 41.67\% chance rate, and per task the scores land close to their
+individual chance rates --- Model~H reaches 50.40\% and 47.00\% on the two-candidate
+families (chance 50\%) and 33.20\% on the three-candidate one (chance 33.3\%). The
+result therefore does not establish that either model learned the comparison
+operation. The one family that departs from chance departs downward, which is the
+subject of the next section.
+
+\begin{figure}[!htb]
+\centering
+\begin{minipage}{0.375\textwidth}\includegraphics[width=\textwidth]{fig_finetune_curves.pdf}\end{minipage}\hfill
+\begin{minipage}{0.605\textwidth}\includegraphics[width=\textwidth]{fig_reasoning_accuracy.pdf}\end{minipage}
+\caption{Left: validation loss bottoms out at step~60 while training loss falls to
+0.4441 and 0.6048 --- with 40 names and 14 templates, memorising the answer prior is
+easier than reading the question. Best-validation checkpointing means the evaluated
+models are step~60, so this overfitting never reached the reported numbers. Right:
+under forced choice every family sits near its own chance line except
+\texttt{transitive3}, which falls well below it in both models.}
+\label{fig:phase3results}
+\end{figure}
+
+\subsection{Error analysis}
+
+Accuracy alone cannot separate uniform guessing from a positional habit, so the
+evaluation records which prompt position each answer came from alongside where the
+gold answer actually sits.
+
+\begin{table}[!htb]
+\centering\small
+\caption{Answer-position distribution on \texttt{transitive3} (finetuned). The chain
+is stated as $A \mathbin{R} B$, $B \mathbin{R} C$, so the extremes are always $A$ and
+$C$ and the middle entity is \emph{never} correct --- yet it attracts most of
+Model~H's answers.}
+\label{tab:errors}
 \begin{tabular}{lrrrr}
 \toprule
- & H pretrained & H finetuned & L pretrained & L finetuned \\
+& answered $A$ (first) & answered $B$ (middle) & answered $C$ (last) & off-prompt \\
 \midrule
-Exact match             & 0.0000 & \textbf{0.3515} & 0.0000 & \textbf{0.2945} \\
-Forced choice           & 0.3980 & 0.3635 & 0.3880 & 0.3930 \\
-Answer-token loss       & 5.2439 & 0.9408 & 5.5367 & 1.4351 \\
-Answer-token perplexity & 189.40 & 2.56 & 253.84 & 4.20 \\
+Gold distribution & 47.4\% & \textbf{0.0\%} & 52.6\% & --- \\
+Model H & \textbf{0.0\%} & \textbf{72.6\%} & 25.4\% & 2.0\% \\
+Model L & 3.2\% & 41.8\% & 26.2\% & 28.8\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Results and error analysis}
-Exact match going from 0 to 35.15\% and 29.45\% looks like success, and answer
-token perplexity falling from 189 to 2.6 shows the models did learn something
-substantial. But forced choice sits at or below chance for both, and per task
-the agreement with chance is close to exact: Model H scores 50.40\% and 47.00\%
-on the two two-candidate families (chance 50\%) and 33.20\% on three-candidate
-\texttt{numeric3} (chance 33.3\%). The honest reading is that finetuning taught
-the output format --- answer with a name from the prompt, in this shape --- and
-not the comparison.
+Model~H selects the middle entity in 72.6\% of two-hop questions and the first entity
+in none. $B$ is the only name mentioned twice, so the behaviour is consistent with
+selection by surface salience rather than by following the inequality --- and it
+explains why this family scores \emph{below} chance, since uniform guessing would at
+least hit $A$ and $C$ sometimes. On the one-hop families Model~H prefers the
+second-named entity roughly two to one (62.0\% and 65.0\%) against a balanced gold
+split, a recency effect:
 
-The one place the models leave chance, they leave it \emph{downward}:
-\texttt{transitive3} scores 12.40\% (H) and 13.40\% (L) against 33.3\%. The
-reason is measurable. On \emph{``A $>$ B. B $>$ C. Who is largest?''} Model H
-answers with the middle entity 72.6\% of the time and the first entity 0.0\% of
-the time, while the gold answer is the first entity 47.4\% and the last 52.6\%
---- the middle entity is never correct. B is the only name mentioned twice, so
-the model is selecting the most repeated name instead of following the chain.
-Model L does the same thing more weakly (41.8\% middle) but has a second
-problem: it answers with a name that is not in the prompt at all 28.8\% of the
-time on this task, against 2.0\% for Model H. Across all four tasks Model H's
-off-prompt rate is 0.0--7.2\% and Model L's is 19.2--28.8\%, which is a concrete
-resource-tier difference --- the higher-resource model is better grounded in the
-text it was given.
+\begin{quote}\small
+\dn{ध्यान दीजिए: नवीन वरुण से अमीर है। अमीर कौन है?} $\rightarrow$ \dn{वरुण}
+\;(gold \dn{नवीन}) \hfill
+\dn{ध्यान दीजिए: प्रवीण वरुण से हल्का है। भारी कौन है?} $\rightarrow$ \dn{वरुण} \;\checkmark
+\end{quote}
 
-Both models overfit quickly: validation loss bottoms at \textbf{step 60} in both
-and rises monotonically after, to 3.5188 by step 1,250, while training loss
-falls to 0.4441. With 40 training names and 14 templates, memorising the answer
-prior is easier than learning to copy from the prompt. Saving on best validation
-loss is what kept the evaluated checkpoints usable --- the evaluated checkpoint
-is step 60, not the badly overfit final one, so the overfitting did not
-contaminate the reported numbers.
+The second example requires flipping the direction of the comparison and is answered
+correctly; given the positional habit above, such cases are best read as the habit
+coinciding with the right answer rather than as evidence of comparison.
 
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\textwidth]{finetune_loss_curves_both.png}
-\caption{Finetuning loss. Validation (dashed) bottoms at step 60 in both models
-while training loss keeps falling --- the gap is the answer prior being
-memorised.}
+The clearest resource-tier difference in the whole project is groundedness. Model~L
+answers with a name the question never mentions in 19.2--28.8\% of cases, repeatedly
+emitting memorised \emph{training} names (\dn{सिर्जना}, \dn{निरु}); Model~H does so in
+0.0--7.2\%. Before finetuning both models do this essentially 100\% of the time, so
+finetuning moved Model~H almost entirely onto the prompt and Model~L only about three
+quarters of the way.
+
+\begin{figure}[!htb]
+\centering
+\begin{minipage}{0.355\textwidth}\includegraphics[width=\textwidth]{fig_offprompt.pdf}\end{minipage}\hfill
+\begin{minipage}{0.625\textwidth}\includegraphics[width=\textwidth]{fig_head_delta.pdf}\end{minipage}
+\caption{Left: how often each finetuned model answers with a name absent from the
+prompt. Right: per-head entropy change, pretrained to finetuned, on identical held-out
+prompts of identical length. Most heads barely move; the largest shifts concentrate in
+the middle layers, where Phase~2 located the previous-token heads. This identifies
+which heads changed, not what they compute.}
+\label{fig:phase3attn}
 \end{figure}
 
-\subsection{Attention, pretrained versus finetuned}
-Both checkpoints were run on the \emph{same} 16 held-out reasoning prompts, all
-of one token length per language, so that prompt text and sequence length cannot
-masquerade as a finetuning effect. Model H: mean entropy 1.9102 $\rightarrow$
-1.8691, mean distance 10.303 $\rightarrow$ 10.360, uniform baseline 2.9545 at
-$T=46$. Model L: entropy 1.8327 $\rightarrow$ 1.7833, distance 9.415
-$\rightarrow$ 10.157, baseline 2.8061 at $T=39$. So finetuning made attention
-sharper and longer-range at the same time in both models, most clearly in Model
-L, whose mean distance rises 0.74 positions on a 39-token prompt. The heads that
-moved most are in the middle layers --- H's largest shifts are L1H5
-($-0.27$ entropy) and L3H1 ($-0.23$ entropy, $+2.59$ distance); L's largest
-distance shift is L3H3 at $+3.71$ --- which is where Phase 2 found the
-previous-token heads. I should be careful about what this shows: it identifies
-heads that changed, not heads that carry the comparison. Ablating L3H1 and
-re-scoring would be the direct test and I did not run it.
+\subsection{Attention before and after finetuning}
 
-\section{Cross-Phase Findings}
+Both checkpoints were run on the same held-out reasoning prompts, all of identical
+token length, so that neither prompt content nor sequence length could masquerade as
+a finetuning effect.
 
-\textbf{How the work built up.} Phase 1 decisions did not stay in Phase 1. The
-tokenizer choice made in week one set the bytes-per-token ratio that reversed
-the Phase 2 ranking, and the missing byte fallback --- invisible in Phase 1,
-where the unknown rate looked like a tiny 0.003 --- became a 4.8\% unknown rate
-on Phase 3 data because that data contained numerals. Phase 2's attention
-toolkit was reused unchanged on Phase 3 checkpoints, which is only possible
-because the finetuned checkpoints keep the pretraining payload format.
+\begin{table}[!htb]
+\centering\small
+\caption{Attention summary on reasoning prompts, pretrained versus finetuned.}
+\label{tab:attncompare}
+\begin{tabular}{llrrr}
+\toprule
+Model & Checkpoint & Mean entropy (nats) & Mean distance (tokens) & Uniform baseline \\
+\midrule
+H & pretrained (step 14{,}500) & 1.9102 & 10.303 & 2.9545 (length 46) \\
+H & finetuned (step 60) & 1.8691 & 10.360 & \\
+L & pretrained (step 14{,}000) & 1.8327 & 9.415 & 2.8061 (length 39) \\
+L & finetuned (step 60) & 1.7833 & 10.157 & \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\textbf{What the results indicate.} The two models are separated much less than
-perplexity suggests. On bits per byte they are within 0.06 of each other, with
-Model L slightly ahead; their attention organisation is nearly the same; their
-reasoning scores are both at chance. Where they genuinely differ is grounding:
-Model L invents names that were not in the prompt on 19.2--28.8\% of examples
-against Model H's 0.0--7.2\%, and on \texttt{numeric2} Model H never does it at
-all. That is the kind of difference I would expect from data
-quality and tokenizer granularity rather than from a capacity gap, which is
-consistent with the two models having identical non-embedding parameter counts.
+Finetuning made attention slightly sharper and slightly longer-range at the same time
+in both models, most visibly in Model~L, where mean distance rises 0.74 positions on a
+39-token prompt. This is consistent with a shift toward attending to the entity names
+scattered across the prompt rather than to local context, but the measurement cannot
+establish that: showing that these heads perform the comparison would require
+ablating a head and re-scoring, which I did not run. Layer~0 and layer~5 heatmaps for
+both checkpoints and both models are in \texttt{report/phase3/figures/}.
 
-\textbf{Bonus ablation} (branch \texttt{bonus-no-pos}, not claimed on the
-submission branch). Retraining Model H with \texttt{pos\_encoding: none}, one
-variable changed, cost only 5.8\% test perplexity (27.41 $\rightarrow$ 29.01)
-and 0.0092 BPB, far less than permutation invariance alone would predict, while
-attention entropy rose from 3.2047 to 3.6005 and the local-head fraction rose
-from 0.0625 to 0.2083. The usual explanation is that causal masking itself leaks
-position --- position $t$ can attend to $t$ keys, so the number of visible tokens
-encodes position. I want to state that as an explanation consistent with the
-evidence, not as something this experiment proves; proving it needs a probe I did
-not run. Also: the ablated run got a faster GPU and finished all 15,000 steps, so
-it is the better-trained of the two and no wall-clock comparison between them is
-meaningful.
+% =====================================================================
+\section{Cross-Phase Analysis}
+\label{sec:cross}
 
-\section{Challenges and Lessons Learned}
+\textbf{Tokenizer $\rightarrow$ intrinsic metrics.} The Phase~1 vocabulary choice
+propagates directly into the Phase~2 headline. Model~L's BPE at 10{,}000 produces
+11.44 bytes per token against Model~H's 8.88, and that single property is large
+enough to reverse the ranking between perplexity and bits-per-byte
+(Figure~\ref{fig:pplbpb}). Any cross-language perplexity comparison in this project
+is therefore a statement about tokenizers at least as much as about models.
 
-\textbf{Bhojpuri did not reach the token target.} I built the whole Bhojpuri
-pipeline and it passed every validation check, but public Bhojpuri text ran out
-at 84.2M tokens. Rather than pad the corpus with low-quality scraping I moved
-Model L to Nepali and kept Bhojpuri's numbers as a documented shortfall. The
-lesson was to check source availability before building the pipeline, not after.
+\textbf{Missing byte fallback $\rightarrow$ Phase~3 data corruption.} Model~L's
+tokenizer has no byte fallback at any vocabulary size, which in Phase~1 appeared only
+as a column of zeros that I read as a good result. It surfaced in Phase~2 as a
+0.17--0.34\% unknown-token rate, and in Phase~3 as outright corruption: no Devanagari
+digit exists in the vocabulary, so 4.8\% of the generated reasoning corpus became
+\texttt{<unk>} before I caught it. One Phase~1 configuration flag, invisible for two
+phases, then responsible for a data defect.
 
-\textbf{The Nepali dedup stage took over 30 hours.} S08 MinHash over about 2.2M
-documents was impractical on my laptop inside the deadline, so it ran on a
-separate machine and only output artifacts came back. That means the S08--S14
-entries in \texttt{log.md} are reconstructed from artifacts rather than live
-logs, and they are flagged inline as such.
+\textbf{Deduplication asymmetry $\rightarrow$ a limit on the comparison.} Model~L has
+MinHash near-duplicate removal and a train-vs-evaluation decontamination stage;
+Model~H has neither, only SHA-1 exact matching, and removed just 2{,}983 documents
+(0.4\%) against Model~L's $\approx$52{,}000. Model~H's test split may therefore
+overlap its training data in ways Model~L's cannot. This is a genuine confound in the
+direction that \emph{flatters} Model~H, and it is not quantified anywhere in this
+project; the perplexity gap attributed above to tokenizer granularity and corpus
+composition may also contain an unmeasured leakage component. Measuring it would mean
+running the Nepali MinHash decontamination over the Hindi corpus, which I did not do.
 
-\textbf{Two training runs hit the 11-hour guard.} I set a wall-clock exit so a
-Kaggle session could not die without a usable checkpoint, and it fired at
-step 14,520 and 14,440 out of 15,000. It cost about 3\% of the token budget and
-was the right trade.
+\textbf{Pretraining $\rightarrow$ reasoning.} The resource tier shows up in Phase~3
+not as accuracy but as groundedness. Both models are at chance on the comparison
+itself, so pretraining quality did not buy reasoning. What it bought is attention to
+the prompt: Model~H answers from the given candidates 93--100\% of the time against
+Model~L's 71--81\%. The better-pretrained model is better at \emph{using the input},
+which is a weaker and more defensible claim than better reasoning.
 
-\textbf{A checkpoint-selection grid that was too coarse.} Evaluating every 100
-steps put the best checkpoint at the exact step where warmup ended. That is not
-a subtle bug --- it is an experiment-design mistake, and it changed Model L's
-headline number by 14.55 points once fixed.
+\textbf{A measurement artefact worth recording.}
+\label{sec:tokencounts}
+Phase~1 and Phase~2 report different token counts for the same splits --- 485{,}280{,}741
+against 485{,}956{,}678 for Hindi train. The difference is exactly 675{,}937, the
+number of documents in that split, because packing appends one end-of-document token
+per document. The same identity holds for all six splits (Nepali train differs by
+exactly 1{,}520{,}000, its document count). Both numbers are correct for what they
+measure; this report uses Phase~1 counts for corpus statistics and packed counts for
+the training stream.
 
-\textbf{Technically, the three things I did not know before.} How an additive
-$-\infty$ mask makes future leakage exactly zero rather than approximately zero;
-why per-token perplexity cannot be compared across tokenizers, and what to do
-instead; and that a metric can move a long way (0 $\rightarrow$ 35\% exact
-match) while the underlying ability does not move at all.
+% =====================================================================
+\section{Limitations, Failures and Lessons}
 
-\section{Reflection}
+\begin{itemize}
+\item \textbf{Checkpoint-selection grid (detected, fixed, re-run).} The first
+finetuning run evaluated every 100 steps and selected its best checkpoint at step
+100 --- exactly where warmup ends --- with validation loss rising monotonically
+afterwards, so the grid was too coarse to locate the real optimum. Moving to a
+20-step grid with nothing else changed raised Model~L from 14.90\% to 29.45\% exact
+match and Model~H from 32.70\% to 35.15\%. The superseded run is kept in
+\texttt{report/phase3/run\_a\_40names/}.
+\item \textbf{Neither pretraining run converged.} Both stopped at the 11-hour guard,
+roughly 3\% short of the planned token budget, with validation loss still falling.
+Absolute perplexities are therefore upper bounds.
+\item \textbf{Hindi deduplication is weaker than Nepali's}, and no decontamination was
+run for Hindi. This is the first thing I would fix, and it is a stated limit on the
+central comparison rather than a cosmetic gap.
+\item \textbf{The reasoning training distribution is too narrow in two ways.} 40 entity
+names make the answer prior cheap to memorise, and every example of a given template
+is identical apart from slot fillers, so the surface form carries almost no entropy.
+Both models overfit by step 60. More entities and per-template linguistic variation
+(synonym substitution, clause reordering) are the two independent fixes; the generator
+has no variation layer today.
+\item \textbf{Attention analysis is correlational.} It identifies which heads changed
+and how sharply they attend. It does not establish what any head computes, and no
+causal probe (head ablation and re-scoring) was run.
+\item \textbf{Manual-share methodology differs between languages} --- Hindi's share is
+character-weighted over the cleaned corpus, Nepali's is token-weighted --- so the two
+percentages are not strictly like-for-like.
+\item \textbf{Lesson.} The same mistake was available twice in opposite directions:
+perplexity alone would have overstated the resource gap, and exact match alone would
+have overstated the reasoning gain. In both cases a second metric measuring the same
+thing in different units was what exposed it. A single headline number was wrong both
+times.
+\end{itemize}
 
-The thing I got wrong at the start was treating tokenizer training as a
-preprocessing step to get past. I chose Nepali BPE on fertility alone, and the
-sweep table I produced actually showed the problem --- byte fallback 0.000000 at
-every vocabulary size --- but I read that column as a good score instead of as a
-missing capability. It cost me a 4.8\% unknown rate on the Phase 3 data and a
-regeneration of the entire Nepali reasoning corpus. What I would do differently
-is not complicated: enable byte fallback and re-sweep.
+\textbf{Reproducibility.} Seeds are fixed and recorded at every stage (splits 42 and
+20260817; pretraining 20260902; finetuning 20260914). Model, training and finetuning
+configurations are YAML files committed beside the code, and the architecture used for
+finetuning is read out of the checkpoint rather than from a config file, so a mismatch
+is impossible by construction. Checkpoints carry weights, optimizer, scheduler, step,
+best validation loss, tokens seen, RNG states and configuration. Every number in this
+report is produced by \texttt{scripts/make\_numbers\_sheet.py} reading the result
+artifacts, and every figure by \texttt{report/final/make\_final\_figures.py} reading
+the same files; neither is hand-entered.
 
-The second thing I misunderstood was what perplexity means across two models.
-When I first saw 27.41 against 46.68 I wrote in my notes that the
-lower-resource model was much worse, and I was ready to attribute it to corpus
-quality. Computing bits per byte changed the conclusion, and the arithmetic is
-simple enough that the error was purely mine for not doing it earlier. The same
-shape of mistake was waiting in Phase 3: 0 $\rightarrow$ 35.15\% exact match is
-a real measurement and a misleading summary, and the only reason I know that is
-that I built a chance-calibrated second metric instead of stopping at the
-flattering one.
-
-What I am most confident about is the code I wrote myself --- the attention
-implementation, the causal-mask test and the evaluation toolkit --- because each
-of those was written to be checked rather than trusted, and the causal-mask test
-in particular is the one place in the project where I can point at a number
-(0.000e+00) and explain exactly why it cannot be anything else.
-
-\textbf{Limitations.} The models do not perform the reasoning task: forced
-choice is at or below chance, and nothing here should be read as evidence that
-they reason. The finetuning distribution is too narrow in two independent ways
---- 40 entity names and 14 templates --- and widening either is the change I
-would make first. Every result comes from a single seed per model, so the
-Model H / Model L differences are not bracketed by run-to-run variance. The
-attention analysis is correlational. Hindi has no near-duplicate or
-decontamination stage, so its test score is less protected than Nepali's. And
-both pretraining runs are 3\% short of their planned budget with loss still
-descending, so neither model is converged.
-
+% =====================================================================
 \section{Conclusion}
 
-Two independent 23--24M parameter decoder-only Transformers were built from
-scratch and trained to about 475M tokens each, one on 505.9M tokens of Hindi and
-one on 635.2M tokens of Nepali, with separate corpora, tokenizers and weights
-throughout. Model H ends at 27.41 test perplexity and Model L at 46.68, but at
-0.5382 and 0.4846 bits per byte, and the reversal is a tokenizer effect rather
-than a quality effect. Finetuning both on self-generated comparative-reasoning
-data raised exact match from 0 to 35.15\% and 29.45\% while forced-choice
-accuracy stayed at chance, so the models learned the answer format and not the
-comparison --- and the transitive failure has a specific, measured cause, which
-is that the model picks the name mentioned twice. The most useful outcome for me
-was learning where single-number metrics stop being trustworthy, which happened
-twice in this project in opposite directions.
+Two independent $\approx$23M-parameter decoder-only Transformers were built from
+scratch and trained on self-collected Hindi and Nepali corpora of 506M and 635M
+tokens with separately trained tokenizers. Holding script and architecture constant
+made the comparison between resource tiers interpretable, and the clearest results
+are the two places where a headline metric was misleading. Model~H's 41\% perplexity
+advantage largely disappears under bits-per-byte, because the gap is mostly tokenizer
+granularity. Finetuning raised exact match from 0\% to 35.15\% and 29.45\% while
+forced-choice accuracy stayed at or below chance, so the models learned the answer
+format rather than the comparison; the \texttt{transitive3} family falls below chance
+by selecting the twice-mentioned middle entity. The resource tier is visible not in
+reasoning accuracy but in groundedness --- how reliably each model answers from the
+candidates actually present in its prompt. Finally, two Phase~1 decisions, a missing
+byte fallback and an exact-match-only deduplicator, were traced to concrete effects
+two phases later, which is the strongest argument this project makes for treating
+corpus and tokenizer construction as experimental choices rather than setup.
 
-\section*{References}
-\small
-\begin{enumerate}\itemsep0pt
-\item Vaswani et al., \emph{Attention Is All You Need}, NeurIPS 2017 --- the
-decoder-only architecture, scaled dot-product attention and the $\sqrt{d_k}$
-scaling implemented in \texttt{model/transformer.py}.
-\item Kudo \& Richardson, \emph{SentencePiece: A simple and language independent
-subword tokenizer}, EMNLP 2018 --- the tokenizer library used for both models.
-\item Kudo, \emph{Subword Regularization}, ACL 2018 --- the Unigram algorithm
-used for Hindi.
-\item Sennrich et al., \emph{Neural Machine Translation of Rare Words with
-Subword Units}, ACL 2016 --- BPE, used for Nepali.
-\item Loshchilov \& Hutter, \emph{Decoupled Weight Decay Regularization},
-ICLR 2019 --- AdamW; and \emph{SGDR}, ICLR 2017 --- cosine schedule.
-\item Hendrycks \& Gimpel, \emph{Gaussian Error Linear Units}, 2016 --- the
-feed-forward non-linearity.
-\item Broder, \emph{On the resemblance and containment of documents}, 1997 ---
-MinHash, used in the Nepali S08 dedup and S09 decontamination stages.
-\item Papineni et al. (BLEU, ACL 2002); Popovi\'c (chrF, WMT 2015); Lin
-(ROUGE, 2004) --- generation metrics, computed with \texttt{sacrebleu} and
-\texttt{rouge-score}.
-\item Joulin et al., \emph{fastText} \texttt{lid.176} language identification
-model --- Nepali stage S04; \texttt{langdetect} for the Hindi pipeline.
-\item Data sources: HuggingFaceFW FineWeb-2 (\texttt{hin\_Deva}); AI4Bharat
-Sangraha and IndicCorpV2; Wikimedia dumps extracted with WikiExtractor; Gadya
-Kosh, Kavita Kosh, \texttt{patrika.com}, \texttt{onlinekhabar}, BBC Nepali and
-\texttt{archive.org} items, collected as described in \S2.1.
-\end{enumerate}
+\vspace{3pt}
+\footnotesize
+\noindent\textbf{References.}
+Vaswani et al., \emph{Attention Is All You Need}, NeurIPS 2017;
+Radford et al., \emph{Language Models are Unsupervised Multitask Learners}, 2019;
+Kudo, \emph{Subword Regularization}, ACL 2018; Sennrich et al., \emph{Rare Words with
+Subword Units}, ACL 2016; Kudo and Richardson, \emph{SentencePiece}, EMNLP 2018;
+Popovi\'{c}, \emph{chrF}, WMT 2015; Post, \emph{A Call for Clarity in Reporting BLEU
+Scores}, WMT 2018; Loshchilov and Hutter, \emph{Decoupled Weight Decay
+Regularization}, ICLR 2019; Broder, \emph{Resemblance and Containment of Documents},
+1997. Corpora: AI4Bharat Sangraha, IndicCorpV2, FineWeb-2.
 
 \end{document}

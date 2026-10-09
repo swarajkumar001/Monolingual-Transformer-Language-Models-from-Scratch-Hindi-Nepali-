@@ -47,6 +47,15 @@ echo "  size  : $SIZE"
 TODOS=$(grep -c '\\TODO{' "$TEX" || true)
 echo "  TODOs : $TODOS"
 
+# Every headline number in the report must still match the artifact it came from.
+FACTS=0
+if python check_report_facts.py > facts_check.log 2>&1; then
+    echo "  facts : $(head -1 facts_check.log)"
+else
+    echo "  facts : MISMATCH -- see report/final/facts_check.log"
+    FACTS=1
+fi
+
 echo
 STATUS=0
 if [ "$PAGES" -gt "$LIMIT" ] 2>/dev/null; then
@@ -55,6 +64,10 @@ if [ "$PAGES" -gt "$LIMIT" ] 2>/dev/null; then
 fi
 if [ "$TODOS" -gt 0 ]; then
     echo "  $TODOS section(s) still unwritten. They render in red -- search for \\TODO."
+    STATUS=1
+fi
+if [ "$FACTS" -ne 0 ]; then
+    echo "  a reported number no longer matches its source artifact. Fix before submitting."
     STATUS=1
 fi
 [ "$STATUS" -eq 0 ] && echo "  ready to submit: under the page limit, nothing unwritten."
